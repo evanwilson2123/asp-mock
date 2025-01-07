@@ -36,10 +36,10 @@ const Sidebar: React.FC = () => {
           </li>
           <li
             className={`hover:bg-gray-700 p-3 rounded ${
-              pathname === "/settings" ? "bg-gray-700" : ""
+              pathname === "/intended-zone" ? "bg-gray-700" : ""
             }`}
           >
-            <Link href="/settings">Settings</Link>
+            <Link href="/intended-zone">Intended Zone</Link>
           </li>
           <li
             className={`hover:bg-gray-700 p-3 rounded ${
