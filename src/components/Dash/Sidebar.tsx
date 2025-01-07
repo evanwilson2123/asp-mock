@@ -7,8 +7,8 @@ const Sidebar: React.FC = () => {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-gray-900 text-white flex flex-col">
-      <div className="p-6 border-b border-gray-700">
+    <aside className="w-64 bg-gray-900 text-white flex flex-col sm:hidden md:block">
+      <div className="sm- p-6 border-b border-gray-700">
         <h1 className="text-2xl font-bold">CSV CENTRAL BABY</h1>
       </div>
       <nav className="flex-1 overflow-y-auto p-4">
