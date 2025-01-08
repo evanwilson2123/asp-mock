@@ -36,8 +36,8 @@ const IntendedZone: React.FC = () => {
   const handleAddPitch = () => {
     if (intended && actual) {
       // Scale the x and y differences to inches (17 inches wide, 23 inches tall)
-      const deltaX = ((actual.x - intended.x) / 100) * 17; // x-difference in inches
-      const deltaY = ((actual.y - intended.y) / 100) * 23; // y-difference in inches
+      const deltaX = ((actual.x - intended.x) / 100) * 19.94; // x-difference in inches
+      const deltaY = ((actual.y - intended.y) / 100) * 25.79; // y-difference in inches
 
       // Calculate the Euclidean distance in inches
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY).toFixed(2);
