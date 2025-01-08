@@ -37,13 +37,13 @@ const Sidebar: React.FC = () => {
           </li>
 
           {/* CSV Upload */}
-          <li
+          {/* <li
             className={`hover:bg-gray-700 p-3 rounded ${
               pathname === "/csv-upload" ? "bg-gray-700" : ""
             }`}
           >
             <Link href="/csv-upload">CSV-Upload</Link>
-          </li>
+          </li> */}
           {/* Reports Section */}
           <li
             className="p-3 rounded hover:bg-gray-700 text-base flex justify-between items-center cursor-pointer"
@@ -133,11 +133,11 @@ const Sidebar: React.FC = () => {
                 <Link href="/intended-zone">Intended Zone</Link>
               </li>
               <li className="p-2 rounded hover:bg-gray-700">
-                <Link href="/pitch-data">Pitch Data</Link>
+                <Link href="/stuff-plus">Stuff Plus Calculator</Link>
               </li>
-              <li className="p-2 rounded hover:bg-gray-700">
+              {/* <li className="p-2 rounded hover:bg-gray-700">
                 <Link href="/program-planner">Program Planner</Link>
-              </li>
+              </li> */}
             </ul>
           )}
 
