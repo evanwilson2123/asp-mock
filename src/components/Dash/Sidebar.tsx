@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"; // Works in app directory
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const [isCoachesToolsOpen, setIsCoachesToolsOpen] = useState(false); // State to manage dropdown
+  const [isReportsOpen, setIsReportsOpen] = useState(false); // State to manage reports drop down
 
   return (
     <aside className="hidden md:block w-64 bg-gray-900 text-white flex flex-col">
@@ -29,10 +30,10 @@ const Sidebar: React.FC = () => {
           {/* Analytics */}
           <li
             className={`hover:bg-gray-700 p-3 rounded ${
-              pathname === "/analytics" ? "bg-gray-700" : ""
+              pathname === "/manage-athletes" ? "bg-gray-700" : ""
             }`}
           >
-            <Link href="/analytics">Analytics</Link>
+            <Link href="/manage-athletes">Manage Athletes</Link>
           </li>
 
           {/* CSV Upload */}
@@ -42,6 +43,59 @@ const Sidebar: React.FC = () => {
             }`}
           >
             <Link href="/csv-upload">CSV-Upload</Link>
+          </li>
+          {/* Reports Section */}
+          <li
+            className="p-3 rounded hover:bg-gray-700 text-base flex justify-between items-center cursor-pointer"
+            onClick={() => setIsReportsOpen(!isReportsOpen)}
+          >
+            <span>Reports</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className={`h-5 w-5 transform transition-transform ${
+                isReportsOpen ? "rotate-180" : ""
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </li>
+
+          {/* Dropdown Options For Reports*/}
+          {isReportsOpen && (
+            <ul className="mt-2 space-y-2 pl-4">
+              <li
+                className={`p-2 rounded ${
+                  pathname === "/blast-motion" ? "bg-gray-700" : ""
+                } hover:bg-gray-700`}
+              >
+                <Link href="/blast-motion">Blast Motion</Link>
+              </li>
+              <li className="p-2 rounded hover:bg-gray-700">
+                <Link href="/hittrax">Hittrax</Link>
+              </li>
+              <li className="p-2 rounded hover:bg-gray-700">
+                <Link href="/trackman">Trackman</Link>
+              </li>
+              <li className="p-2 rounded hover:bg-gray-700">
+                <Link href="/forceplates">Forceplates</Link>
+              </li>
+            </ul>
+          )}
+
+          <li
+            className={`hover:bg-gray-700 p-3 rounded ${
+              pathname === "/chat" ? "bg-gray-700" : ""
+            }`}
+          >
+            <Link href="/chat">Chat/Messaging</Link>
           </li>
 
           {/* Coaches Tools Section */}
@@ -68,7 +122,7 @@ const Sidebar: React.FC = () => {
             </svg>
           </li>
 
-          {/* Dropdown Options */}
+          {/* Dropdown Options for Coaches Tools*/}
           {isCoachesToolsOpen && (
             <ul className="mt-2 space-y-2 pl-4">
               <li
@@ -87,13 +141,21 @@ const Sidebar: React.FC = () => {
             </ul>
           )}
 
+          <li
+            className={`hover:bg-gray-700 p-3 rounded ${
+              pathname === "/programming" ? "bg-gray-700" : ""
+            }`}
+          >
+            <Link href="/programming">Programming</Link>
+          </li>
+
           {/* Logout */}
           <li
             className={`hover:bg-gray-700 p-3 rounded ${
-              pathname === "/logout" ? "bg-gray-700" : ""
+              pathname === "/teams" ? "bg-gray-700" : ""
             }`}
           >
-            <Link href="/logout">Logout</Link>
+            <Link href="/teams">Teams/Groups</Link>
           </li>
         </ul>
       </nav>
