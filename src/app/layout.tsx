@@ -1,9 +1,4 @@
-import {
-  ClerkProvider,
-  SignedIn,
-  SignedOut,
-  SignInButton,
-} from "@clerk/nextjs";
+import { ClerkProvider, SignedIn, SignedOut } from "@clerk/nextjs";
 import Navbar from "@/components/Navbar";
 import "./globals.css";
 import SignInPrompt from "@/components/SignInPrompt";
