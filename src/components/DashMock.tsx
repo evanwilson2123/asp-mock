@@ -3,7 +3,7 @@
 import React from "react";
 import Sidebar from "./Dash/Sidebar";
 import DashboardHeader from "./Dash/Header";
-import AthleteRow from "./Dash/AthlerteRow";
+import AthleteRow from "./Dash/AthleteRow";
 import { useUser } from "@clerk/nextjs";
 import SignInPrompt from "./SignInPrompt";
 import CoachSidebar from "./Dash/CoachSidebar";
