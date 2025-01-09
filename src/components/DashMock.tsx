@@ -4,6 +4,9 @@ import React from "react";
 import Sidebar from "./Dash/Sidebar";
 import DashboardHeader from "./Dash/Header";
 import AthleteRow from "./Dash/AthlerteRow";
+import { useUser } from "@clerk/nextjs";
+import SignInPrompt from "./SignInPrompt";
+import CoachSidebar from "./Dash/CoachSidebar";
 
 const athletes = [
   { name: "John Doe", level: "Intermediate", status: "Active" },
@@ -12,10 +15,17 @@ const athletes = [
 ];
 
 const DashMock: React.FC = () => {
+  const { isSignedIn, user } = useUser();
+  const role = user?.publicMetadata?.role;
+
+  if (!isSignedIn) {
+    return <SignInPrompt />;
+  }
+
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-gray-100">
       {/* Sidebar */}
-      <Sidebar />
+      {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col">

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation"; // Works in app directory
 
-const Sidebar: React.FC = () => {
+const CoachSidebar: React.FC = () => {
   const pathname = usePathname();
   const [isCoachesToolsOpen, setIsCoachesToolsOpen] = useState(false); // State to manage dropdown
   const [isReportsOpen, setIsReportsOpen] = useState(false); // State to manage reports drop down
@@ -157,17 +157,10 @@ const Sidebar: React.FC = () => {
           >
             <Link href="/teams">Teams/Groups</Link>
           </li>
-          <li
-            className={`hover:bg-gray-700 p-3 rounded ${
-              pathname === "/add-members" ? "bg-gray-700" : ""
-            }`}
-          >
-            <Link href="/add-members">Add Players/Coaches</Link>
-          </li>
         </ul>
       </nav>
     </aside>
   );
 };
 
-export default Sidebar;
+export default CoachSidebar;

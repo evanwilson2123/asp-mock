@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { SignOutButton } from "@clerk/nextjs";
 
 const Navbar: React.FC = () => {
   return (
@@ -21,9 +22,10 @@ const Navbar: React.FC = () => {
         <a href="#" className="hover:underline">
           Contact
         </a>
-        <button className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
+        {/* <button className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
           Sign Out
-        </button>
+        </button> */}
+        <SignOutButton />
       </nav>
     </header>
   );
