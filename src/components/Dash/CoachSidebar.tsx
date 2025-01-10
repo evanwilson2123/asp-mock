@@ -152,10 +152,10 @@ const CoachSidebar: React.FC = () => {
           {/* Logout */}
           <li
             className={`hover:bg-gray-700 p-3 rounded ${
-              pathname === "/teams" ? "bg-gray-700" : ""
+              pathname === "/my-teams" ? "bg-gray-700" : ""
             }`}
           >
-            <Link href="/teams">Teams/Groups</Link>
+            <Link href="/my-teams">My Teams/Groups</Link>
           </li>
         </ul>
       </nav>

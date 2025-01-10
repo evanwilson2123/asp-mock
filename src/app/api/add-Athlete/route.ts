@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
   try {
     await connectDB();
-    const { firstName, lastName, email, level } = await req.json();
+    const { firstName, lastName, email, level, u } = await req.json();
 
     if (!firstName || !lastName || !email) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       firstName,
       lastName,
       email,
+      u,
       level,
     });
 

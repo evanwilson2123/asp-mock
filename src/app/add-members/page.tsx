@@ -16,6 +16,7 @@ const AddMembersPage: React.FC = () => {
     email: "",
     password: "",
     level: "Youth", // Default level for Athlete form
+    u: "", // New field for Athlete form
   });
   const [message, setMessage] = useState("");
   const router = useRouter();
@@ -61,6 +62,7 @@ const AddMembersPage: React.FC = () => {
           email: "",
           password: "",
           level: "Youth",
+          u: "",
         });
       } else {
         const errorData = await response.json();
@@ -155,18 +157,29 @@ const AddMembersPage: React.FC = () => {
               />
             )}
             {activeForm === "Athlete" && (
-              <select
-                name="level"
-                value={formData.level}
-                onChange={handleChange}
-                required
-                className="w-full border text-black border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Youth">Youth</option>
-                <option value="High School">High School</option>
-                <option value="College">College</option>
-                <option value="Pro">Pro</option>
-              </select>
+              <>
+                <select
+                  name="level"
+                  value={formData.level}
+                  onChange={handleChange}
+                  required
+                  className="w-full border text-black border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Youth">Youth</option>
+                  <option value="High School">High School</option>
+                  <option value="College">College</option>
+                  <option value="Pro">Pro</option>
+                </select>
+                <input
+                  type="text"
+                  name="u" // Correct name attribute to match state key
+                  placeholder="Age Group"
+                  value={formData.u}
+                  onChange={handleChange}
+                  required
+                  className="w-full border text-black border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </>
             )}
             <button
               type="submit"
