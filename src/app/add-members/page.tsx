@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import SignInPrompt from "@/components/SignInPrompt";
 import CoachSidebar from "@/components/Dash/CoachSidebar";
 import Sidebar from "@/components/Dash/Sidebar";
+import { useRouter } from "next/navigation";
 
 const AddMembersPage: React.FC = () => {
   const { isSignedIn, user } = useUser();
@@ -17,10 +18,19 @@ const AddMembersPage: React.FC = () => {
     password: "",
   });
   const [message, setMessage] = useState("");
+  const router = useRouter();
 
-  if (!isSignedIn) {
-    return <SignInPrompt />;
-  }
+  useEffect(() => {
+    if (isSignedIn === false) {
+      router.push("/sign-in");
+      return;
+    }
+
+    const role = user?.publicMetadata?.role;
+    if (role !== "ADMIN") {
+      router.push("/");
+    }
+  }, [isSignedIn, user, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -54,6 +64,8 @@ const AddMembersPage: React.FC = () => {
       setMessage("An error occurred. Please try again.");
     }
   };
+
+  if (!isSignedIn) return null;
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
