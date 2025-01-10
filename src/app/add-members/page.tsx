@@ -15,6 +15,7 @@ const AddMembersPage: React.FC = () => {
     lastName: "",
     email: "",
     password: "",
+    level: "Youth", // Default level for Athlete form
   });
   const [message, setMessage] = useState("");
   const router = useRouter();
@@ -25,13 +26,14 @@ const AddMembersPage: React.FC = () => {
       return;
     }
 
-    const role = user?.publicMetadata?.role;
     if (role !== "ADMIN") {
       router.push("/");
     }
   }, [isSignedIn, user, router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -53,7 +55,13 @@ const AddMembersPage: React.FC = () => {
 
       if (response.ok) {
         setMessage(`${activeForm} added successfully!`);
-        setFormData({ firstName: "", lastName: "", email: "", password: "" });
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          password: "",
+          level: "Youth",
+        });
       } else {
         const errorData = await response.json();
         setMessage(`Error: ${errorData.error}`);
@@ -145,6 +153,20 @@ const AddMembersPage: React.FC = () => {
                 required
                 className="w-full border text-black border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            )}
+            {activeForm === "Athlete" && (
+              <select
+                name="level"
+                value={formData.level}
+                onChange={handleChange}
+                required
+                className="w-full border text-black border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Youth">Youth</option>
+                <option value="High School">High School</option>
+                <option value="College">College</option>
+                <option value="Pro">Pro</option>
+              </select>
             )}
             <button
               type="submit"

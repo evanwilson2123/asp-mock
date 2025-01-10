@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
+import { connectDB } from "@/lib/db";
+import Coach from "@/models/coach";
 
 export async function POST(req: NextRequest) {
   try {
+    await connectDB();
     // Parse the request body
-    const { email, password } = await req.json();
+    const { firstName, lastName, email, password } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -25,6 +28,14 @@ export async function POST(req: NextRequest) {
         role: "COACH",
       },
     });
+
+    const coach = new Coach({
+      firstName,
+      lastName,
+      email,
+    });
+
+    await coach.save();
 
     // Return success response
     return NextResponse.json(
