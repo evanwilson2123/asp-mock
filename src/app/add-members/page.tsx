@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import SignInPrompt from "@/components/SignInPrompt";
 import CoachSidebar from "@/components/Dash/CoachSidebar";
 import Sidebar from "@/components/Dash/Sidebar";
 import { useRouter } from "next/navigation";
