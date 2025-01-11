@@ -13,6 +13,7 @@ export async function GET() {
     const coaches = await Coach.find();
     return NextResponse.json({ coaches });
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to fetch coaches" },
       { status: 500 }

@@ -30,7 +30,7 @@ const AddMembersPage: React.FC = () => {
     if (role !== "ADMIN") {
       router.push("/");
     }
-  }, [isSignedIn, user, router]);
+  }, [isSignedIn, user, router, role]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>

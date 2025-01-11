@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
     const athletes = await Athlete.find({ u });
     return NextResponse.json({ athletes });
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to fetch athletes" },
       { status: 500 }

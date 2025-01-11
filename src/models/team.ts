@@ -11,7 +11,7 @@ export interface ITeam {
 
 const teamSchema = new Schema<ITeam>({
   name: { type: String, required: true },
-  coach: { type: mongoose.Types.ObjectId, ref: "Coach", reuired: true },
+  coach: { type: mongoose.Types.ObjectId, ref: "Coach", reqired: true },
   assistants: [
     { type: mongoose.Types.ObjectId, ref: "Coach", required: false },
   ],
