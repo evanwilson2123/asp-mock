@@ -23,12 +23,6 @@ export async function POST(req: NextRequest) {
       password,
     });
 
-    await client.users.updateUserMetadata(user.id, {
-      publicMetadata: {
-        role: "COACH",
-      },
-    });
-
     const coach = new Coach({
       firstName,
       lastName,
@@ -36,6 +30,14 @@ export async function POST(req: NextRequest) {
     });
 
     await coach.save();
+    console.log("Coach Object ID: ", coach._id);
+
+    await client.users.updateUserMetadata(user.id, {
+      publicMetadata: {
+        role: "COACH",
+        objectId: coach._id,
+      },
+    });
 
     // Return success response
     return NextResponse.json(
