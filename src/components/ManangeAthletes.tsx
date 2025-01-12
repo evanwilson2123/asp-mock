@@ -44,15 +44,15 @@ const ManageAthletes = () => {
     fetchAthletes();
   }, []);
 
-  const handleBackClick = () => {
-    if (role === "COACH") {
-      router.push("/my-team");
-    } else if (role === "ADMIN") {
-      router.push("/teams-groups");
-    } else {
-      router.push("/"); // Default behavior
-    }
-  };
+  //   const handleBackClick = () => {
+  //     if (role === "COACH") {
+  //       router.push("/my-team");
+  //     } else if (role === "ADMIN") {
+  //       router.push("/teams-groups");
+  //     } else {
+  //       router.push("/"); // Default behavior
+  //     }
+  //   };
 
   const handleAthleteClick = (athleteId: string) => {
     // Navigate to athlete details page
