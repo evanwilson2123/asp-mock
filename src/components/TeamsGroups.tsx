@@ -75,7 +75,7 @@ const TeamsGroups: React.FC = () => {
               <div
                 key={team._id}
                 className="bg-white p-4 rounded-lg shadow-md flex items-center justify-between cursor-pointer hover:bg-blue-50"
-                onClick={() => router.push(`/team/${team._id}`)} // Navigate to team details page
+                onClick={() => router.push(`/my-team/${team._id}`)} // Navigate to team details page
               >
                 <div>
                   <h2 className="text-lg font-bold text-gray-700">

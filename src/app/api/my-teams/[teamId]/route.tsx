@@ -3,30 +3,27 @@ import { NextRequest, NextResponse } from "next/server";
 import Team from "@/models/team";
 import Athlete from "@/models/athlete";
 
-export async function GET(
-  req: NextRequest,
-  context: { params: { teamId: string } }
-) {
-  const { teamId } = await context.params; // Await the params object
-
+export async function GET(req: NextRequest, context: any) {
   try {
     await connectDB();
 
+    const teamId = context.params.teamId; // Access params without strict typing
+
     if (!teamId) {
       return NextResponse.json(
-        { error: "Team ID is missing" },
+        { error: "Team ID is required" },
         { status: 400 }
       );
     }
 
-    // Fetch the team document to get the players array
+    // Fetch the team to get the players array
     const team = await Team.findById(teamId).exec();
 
     if (!team) {
       return NextResponse.json({ error: "Team not found" }, { status: 404 });
     }
 
-    // Fetch the athletes based on the players array
+    // Fetch all athletes based on the players array
     const athletes = await Athlete.find({ _id: { $in: team.players } }).exec();
 
     return NextResponse.json({ athletes }, { status: 200 });
