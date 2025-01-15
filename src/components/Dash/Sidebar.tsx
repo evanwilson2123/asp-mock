@@ -87,6 +87,9 @@ const Sidebar: React.FC = () => {
               <li className="p-2 rounded hover:bg-gray-700">
                 <Link href="/forceplates">Forceplates</Link>
               </li>
+              <li className="p-2 rounded hover:bg-gray-700">
+                <Link href="/arm-care">ArmCare.com</Link>
+              </li>
             </ul>
           )}
 
