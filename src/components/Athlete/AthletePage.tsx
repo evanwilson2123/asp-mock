@@ -26,7 +26,7 @@ const AthleteDetails = () => {
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
-  const technologies = ["Blast Motion", "Hittrax", "Trackman", "Forceplates"];
+  const technologies = ["Blast Motion", "Hittrax", "Trackman", "Armcare"];
 
   useEffect(() => {
     // Fetch athlete details
