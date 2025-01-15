@@ -59,7 +59,9 @@ const AthleteDetails = () => {
 
     try {
       const response = await fetch(
-        `/api/athlete/${athleteId}/upload?tech=${tech}`,
+        `/api/athlete/${athleteId}/upload/${tech
+          .toLowerCase()
+          .replace(/\s+/g, "-")}`,
         {
           method: "POST",
           body: formData,
