@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { connectDB } from "@/lib/db";
 import Athlete from "@/models/athlete";
 
@@ -13,11 +13,19 @@ export async function POST(req: NextRequest) {
   }
   try {
     await connectDB();
-    const { firstName, lastName, email, level, u } = await req.json();
+    // Parse the request body
+    const { firstName, lastName, email, password, level, u } = await req.json();
 
-    if (!firstName || !lastName || !email) {
+    // Check for null values
+    if (!firstName || !lastName || !email || !password) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
+
+    const client = await clerkClient();
+    const user = await client.users.createUser({
+      emailAddress: [email],
+      password,
+    });
 
     // Create an athlete Object:
     const athlete = new Athlete({
@@ -29,6 +37,14 @@ export async function POST(req: NextRequest) {
     });
 
     await athlete.save();
+
+    // add role and objectId metadata
+    await client.users.updateUserMetadata(user.id, {
+      publicMetadata: {
+        role: "ATHLETE",
+        objectId: athlete._id,
+      },
+    });
 
     return NextResponse.json({ message: "success" }, { status: 200 });
   } catch (error: any) {

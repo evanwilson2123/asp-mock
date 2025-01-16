@@ -3,9 +3,14 @@ import Trackman from "@/models/trackman";
 import { connectDB } from "@/lib/db";
 import csvParser from "csv-parser";
 import { Readable } from "stream";
+import { auth } from "@clerk/nextjs/server";
 
 // When querying for this data, filter rows where pitchReleaseSpeed !== 0
 export async function POST(req: NextRequest, context: any) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Auth Failed" }, { status: 400 });
+  }
   const athleteId = context.params.athleteId;
   console.log("Athlete ID:", athleteId);
 

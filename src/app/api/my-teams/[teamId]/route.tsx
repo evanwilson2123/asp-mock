@@ -2,8 +2,13 @@ import { connectDB } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import Team from "@/models/team";
 import Athlete from "@/models/athlete";
+import { auth } from "@clerk/nextjs/server";
 
 export async function GET(req: NextRequest, context: any) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Auth Failed" }, { status: 400 });
+  }
   try {
     await connectDB();
 

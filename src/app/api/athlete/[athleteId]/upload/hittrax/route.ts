@@ -3,6 +3,7 @@ import csvParser from "csv-parser";
 import { Readable } from "stream";
 import HitTrax from "@/models/hittrax"; // Adjust path if needed
 import { connectDB } from "@/lib/db";
+import { auth } from "@clerk/nextjs/server";
 
 // This shape matches what your Mongoose schema requires
 type AggregatedData = {
@@ -42,6 +43,10 @@ type AggregatedData = {
 };
 
 export async function POST(req: NextRequest, context: any) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Auth Failed" }, { status: 400 });
+  }
   try {
     const athleteId = context.params.athleteId;
 

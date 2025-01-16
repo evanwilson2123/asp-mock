@@ -3,6 +3,7 @@ import csvParser from "csv-parser";
 import { Readable } from "stream";
 import { connectDB } from "@/lib/db";
 import ArmCare from "@/models/armcare";
+import { auth } from "@clerk/nextjs/server";
 
 /**
  * parseDate: If invalid or blank, returns new Date(0).
@@ -30,6 +31,10 @@ function parseStr(value: string | undefined): string {
 }
 
 export async function POST(req: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Auth Failed" }, { status: 400 });
+  }
   try {
     await connectDB();
 

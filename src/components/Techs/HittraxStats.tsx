@@ -19,6 +19,7 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import SignInPrompt from "../SignInPrompt";
 
 // Register chart.js modules
 ChartJS.register(
@@ -78,6 +79,9 @@ const HitTraxStats: React.FC = () => {
 
   if (loading) {
     return <Loader />;
+  }
+  if (!role) {
+    return <SignInPrompt />;
   }
   if (error) {
     return <div className="text-red-500">Error: {error}</div>;

@@ -3,9 +3,14 @@ import BlastMotion from "@/models/blastMotion";
 import { connectDB } from "@/lib/db";
 import csvParser from "csv-parser";
 import { Readable } from "stream";
+import { auth } from "@clerk/nextjs/server";
 
 export async function POST(req: NextRequest, context: any) {
   const athleteId = context.params.athleteId;
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Auth Failed" }, { status: 400 });
+  }
 
   // Validate input
   if (!athleteId) {
