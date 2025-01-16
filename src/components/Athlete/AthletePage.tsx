@@ -122,7 +122,7 @@ const AthleteDetails = () => {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className="w-64 bg-gray-900 text-white">
         {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
@@ -153,7 +153,11 @@ const AthleteDetails = () => {
             <button
               key={tech}
               onClick={() =>
-                router.push(`/athlete/${athleteId}/reports?tech=${tech}`)
+                router.push(
+                  `/athlete/${athleteId}/reports/${tech
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`
+                )
               }
               className="text-gray-700 font-semibold hover:text-gray-900 transition"
             >

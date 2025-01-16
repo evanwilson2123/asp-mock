@@ -16,10 +16,20 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className="h-screen w-screen flex flex-col">
-          {/* Fixed Navbar */}
+        {/* 
+          Using min-h-screen makes the body at least the viewport height,
+          and flex + flex-col + overflow-y-auto let the page scroll 
+          if content is longer than the screen. 
+        */}
+        <body className="min-h-screen w-screen flex flex-col overflow-y-auto">
+          {/* Fixed Navbar at the top */}
           <Navbar />
-          {/* Main Content */}
+
+          {/* 
+            Main content:
+            - SignedIn: shows the actual page content if the user is signed in
+            - SignedOut: shows the sign-in prompt otherwise
+          */}
           <SignedIn>
             <div className="flex-1 overflow-y-auto">{children}</div>
           </SignedIn>

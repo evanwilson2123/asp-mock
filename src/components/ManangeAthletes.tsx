@@ -117,7 +117,7 @@ const ManageAthletes: React.FC = () => {
   const levelOptions = ["All", ...levels];
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className="w-64 bg-gray-900 text-white">
         {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
