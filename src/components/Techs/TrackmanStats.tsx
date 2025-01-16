@@ -1,0 +1,186 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import CoachSidebar from "@/components/Dash/CoachSidebar";
+import Sidebar from "@/components/Dash/Sidebar";
+import Loader from "@/components/Loader";
+import SignInPrompt from "../SignInPrompt";
+import { Line } from "react-chartjs-2";
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const TrackmanStats: React.FC = () => {
+  const [peakVelocities, setPeakVelocities] = useState<
+    { pitchType: string; peakSpeed: number }[]
+  >([]);
+  const [averageVelocities, setAverageVelocities] = useState<
+    { date: string; pitchType: string; avgSpeed: number }[]
+  >([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const { athleteId } = useParams();
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role;
+
+  useEffect(() => {
+    const fetchTrackmanData = async () => {
+      try {
+        const res = await fetch(`/api/athlete/${athleteId}/reports/trackman`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch Trackman data");
+        }
+
+        const data = await res.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        setPeakVelocities(data.pitchStats || []);
+        setAverageVelocities(data.avgPitchSpeeds || []);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrackmanData();
+  }, [athleteId]);
+
+  if (loading) {
+    return <Loader />;
+  }
+  if (!role) {
+    return <SignInPrompt />;
+  }
+  if (error) {
+    return <div className="text-red-500">Error: {error}</div>;
+  }
+
+  const colors = [
+    "#FF6384", // Red
+    "#36A2EB", // Blue
+    "#FFCE56", // Yellow
+    "#4BC0C0", // Teal
+    "#9966FF", // Purple
+    "#FF9F40", // Orange
+  ];
+
+  return (
+    <div className="flex min-h-screen overflow-x-hidden">
+      {/* Sidebar */}
+      <div className="md:hidden bg-gray-100">
+        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+      </div>
+      <div className="hidden md:block w-64 bg-gray-900 text-white">
+        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 p-6 bg-gray-100">
+        <h1 className="text-2xl font-bold text-gray-700 mb-6">
+          Trackman Stats
+        </h1>
+
+        {/* Peak Velocities by Pitch Type */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {peakVelocities.map(({ pitchType, peakSpeed }, index) => (
+            <div
+              key={pitchType}
+              className="bg-white p-6 rounded shadow flex flex-col items-center min-w-0"
+            >
+              <span className="text-xl font-bold text-gray-600">
+                {pitchType} Peak Velocity
+              </span>
+              <div
+                className="mt-4 relative rounded-full w-32 h-32 border-8 flex items-center justify-center"
+                style={{
+                  borderColor: colors[index % colors.length],
+                }}
+              >
+                <span
+                  className="text-2xl font-semibold"
+                  style={{ color: colors[index % colors.length] }}
+                >
+                  {peakSpeed}
+                </span>
+              </div>
+              <p
+                className="mt-2 font-medium"
+                style={{ color: colors[index % colors.length] }}
+              >
+                mph
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Averages Over Time (Line Chart) */}
+        <div className="bg-white p-6 rounded shadow">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Averages Over Time
+          </h2>
+          <div className="w-full overflow-x-auto">
+            {averageVelocities.length > 0 ? (
+              <Line
+                data={{
+                  labels: [...new Set(averageVelocities.map((d) => d.date))],
+                  datasets: Object.entries(
+                    averageVelocities.reduce((acc, curr) => {
+                      if (!acc[curr.pitchType]) {
+                        acc[curr.pitchType] = [];
+                      }
+                      acc[curr.pitchType].push(curr.avgSpeed);
+                      return acc;
+                    }, {} as { [key: string]: number[] })
+                  ).map(([pitchType, avgSpeeds], index) => ({
+                    label: pitchType,
+                    data: avgSpeeds,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length] + "33", // Add transparency
+                    fill: true,
+                    tension: 0.3,
+                  })),
+                }}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: "top" as const,
+                    },
+                  },
+                }}
+              />
+            ) : (
+              <p className="text-gray-500">No session data available.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TrackmanStats;
