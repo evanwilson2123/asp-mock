@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import CoachSidebar from "@/components/Dash/CoachSidebar";
-import Sidebar from "@/components/Dash/Sidebar";
-import Loader from "@/components/Loader";
+import Sidebar from "../Dash/Sidebar";
+import Loader from "../Loader";
 
 // Chart imports
 import {
@@ -125,7 +125,10 @@ const BlastMotionStats: React.FC = () => {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white">
+      <div className="md:hidden bg-gray-100">
+        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+      </div>
+      <div className="hidden md:block w-64 bg-gray-900 text-white">
         {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
       </div>
 

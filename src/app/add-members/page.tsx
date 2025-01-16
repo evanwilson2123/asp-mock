@@ -77,9 +77,12 @@ const AddMembersPage: React.FC = () => {
   if (!isSignedIn) return null;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex min-h-screen">
+      <div className="md:hidden bg-gray-100">
+        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+      </div>
       {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white">
+      <div className="hidden md:block w-64 bg-gray-900 text-white">
         {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
       </div>
 

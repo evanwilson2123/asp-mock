@@ -119,7 +119,10 @@ const ManageAthletes: React.FC = () => {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white">
+      <div className="md:hidden bg-gray-100">
+        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+      </div>
+      <div className="hidden md:block w-64 bg-gray-900 text-white">
         {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
       </div>
 

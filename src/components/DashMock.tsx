@@ -23,7 +23,7 @@ const DashMock: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen min-w-screen bg-gray-100">
       {/* Sidebar */}
       {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
 
