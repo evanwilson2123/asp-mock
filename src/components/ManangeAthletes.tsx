@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import CoachSidebar from "@/components/Dash/CoachSidebar";
 import Sidebar from "@/components/Dash/Sidebar";
+import Loader from "./Loader";
 
 interface Athlete {
   _id: string;
@@ -59,7 +60,12 @@ const ManageAthletes = () => {
     router.push(`/athlete/${athleteId}`);
   };
 
-  if (loading) return <div>Loading athletes...</div>;
+  if (loading)
+    return (
+      <div>
+        <Loader />
+      </div>
+    );
   if (error) return <div>Error: {error}</div>;
 
   return (
