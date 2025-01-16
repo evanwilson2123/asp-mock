@@ -22,11 +22,13 @@ const AthleteDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [hoveredTile, setHoveredTile] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+
   const router = useRouter();
   const { athleteId } = useParams();
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
+  // Technologies for the nav bar and CSV upload
   const technologies = ["Blast Motion", "Hittrax", "Trackman", "Armcare"];
 
   useEffect(() => {
@@ -54,6 +56,7 @@ const AthleteDetails = () => {
     router.push("/manage-athletes");
   };
 
+  // Upload logic
   const handleFileUpload = async (tech: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -91,9 +94,10 @@ const AthleteDetails = () => {
     }
   };
 
+  // Drag/Drop logic
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setHoveredTile(null); // Prevent hover conflict with drag state
+    setHoveredTile(null); // Prevent conflict with drag state
   };
 
   const handleDragLeave = () => {
@@ -108,6 +112,7 @@ const AthleteDetails = () => {
     }
   };
 
+  // Loading & error states
   if (loading)
     return (
       <div>
@@ -125,7 +130,9 @@ const AthleteDetails = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 p-6 bg-gray-100">
-        {/* Header */}
+        {/* 
+          1) Top Header + Back Button 
+        */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-700">
             {athlete?.firstName} {athlete?.lastName}&apos;s Details
@@ -138,26 +145,37 @@ const AthleteDetails = () => {
           </button>
         </div>
 
-        {/* Reports Section */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <h2 className="text-lg font-bold text-gray-700 mb-4">View Reports</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {technologies.map((tech) => (
-              <button
-                key={tech}
-                onClick={() =>
-                  router.push(`/athlete/${athleteId}/reports?tech=${tech}`)
-                }
-                className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg shadow text-gray-700 text-left font-semibold"
-              >
-                {tech}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* 
+          2) Technology Nav Bar
+        */}
+        <nav className="bg-white rounded-lg shadow-md mb-4 p-3 flex space-x-4">
+          {technologies.map((tech) => (
+            <button
+              key={tech}
+              onClick={() =>
+                router.push(`/athlete/${athleteId}/reports?tech=${tech}`)
+              }
+              className="text-gray-700 font-semibold hover:text-gray-900 transition"
+            >
+              {tech}
+            </button>
+          ))}
+          {/* 
+            Extra Nav Item: "New Assessment" 
+            This can link to a new page for creating an initial assessment
+          */}
+          <button
+            onClick={() => router.push(`/athlete/${athleteId}/new-assessment`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            New Assessment
+          </button>
+        </nav>
 
-        {/* Drag and Drop Upload Section */}
-        <div className="bg-white rounded-lg shadow-md p-4">
+        {/* 
+          3) CSV Upload Section
+        */}
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <h2 className="text-lg font-bold text-gray-700 mb-4">
             Upload CSV Data
           </h2>
@@ -197,7 +215,9 @@ const AthleteDetails = () => {
           </div>
         </div>
 
-        {/* Upload Status */}
+        {/* 
+          4) Upload Status
+        */}
         {uploadStatus && (
           <div className="mt-4 p-2 bg-green-200 text-green-800 rounded-lg">
             {uploadStatus}
