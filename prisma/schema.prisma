@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model BlastMotion {
+  id                     Int      @id @default(autoincrement())
+  sessionId              String
+  athlete                String   // Store MongoDB ObjectId as a string
+  date                   DateTime @default(now())
+  equipment              String?
+  handedness             String?
+  swingDetails           String?
+  planeScore             Float?
+  connectionScore        Float?
+  rotationScore          Float?
+  batSpeed               Float?
+  rotationalAcceleration Float?
+  onPlaneEfficiency      Float?
+  attackAngle            Float?
+  earlyConnection        Float?
+  connectionAtImpact     Float?
+  verticalBatAngle       Float?
+  power                  Float?
+  timeToContact          Float?
+  peakHandSpeed          Float?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model HitTrax {
+  id                  Int      @id @default(autoincrement())
+  sessionId           String
+  athlete             String?  // Store MongoDB ObjectId as a string
+  AB                  Int?
+  date                String?
+  timestamp           String?
+  pitch               Float?
+  strikeZone          String?
+  pType               String?
+  velo                Float?
+  LA                  Float?
+  dist                Float?
+  res                 String?
+  type                String?
+  horizAngle          Float?
+  pts                 Float?
+  strikeZoneBottom    Float?
+  strikeZoneTop       Float?
+  strikeZoneWidth     Float?
+  verticalDistance    Float?
+  horizontalDistance  Float?
+  POIX                Float?
+  POIY                Float?
+  POIZ                Float?
+  sprayChartX         Float?
+  sprayChartZ         Float?
+  fieldedX            Float?
+  fieldedZ            Float?
+  batMaterial         String?
+  user                String?
+  pitchAngle          Float?
+  batting             String?
+  level               String?
+  opposingPlayer      String?
+  tag                 String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model ArmCare {
+  id                    Int      @id @default(autoincrement())
+  sessionId             String
+  athlete               String?  // Store MongoDB ObjectId as a string
+  examDate              DateTime?
+  email                 String?
+  armCareId             String?
+  lastName              String?
+  firstName             String?
+  gender                String?
+  dob                   DateTime?
+  heightFt              Float?
+  heightIn              Float?
+  weightLbs             Float?
+  country               String?
+  stateProv             String?
+  position1             String?
+  position2             String?
+  position3             String?
+  position4             String?
+  position5             String?
+  playingLevel          String?
+  throws                String?
+  bats                  String?
+  surgery               String?
+  time                  String?
+  timezone              String?
+  examType              String?
+  armScore              Float?
+  totalStrength         Float?
+  irtarmStrength        Float?
+  irtarmRs              Float?
+  irtarmRecovery        String?
+  ertarmStrength        Float?
+  ertarmRs              Float?
+  ertarmRecovery        String?
+  starmStrength         Float?
+  starmRs               Float?
+  starmRecovery         String?
+  gtarmStrength         Float?
+  gtarmRs               Float?
+  gtarmRecovery         String?
+  shoulderBalance       Float?
+  velo                  Float?
+  svr                   Float?
+  totalStrengthPost     Float?
+  postStrengthLoss      Float?
+  totalPctFresh         Float?
+  irtarmPostStrength    Float?
+  irtarmPostLoss        Float?
+  irtarmPctFresh        Float?
+  ertarmPostStrength    Float?
+  ertarmPostLoss        Float?
+  ertarmPctFresh        Float?
+  starmPostStrength     Float?
+  starmPostLoss         Float?
+  starmPctFresh         Float?
+  gtarmPostStrength     Float?
+  gtarmPostLoss         Float?
+  gtarmPctFresh         Float?
+  irtarmPeakForceLbs1   Float?
+  irtarmPeakForceLbs2   Float?
+  irtarmPeakForceLbs3   Float?
+  irtarmMaxLbs          Float?
+  irntarmPeakForceLbs1  Float?
+  irntarmPeakForceLbs2  Float?
+  irntarmPeakForceLbs3  Float?
+  irntarmMaxLbs         Float?
+  ertarmPeakForceLbs1   Float?
+  ertarmPeakForceLbs2   Float?
+  ertarmPeakForceLbs3   Float?
+  ertarmMaxLbs          Float?
+  erntarmPeakForceLbs1  Float?
+  erntarmPeakForceLbs2  Float?
+  erntarmPeakForceLbs3  Float?
+  erntarmMaxLbs         Float?
+  starmPeakForceLbs1    Float?
+  starmPeakForceLbs2    Float?
+  starmPeakForceLbs3    Float?
+  starmMaxLbs           Float?
+  sntarmPeakForceLbs1   Float?
+  sntarmPeakForceLbs2   Float?
+  sntarmPeakForceLbs3   Float?
+  sntarmMaxLbs          Float?
+  gtarmPeakForceLbs1    Float?
+  gtarmPeakForceLbs2    Float?
+  gtarmPeakForceLbs3    Float?
+  gtarmMaxLbs           Float?
+  gntarmPeakForceLbs1   Float?
+  gntarmPeakForceLbs2   Float?
+  gntarmPeakForceLbs3   Float?
+  gntarmMaxLbs          Float?
+  accelPeakForceLbs1    Float?
+  accelPeakForceLbs2    Float?
+  accelPeakForceLbs3    Float?
+  accelMaxLbs           Float?
+  decelPeakForceLbs1    Float?
+  decelPeakForceLbs2    Float?
+  decelPeakForceLbs3    Float?
+  decelMaxLbs           Float?
+  totalPrimerMaxLbs     Float?
+  irtarmRom             Float?
+  irntarmRom            Float?
+  ertarmRom             Float?
+  erntarmRom            Float?
+  tarmTarc              Float?
+  ntarmTarc             Float?
+  ftarmRom              Float?
+  fntarmRom             Float?
+  freshLastOuting       String?
+  freshThrewToday       String?
+  freshRpe              Float?
+  freshArmFeels         String?
+  freshLocation         String?
+  freshWarmedUp         String?
+  postThrewToday        String?
+  postThrowingActivity  String?
+  postThrowingTime      String?
+  postPitchCount        Float?
+  postHighIntentThrows  Float?
+  postRpe               Float?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Trackman {
+  id                     Int      @id @default(autoincrement())
+  sessionId              String   // Unique session ID for grouping
+  athleteId              String?  // Mongo ObjectId as a string reference
+  pitchReleaseSpeed      Float?   // mph
+  pitchType              String?  // Type of pitch
+  pitcherName            String?  // Name of the pitcher
+  releaseHeight          Float?   // ft
+  releaseSide            Float?   // ft
+  extension              Float?   // ft
+  tilt                   String?  // Tilt angle
+  measuredTilt           String?  // Measured tilt
+  gyro                   Float?   // degrees
+  spinEfficiency         Float?   // %
+  inducedVerticalBreak   Float?   // inches
+  horizontalBreak        Float?   // inches
+  verticalApproachAngle  Float?   // degrees
+  horizontalApproachAngle Float?  // degrees
+  locationHeight         Float?   // ft
+  locationSide           Float?   // ft
+  zoneLocation           String?  // Zone location
+  spinRate               Float?   // rpm
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}

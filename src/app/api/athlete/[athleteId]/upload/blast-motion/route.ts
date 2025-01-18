@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import BlastMotion from "@/models/blastMotion";
-import { connectDB } from "@/lib/db";
+import prisma from "@/lib/prismaDb";
 import csvParser from "csv-parser";
 import { Readable } from "stream";
 import { auth } from "@clerk/nextjs/server";
+import { randomUUID } from "crypto"; // For generating the unique session ID
 
 export async function POST(req: NextRequest, context: any) {
   const athleteId = context.params.athleteId;
   const { userId } = await auth();
+
   if (!userId) {
     return NextResponse.json({ error: "Auth Failed" }, { status: 400 });
   }
 
-  // Validate input
   if (!athleteId) {
     return NextResponse.json(
       { error: "Athlete ID is missing" },
@@ -21,20 +21,26 @@ export async function POST(req: NextRequest, context: any) {
   }
 
   try {
-    await connectDB();
-
     const csvData: any[] = [];
+    const sessionId = randomUUID(); // Generate a unique session ID
     const arrayBuffer = await req.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const fileStream = Readable.from(buffer);
     const parseStream = fileStream.pipe(csvParser());
 
-    // Parse CSV data
+    console.log("Starting CSV Parsing...");
+
     for await (const row of parseStream) {
-      // Filter out invalid rows for Blast Motion
-      if (!row["_1"] || row["_1"] === "Equipment") continue;
+      // Skip rows that are headers, invalid, or where "Handedness" is null
+      if (!row["_1"] || row["_1"] === "Equipment" || !row["_2"]) {
+        console.log("Skipping invalid or header row:", row);
+        continue;
+      }
 
       csvData.push({
+        sessionId, // Associate each row with the same session ID
+        athlete: athleteId,
+        date: new Date(), // Replace with a valid column if the date is in the CSV
         equipment: row["_1"]?.trim() || null,
         handedness: row["_2"]?.trim() || null,
         swingDetails: row["_3"]?.trim() || null,
@@ -54,7 +60,8 @@ export async function POST(req: NextRequest, context: any) {
       });
     }
 
-    // If no valid data was parsed
+    console.log("Finished CSV Parsing. Total Rows Parsed:", csvData.length);
+
     if (csvData.length === 0) {
       return NextResponse.json(
         { error: "No valid data found in the uploaded file" },
@@ -62,33 +69,16 @@ export async function POST(req: NextRequest, context: any) {
       );
     }
 
-    // Aggregate all rows into a single session
-    const aggregatedData = {
-      athlete: athleteId,
-      date: new Date(),
-      equipment: csvData.map((row) => row.equipment),
-      handedness: csvData.map((row) => row.handedness),
-      swingDetails: csvData.map((row) => row.swingDetails),
-      planeScore: csvData.map((row) => row.planeScore),
-      connectionScore: csvData.map((row) => row.connectionScore),
-      rotationScore: csvData.map((row) => row.rotationScore),
-      batSpeed: csvData.map((row) => row.batSpeed),
-      rotationalAcceleration: csvData.map((row) => row.rotationalAcceleration),
-      onPlaneEfficiency: csvData.map((row) => row.onPlaneEfficiency),
-      attackAngle: csvData.map((row) => row.attackAngle),
-      earlyConnection: csvData.map((row) => row.earlyConnection),
-      connectionAtImpact: csvData.map((row) => row.connectionAtImpact),
-      verticalBatAngle: csvData.map((row) => row.verticalBatAngle),
-      power: csvData.map((row) => row.power),
-      timeToContact: csvData.map((row) => row.timeToContact),
-      peakHandSpeed: csvData.map((row) => row.peakHandSpeed),
-    };
+    console.log("Inserting data into database...");
+    await prisma.blastMotion.createMany({
+      data: csvData,
+    });
 
-    // Save to database
-    await BlastMotion.create(aggregatedData);
+    console.log("Data insertion successful.");
 
     return NextResponse.json({
       message: "Blast Motion session uploaded successfully",
+      sessionId, // Return the session ID for reference
     });
   } catch (error: any) {
     console.error("Error uploading data:", error);

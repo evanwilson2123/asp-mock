@@ -21,7 +21,7 @@ const Sidebar: React.FC = () => {
           ☰
         </button>
       </div>
-      <div className="md:hidden ">
+      <div className="md:hidden">
         <MobileSidebar
           isOpen={isMobileOpen}
           onClose={() => setIsMobileOpen(false)}

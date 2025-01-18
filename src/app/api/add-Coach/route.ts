@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     await coach.save();
     console.log("Coach Object ID: ", coach._id);
 
+    // add role and objectId metadata
     await client.users.updateUserMetadata(user.id, {
       publicMetadata: {
         role: "COACH",
