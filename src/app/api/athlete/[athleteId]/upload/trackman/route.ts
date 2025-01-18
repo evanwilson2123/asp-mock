@@ -3,7 +3,6 @@ import prisma from "@/lib/prismaDb";
 import csvParser from "csv-parser";
 import { Readable } from "stream";
 import { auth } from "@clerk/nextjs/server";
-import { UUID } from "crypto";
 
 export async function POST(req: NextRequest, context: any) {
   const { userId } = await auth();
