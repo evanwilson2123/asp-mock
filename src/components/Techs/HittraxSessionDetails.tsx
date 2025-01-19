@@ -38,7 +38,7 @@ const HitTraxSessionDetails: React.FC = () => {
   const [hits, setHits] = useState<Hit[]>([]);
   const [maxExitVelo, setMaxExitVelo] = useState<number>(0);
   const [maxDistance, setMaxDistance] = useState<number>(0);
-  const [maxLaunchAngle, setMaxLaunchAngle] = useState<number>(0);
+  const [avgLaunchAngle, setAvgLaunchAngle] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +62,7 @@ const HitTraxSessionDetails: React.FC = () => {
         setHits(data.hits || []);
         setMaxExitVelo(data.maxExitVelo || 0);
         setMaxDistance(data.maxDistance || 0);
-        setMaxLaunchAngle(data.maxLaunchAngle || 0);
+        setAvgLaunchAngle(data.avgLaunchAngle || 0);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -162,10 +162,10 @@ const HitTraxSessionDetails: React.FC = () => {
           </div>
           <div className="bg-white p-6 rounded shadow w-full md:w-1/3">
             <h2 className="text-lg font-bold text-gray-600">
-              Max Launch Angle
+              Average Launch Angle
             </h2>
             <div className="mt-4 text-4xl font-semibold text-orange-600">
-              {maxLaunchAngle.toFixed(1)} °
+              {avgLaunchAngle.toFixed(1)} °
             </div>
           </div>
         </div>
