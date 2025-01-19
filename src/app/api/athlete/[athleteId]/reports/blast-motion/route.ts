@@ -1,70 +1,95 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import BlastMotion from "@/models/blastMotion";
+import prisma from "@/lib/prismaDb";
 import { auth } from "@clerk/nextjs/server";
 
 /**
  * GET handler:
- * - Finds all `BlastMotion` docs for the given athlete.
- * - Flattens batSpeed & peakHandSpeed to find all-time max.
- * - Calculates average speeds for each doc (session) along with the doc's `date`.
+ * - Finds all `BlastMotion` records for the given athlete.
+ * - Groups data by `sessionId`.
+ * - Calculates average speeds for each session and sorts by session date (latest to earliest).
+ * - Computes global max batSpeed and peakHandSpeed across all sessions.
+ * - Returns a list of sessions for navigation.
  */
 export async function GET(req: NextRequest, context: any) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "AUTH FAILED" }, { status: 400 });
   }
+  const athleteId = context.params.athleteId;
+
   try {
-    await connectDB();
+    // Fetch all BlastMotion records for the athlete
+    const records = await prisma.blastMotion.findMany({
+      where: { athlete: athleteId },
+      orderBy: { date: "desc" }, // Sort by session date (latest first)
+    });
 
-    // Fetch all sessions for athlete
-    const docs = await BlastMotion.find({ athlete: context.params.athleteId });
+    if (!records || records.length === 0) {
+      return NextResponse.json(
+        { error: "No data found for this athlete" },
+        { status: 404 }
+      );
+    }
 
-    // Flatten arrays for global max
+    // Group records by sessionId and collect all values for global maxes
+    const sessions: Record<
+      string,
+      {
+        sessionId: string;
+        date: string;
+        batSpeeds: number[];
+        handSpeeds: number[];
+      }
+    > = {};
+
     const allBatSpeeds: number[] = [];
     const allHandSpeeds: number[] = [];
 
-    // Build an array of "session averages" to plot in a line chart
-    const sessionAverages: {
-      date: string; // e.g. "2023-08-12"
-      avgBatSpeed: number;
-      avgHandSpeed: number;
-    }[] = [];
+    for (const record of records) {
+      const sessionId = record.sessionId;
 
-    for (const doc of docs) {
-      // Flatten arrays for all-time max
-      if (doc.batSpeed) {
-        allBatSpeeds.push(...doc.batSpeed);
-      }
-      if (doc.peakHandSpeed) {
-        allHandSpeeds.push(...doc.peakHandSpeed);
+      if (!sessions[sessionId]) {
+        sessions[sessionId] = {
+          sessionId,
+          date: record.date.toISOString().split("T")[0], // Format date to "YYYY-MM-DD"
+          batSpeeds: [],
+          handSpeeds: [],
+        };
       }
 
-      // Compute average for this doc
-      let avgBat = 0;
-      if (doc.batSpeed && doc.batSpeed.length > 0) {
-        const sum = doc.batSpeed.reduce((acc: any, v: any) => acc + v, 0);
-        avgBat = sum / doc.batSpeed.length;
+      // Collect batSpeed and peakHandSpeed for this session and global max calculations
+      if (record.batSpeed !== null) {
+        sessions[sessionId].batSpeeds.push(record.batSpeed);
+        allBatSpeeds.push(record.batSpeed); // Add to global max array
       }
-      let avgHand = 0;
-      if (doc.peakHandSpeed && doc.peakHandSpeed.length > 0) {
-        const sum = doc.peakHandSpeed.reduce((acc: any, v: any) => acc + v, 0);
-        avgHand = sum / doc.peakHandSpeed.length;
+      if (record.peakHandSpeed !== null) {
+        sessions[sessionId].handSpeeds.push(record.peakHandSpeed);
+        allHandSpeeds.push(record.peakHandSpeed); // Add to global max array
       }
-
-      // Convert doc.date => "YYYY-MM-DD" for easy chart labeling
-      const dateStr = doc.date
-        ? new Date(doc.date).toISOString().split("T")[0]
-        : "NoDate";
-
-      sessionAverages.push({
-        date: dateStr,
-        avgBatSpeed: avgBat,
-        avgHandSpeed: avgHand,
-      });
     }
 
-    // Compute global max
+    // Calculate averages per session
+    const sessionAverages = Object.values(sessions).map((session) => {
+      const avgBatSpeed =
+        session.batSpeeds.length > 0
+          ? session.batSpeeds.reduce((acc, v) => acc + v, 0) /
+            session.batSpeeds.length
+          : 0;
+      const avgHandSpeed =
+        session.handSpeeds.length > 0
+          ? session.handSpeeds.reduce((acc, v) => acc + v, 0) /
+            session.handSpeeds.length
+          : 0;
+
+      return {
+        sessionId: session.sessionId,
+        date: session.date,
+        avgBatSpeed,
+        avgHandSpeed,
+      };
+    });
+
+    // Compute global max values
     const maxBatSpeed = allBatSpeeds.length > 0 ? Math.max(...allBatSpeeds) : 0;
     const maxHandSpeed =
       allHandSpeeds.length > 0 ? Math.max(...allHandSpeeds) : 0;
@@ -72,9 +97,17 @@ export async function GET(req: NextRequest, context: any) {
     return NextResponse.json({
       maxBatSpeed,
       maxHandSpeed,
-      sessionAverages, // e.g. [{ date, avgBatSpeed, avgHandSpeed }, ...]
+      sessionAverages, // [{ sessionId, date, avgBatSpeed, avgHandSpeed }, ...]
+      sessions: sessionAverages.map(({ sessionId, date }) => ({
+        sessionId,
+        date,
+      })), // List of sessions for navigation
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Error fetching BlastMotion data:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch BlastMotion data", details: error.message },
+      { status: 500 }
+    );
   }
 }

@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import CoachSidebar from "@/components/Dash/CoachSidebar";
 import Sidebar from "../Dash/Sidebar";
 import Loader from "../Loader";
+import Link from "next/link"; // Correct import
 
 // Chart imports
 import {
@@ -37,11 +38,16 @@ interface SessionAvg {
   avgHandSpeed: number;
 }
 
+interface Session {
+  sessionId: string;
+  date: string;
+}
+
 const BlastMotionStats: React.FC = () => {
   const [maxBatSpeed, setMaxBatSpeed] = useState<number>(0);
   const [maxHandSpeed, setMaxHandSpeed] = useState<number>(0);
   const [sessionData, setSessionData] = useState<SessionAvg[]>([]);
-
+  const [sessions, setSessions] = useState<Session[]>([]); // Added for clickable sessions
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,6 +74,7 @@ const BlastMotionStats: React.FC = () => {
         setMaxBatSpeed(data.maxBatSpeed || 0);
         setMaxHandSpeed(data.maxHandSpeed || 0);
         setSessionData(data.sessionAverages || []);
+        setSessions(data.sessions || []); // Set sessions for clickable list
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -137,6 +144,26 @@ const BlastMotionStats: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Blast Motion Report
         </h1>
+
+        {/* Session List */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Sessions (Latest to Earliest)
+          </h2>
+          <ul className="bg-white p-4 rounded shadow text-black">
+            {sessions.map((session) => (
+              <li
+                key={session.sessionId}
+                className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+              >
+                {/* Dynamic route link */}
+                <Link href={`/blast-motion/${session.sessionId}`}>
+                  {session.date} (Session ID: {session.sessionId})
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* All-time max speed stats */}
         <div className="flex flex-col md:flex-row items-center gap-8 mb-8">
