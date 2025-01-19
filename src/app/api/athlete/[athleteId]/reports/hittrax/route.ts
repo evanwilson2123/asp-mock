@@ -1,81 +1,99 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import HitTrax from "@/models/hittrax";
+import prisma from "@/lib/prismaDb";
 import { auth } from "@clerk/nextjs/server";
 
 /**
  * GET handler:
- * - Finds all `HitTrax` docs for the given athlete.
- * - Calculates Max Exit Velo, Max Distance, Average Exit Velo (Running Average), and Hard Hit Average.
+ * - Fetches `HitTrax` records for the given athlete.
+ * - Groups data by `sessionId` and calculates stats (Max Exit Velo, Max Distance, etc.).
+ * - Returns a list of clickable sessions along with aggregated stats.
  */
 export async function GET(req: NextRequest, context: any) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "AUTH FAILED" }, { status: 400 });
   }
+
+  const athleteId = context.params.athleteId;
+
   try {
-    await connectDB();
+    const records = await prisma.hitTrax.findMany({
+      where: { athlete: athleteId },
+      orderBy: { date: "desc" }, // Sort by session date (latest first)
+    });
 
-    // Fetch all sessions for athlete
-    const docs = await HitTrax.find({ athlete: context.params.athleteId });
+    if (!records || records.length === 0) {
+      return NextResponse.json(
+        { error: "No HitTrax data found for this athlete" },
+        { status: 404 }
+      );
+    }
 
-    // Initialize stats
+    // Group records by sessionId
+    const sessions: Record<
+      string,
+      { velocities: number[]; distances: number[]; date: string }
+    > = {};
+
+    for (const record of records) {
+      const { sessionId, velo, dist, date } = record;
+
+      if (!sessions[sessionId]) {
+        sessions[sessionId] = {
+          velocities: [],
+          distances: [],
+          date: date ? new Date(date).toISOString().split("T")[0] : "No Date",
+        };
+      }
+
+      if (velo) sessions[sessionId].velocities.push(velo);
+      if (dist) sessions[sessionId].distances.push(dist);
+    }
+
+    // Calculate stats
     let maxExitVelo = 0;
     let maxDistance = 0;
-    // let totalExitVelo = 0;
     let totalHardHits = 0;
     let totalEntries = 0;
 
-    const sessionAverages: {
-      date: string; // e.g. "2023-08-12"
-      avgExitVelo: number;
-    }[] = [];
+    const sessionAverages = Object.keys(sessions).map((sessionId) => {
+      const { velocities, distances, date } = sessions[sessionId];
 
-    // Loop through each session to calculate stats
-    for (const doc of docs) {
-      const sessionVelo = doc.velo || [];
-      const sessionDist = doc.dist || [];
+      if (velocities.length > 0) {
+        maxExitVelo = Math.max(maxExitVelo, ...velocities);
+        const sessionTotal = velocities.reduce((sum, velo) => sum + velo, 0);
+        totalEntries += velocities.length;
+        totalHardHits += velocities.filter((velo) => velo >= 95).length;
+        const avgExitVelo = sessionTotal / velocities.length;
 
-      if (sessionVelo.length > 0) {
-        // Update Max Exit Velo
-        maxExitVelo = Math.max(maxExitVelo, ...sessionVelo);
+        if (distances.length > 0) {
+          maxDistance = Math.max(maxDistance, ...distances);
+        }
 
-        // Update Total Exit Velo and Entries
-        const sessionTotal = sessionVelo.reduce(
-          (sum: any, velo: any) => sum + velo,
-          0
-        );
-        // totalExitVelo += sessionTotal;
-        totalEntries += sessionVelo.length;
-
-        // Count Hard Hits (e.g., >95 mph)
-        totalHardHits += sessionVelo.filter((velo: any) => velo >= 95).length;
-
-        // Calculate and store session average
-        const sessionAvg = sessionTotal / sessionVelo.length;
-        const dateStr = doc.date
-          ? new Date(doc.date[0]).toISOString().split("T")[0]
-          : "NoDate";
-
-        sessionAverages.push({ date: dateStr, avgExitVelo: sessionAvg });
+        return { sessionId, date, avgExitVelo };
       }
 
-      if (sessionDist.length > 0) {
-        // Update Max Distance
-        maxDistance = Math.max(maxDistance, ...sessionDist);
-      }
-    }
+      return { sessionId, date, avgExitVelo: 0 };
+    });
 
-    // Calculate Hard Hit Average
+    // Hard Hit Average
     const hardHitAverage = totalEntries > 0 ? totalHardHits / totalEntries : 0;
 
     return NextResponse.json({
       maxExitVelo,
       maxDistance,
       hardHitAverage,
-      sessionAverages, // e.g. [{ date, avgExitVelo }]
+      sessionAverages,
+      sessions: sessionAverages.map(({ sessionId, date }) => ({
+        sessionId,
+        date,
+      })),
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Error fetching HitTrax data:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch HitTrax data", details: error.message },
+      { status: 500 }
+    );
   }
 }
