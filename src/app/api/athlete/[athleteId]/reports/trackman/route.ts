@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Trackman from "@/models/trackman";
+import prisma from "@/lib/prismaDb";
 
 export async function GET(req: NextRequest, context: any) {
+  const athleteId = context.params.athleteId;
+
   try {
-    await connectDB();
-
-    const athleteId = context.params.athleteId;
-
     // Fetch all Trackman data for the athlete
-    const sessions = await Trackman.find({ athlete: athleteId });
+    const sessions = await prisma.trackman.findMany({
+      where: { athleteId },
+      orderBy: { createdAt: "asc" },
+    });
 
     if (!sessions || sessions.length === 0) {
       return NextResponse.json(
@@ -26,31 +26,40 @@ export async function GET(req: NextRequest, context: any) {
       [date: string]: { [pitchType: string]: number[] };
     } = {};
 
+    // Collect sessions for navigation
+    const sessionMap: Record<string, { sessionId: string; date: string }> = {};
+
     sessions.forEach((session) => {
-      if (session.pitchType && session.pitchReleaseSpeed) {
-        session.pitchType.forEach((type: string, idx: number) => {
-          const speed = session.pitchReleaseSpeed[idx] || 0;
+      const { sessionId, pitchType, pitchReleaseSpeed, createdAt } = session;
 
-          // Calculate peak velocity for each pitch type
-          if (!pitchStats[type] || pitchStats[type] < speed) {
-            pitchStats[type] = speed;
-          }
+      // Add sessionId and date for clickable sessions
+      if (!sessionMap[sessionId]) {
+        sessionMap[sessionId] = {
+          sessionId,
+          date: new Date(createdAt).toISOString().split("T")[0],
+        };
+      }
 
-          // Prepare average velocity over time by pitch type
-          const date = new Date(session.sessionId || Date.now())
-            .toISOString()
-            .split("T")[0]; // Replace with actual session date if available
+      if (pitchType && pitchReleaseSpeed) {
+        const speed = pitchReleaseSpeed;
 
-          if (!avgPitchSpeedsByType[date]) {
-            avgPitchSpeedsByType[date] = {};
-          }
+        // Calculate peak velocity for each pitch type
+        if (!pitchStats[pitchType] || pitchStats[pitchType] < speed) {
+          pitchStats[pitchType] = speed;
+        }
 
-          if (!avgPitchSpeedsByType[date][type]) {
-            avgPitchSpeedsByType[date][type] = [];
-          }
+        // Prepare average velocity over time by pitch type
+        const date = new Date(createdAt).toISOString().split("T")[0];
 
-          avgPitchSpeedsByType[date][type].push(speed);
-        });
+        if (!avgPitchSpeedsByType[date]) {
+          avgPitchSpeedsByType[date] = {};
+        }
+
+        if (!avgPitchSpeedsByType[date][pitchType]) {
+          avgPitchSpeedsByType[date][pitchType] = [];
+        }
+
+        avgPitchSpeedsByType[date][pitchType].push(speed);
       }
     });
 
@@ -73,9 +82,13 @@ export async function GET(req: NextRequest, context: any) {
       })
     );
 
+    // Convert session map to array for clickable sessions
+    const clickableSessions = Object.values(sessionMap);
+
     return NextResponse.json({
       pitchStats: formattedPitchStats,
       avgPitchSpeeds,
+      sessions: clickableSessions, // List of clickable sessions
     });
   } catch (error: any) {
     console.error("Error fetching Trackman data:", error);

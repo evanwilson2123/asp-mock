@@ -5,6 +5,7 @@ import { Readable } from "stream";
 import { auth } from "@clerk/nextjs/server";
 import { connectDB } from "@/lib/db";
 import Athlete from "@/models/athlete";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest, context: any) {
   const { userId } = await auth();
@@ -50,59 +51,71 @@ export async function POST(req: NextRequest, context: any) {
     const parseStream = fileStream.pipe(
       csvParser({
         headers: [
-          "pitchReleaseSpeed",
-          "pitchType",
-          "pitcherName",
-          "releaseHeight",
-          "releaseSide",
-          "extension",
-          "tilt",
-          "measuredTilt",
-          "gyro",
-          "spinEfficiency",
-          "inducedVerticalBreak",
-          "horizontalBreak",
-          "verticalApproachAngle",
-          "horizontalApproachAngle",
-          "locationHeight",
-          "locationSide",
-          "zoneLocation",
-          "spinRate",
+          "pitch_release_speed_imp",
+          "Pitch Type",
+          "Pitcher Name",
+          "Release Height (ft)",
+          "Release Side (ft)",
+          "Extension (ft)",
+          "Tilt",
+          "Measured Tilt",
+          "Gyro (°)",
+          "Spin Efficiency (%)",
+          "Induced Vertical Break (in)",
+          "Horizontal Break (in)",
+          "Vertical Approach Angle (°)",
+          "Horizontal Approach Angle (°)",
+          "Location Height (ft)",
+          "Location Side (ft)",
+          "Zone Location",
+          "session_id",
+          "Spin rate (rpm)",
         ],
         skipLines: 0,
       })
     );
 
     for await (const row of parseStream) {
-      const pitchReleaseSpeed = parseFloat(row["pitchReleaseSpeed"]) || 0;
+      const pitchReleaseSpeed = parseFloat(row["pitch_release_speed_imp"]) || 0;
 
       // Skip rows with invalid pitchReleaseSpeed
       if (pitchReleaseSpeed === 0) {
         continue;
       }
 
+      // Parse spinRate and log for debugging
+      const spinRateRaw = row["Spin rate (rpm)"];
+      const spinRate = spinRateRaw
+        ? parseFloat(spinRateRaw.replace(/,/g, "").trim()) || null
+        : null;
+
+      console.log("Row data:", row); // Log the full row for debugging
+      console.log("Parsed Spin Rate:", spinRate); // Log parsed spin rate
+
       trackmanRows.push({
         sessionId,
         athleteId,
         pitchReleaseSpeed,
-        pitchType: row["pitchType"]?.trim() || null,
-        pitcherName: row["pitcherName"]?.trim() || null,
-        releaseHeight: parseFloat(row["releaseHeight"]) || null,
-        releaseSide: parseFloat(row["releaseSide"]) || null,
-        extension: parseFloat(row["extension"]) || null,
-        tilt: row["tilt"]?.trim() || null,
-        measuredTilt: row["measuredTilt"]?.trim() || null,
-        gyro: parseFloat(row["gyro"]) || null,
-        spinEfficiency: parseFloat(row["spinEfficiency"]) || null,
-        inducedVerticalBreak: parseFloat(row["inducedVerticalBreak"]) || null,
-        horizontalBreak: parseFloat(row["horizontalBreak"]) || null,
-        verticalApproachAngle: parseFloat(row["verticalApproachAngle"]) || null,
+        pitchType: row["Pitch Type"]?.trim() || null,
+        pitcherName: row["Pitcher Name"]?.trim() || null,
+        releaseHeight: parseFloat(row["Release Height (ft)"]) || null,
+        releaseSide: parseFloat(row["Release Side (ft)"]) || null,
+        extension: parseFloat(row["Extension (ft)"]) || null,
+        tilt: row["Tilt"]?.trim() || null,
+        measuredTilt: row["Measured Tilt"]?.trim() || null,
+        gyro: parseFloat(row["Gyro (°)"]) || null,
+        spinEfficiency: parseFloat(row["Spin Efficiency (%)"]) || null,
+        inducedVerticalBreak:
+          parseFloat(row["Induced Vertical Break (in)"]) || null,
+        horizontalBreak: parseFloat(row["Horizontal Break (in)"]) || null,
+        verticalApproachAngle:
+          parseFloat(row["Vertical Approach Angle (°)"]) || null,
         horizontalApproachAngle:
-          parseFloat(row["horizontalApproachAngle"]) || null,
-        locationHeight: parseFloat(row["locationHeight"]) || null,
-        locationSide: parseFloat(row["locationSide"]) || null,
-        zoneLocation: row["zoneLocation"]?.trim() || null,
-        spinRate: parseFloat(row["spinRate"]) || null,
+          parseFloat(row["Horizontal Approach Angle (°)"]) || null,
+        locationHeight: parseFloat(row["Location Height (ft)"]) || null,
+        locationSide: parseFloat(row["Location Side (ft)"]) || null,
+        zoneLocation: row["Zone Location"]?.trim() || null,
+        spinRate,
       });
     }
 

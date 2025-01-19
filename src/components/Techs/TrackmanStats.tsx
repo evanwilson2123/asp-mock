@@ -37,6 +37,9 @@ const TrackmanStats: React.FC = () => {
   const [averageVelocities, setAverageVelocities] = useState<
     { date: string; pitchType: string; avgSpeed: number }[]
   >([]);
+  const [sessions, setSessions] = useState<
+    { sessionId: string; date: string }[]
+  >([]); // Clickable sessions
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +62,7 @@ const TrackmanStats: React.FC = () => {
 
         setPeakVelocities(data.pitchStats || []);
         setAverageVelocities(data.avgPitchSpeeds || []);
+        setSessions(data.sessions || []); // Add sessions for clickable list
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -103,6 +107,28 @@ const TrackmanStats: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Trackman Stats
         </h1>
+
+        {/* Clickable Sessions */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Sessions (Clickable)
+          </h2>
+          <ul className="bg-white p-4 rounded shadow text-black">
+            {sessions.map((session) => (
+              <li
+                key={session.sessionId}
+                className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+              >
+                <a
+                  href={`/trackman/${session.sessionId}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {session.date} (Session ID: {session.sessionId})
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* Peak Velocities by Pitch Type */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
