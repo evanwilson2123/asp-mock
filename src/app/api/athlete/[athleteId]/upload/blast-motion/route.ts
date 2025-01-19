@@ -4,6 +4,8 @@ import csvParser from "csv-parser";
 import { Readable } from "stream";
 import { auth } from "@clerk/nextjs/server";
 import { randomUUID } from "crypto"; // For generating the unique session ID
+import { connectDB } from "@/lib/db";
+import Athlete from "@/models/athlete";
 
 export async function POST(req: NextRequest, context: any) {
   const athleteId = context.params.athleteId;
@@ -21,6 +23,17 @@ export async function POST(req: NextRequest, context: any) {
   }
 
   try {
+    await connectDB();
+
+    const athlete = await Athlete.findById(athleteId);
+    if (!athlete) {
+      return NextResponse.json({ error: "Athlete not found" }, { status: 404 });
+    }
+
+    if (!athlete.blastMotion) {
+      athlete.blastMotion = [];
+    }
+
     const csvData: any[] = [];
     const sessionId = randomUUID(); // Generate a unique session ID
     const arrayBuffer = await req.arrayBuffer();
@@ -75,6 +88,10 @@ export async function POST(req: NextRequest, context: any) {
     });
 
     console.log("Data insertion successful.");
+
+    athlete.blastMotion.push(sessionId);
+
+    await athlete.save();
 
     return NextResponse.json({
       message: "Blast Motion session uploaded successfully",

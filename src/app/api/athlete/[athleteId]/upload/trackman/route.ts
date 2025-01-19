@@ -3,6 +3,8 @@ import prisma from "@/lib/prismaDb";
 import csvParser from "csv-parser";
 import { Readable } from "stream";
 import { auth } from "@clerk/nextjs/server";
+import { connectDB } from "@/lib/db";
+import Athlete from "@/models/athlete";
 
 export async function POST(req: NextRequest, context: any) {
   const { userId } = await auth();
@@ -20,6 +22,16 @@ export async function POST(req: NextRequest, context: any) {
   }
 
   try {
+    await connectDB();
+    const athlete = await Athlete.findById(athleteId);
+
+    if (!athlete) {
+      return NextResponse.json({ error: "Athlete Not Found" }, { status: 404 });
+    }
+    if (!athlete.trackman) {
+      athlete.trackman = [];
+    }
+
     const sessionId = crypto.randomUUID();
     const formData = await req.formData();
     const file = formData.get("file");
@@ -98,6 +110,9 @@ export async function POST(req: NextRequest, context: any) {
     const savedData = await prisma.trackman.createMany({
       data: trackmanRows,
     });
+
+    athlete.trackman.push(sessionId);
+    await athlete.save();
 
     return NextResponse.json({
       message: "Trackman data uploaded successfully",

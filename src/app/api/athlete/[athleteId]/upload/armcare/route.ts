@@ -4,6 +4,8 @@ import { Readable } from "stream";
 import prisma from "@/lib/prismaDb";
 import { auth } from "@clerk/nextjs/server";
 import { randomUUID } from "crypto";
+import { connectDB } from "@/lib/db";
+import Athlete from "@/models/athlete";
 
 /**
  * parseDate: If invalid or blank, returns null.
@@ -42,6 +44,17 @@ export async function POST(req: NextRequest, context: any) {
   }
 
   try {
+    await connectDB();
+    const athlete = await Athlete.findById(athleteId).exec();
+    if (!athlete) {
+      return NextResponse.json(
+        { error: "Athlete not found for ID" },
+        { status: 404 }
+      );
+    }
+    if (!athlete.armcare) {
+      athlete.armcare = [];
+    }
     const sessionId = randomUUID(); // Generate a unique session ID
 
     // 1) Pull the CSV File from form data
@@ -220,6 +233,10 @@ export async function POST(req: NextRequest, context: any) {
         },
       });
     }
+
+    athlete.armcare.push(sessionId);
+
+    await athlete.save();
 
     return NextResponse.json({
       message: "ArmCare CSV uploaded successfully.",

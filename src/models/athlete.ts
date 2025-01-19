@@ -8,6 +8,11 @@ export interface IAthlete {
   u?: string;
   level: string;
   team?: Types.ObjectId;
+  blastMotion: string[];
+  hitTrax?: string[];
+  trackman?: string[];
+  armcare?: string[];
+  forceplates?: string[];
 }
 
 const athleteSchema = new Schema<IAthlete>({
@@ -17,6 +22,11 @@ const athleteSchema = new Schema<IAthlete>({
   u: { type: String, required: false },
   level: { type: String, required: true },
   team: { type: mongoose.Types.ObjectId, ref: "Team", required: false },
+  blastMotion: [{ type: String, required: false }],
+  hitTrax: [{ type: String, required: false }],
+  trackman: [{ type: String, required: false }],
+  armcare: [{ type: String, required: false }],
+  forceplates: [{ type: String, required: false }],
 });
 
 const Athlete = models.Athlete || model<IAthlete>("Athlete", athleteSchema);
