@@ -232,7 +232,7 @@ const AthleteDetails = () => {
         {/* Notes Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-lg font-bold text-gray-700 mb-4">
-            Coachs&apos; Notes
+            Coach&apos;s Notes
           </h2>
           <textarea
             value={coachNotes}

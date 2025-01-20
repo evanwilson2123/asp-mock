@@ -44,7 +44,7 @@ const TrackmanStats: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const { athleteId } = useParams();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser(); // Use isLoaded to avoid premature rendering
   const role = user?.publicMetadata?.role;
 
   useEffect(() => {
@@ -73,12 +73,16 @@ const TrackmanStats: React.FC = () => {
     fetchTrackmanData();
   }, [athleteId]);
 
-  if (loading) {
+  if (!isLoaded || loading) {
+    // Ensure Clerk user data and API data are fully loaded
     return <Loader />;
   }
+
   if (!role) {
+    // Display sign-in prompt only if the role is explicitly null or undefined
     return <SignInPrompt />;
   }
+
   if (error) {
     return <div className="text-red-500">Error: {error}</div>;
   }
