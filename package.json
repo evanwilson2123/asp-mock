@@ -16,6 +16,7 @@
     "@types/pg": "^8.11.10",
     "chart.js": "^4.4.7",
     "chartjs": "^0.3.24",
+    "chartjs-plugin-annotation": "^3.1.0",
     "csv-parser": "^3.1.0",
     "dotenv": "^16.4.7",
     "mongodb": "^6.12.0",

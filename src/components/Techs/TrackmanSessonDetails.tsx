@@ -2,40 +2,42 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Line } from "react-chartjs-2";
+import { Scatter } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
 } from "chart.js";
+import annotationPlugin from "chartjs-plugin-annotation";
 import Loader from "@/components/Loader";
+import Sidebar from "@/components/Dash/Sidebar";
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  annotationPlugin
 );
 
 const TrackmanSessionDetails: React.FC = () => {
-  const [dataByPitchType, setDataByPitchType] = useState<Record<
-    string,
-    {
+  const [dataByPitchType, setDataByPitchType] = useState<{
+    [key: string]: {
       speeds: number[];
       spinRates: number[];
       horizontalBreaks: number[];
-      verticalAngles: number[];
-      timestamps: string[];
-    }
-  > | null>(null);
+      verticalBreaks: number[];
+      locations: { x: number; y: number }[];
+    };
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,152 +72,177 @@ const TrackmanSessionDetails: React.FC = () => {
   if (!dataByPitchType) return <div>No data available for this session.</div>;
 
   const pitchTypes = Object.keys(dataByPitchType);
+  const softColors = [
+    "#5DADE2", // Soft blue
+    "#58D68D", // Soft green
+    "#F5B041", // Soft orange
+    "#AF7AC5", // Soft purple
+    "#F1948A", // Soft pink
+  ];
 
   return (
-    <div className="flex flex-col min-h-screen p-6 bg-gray-100">
-      <h1 className="text-2xl font-bold text-gray-700 mb-6">
-        Trackman Session Details
-      </h1>
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="hidden md:block w-64 bg-gray-900 text-white">
+        <Sidebar />
+      </div>
 
-      {/* Graphs for Each Pitch Type */}
-      {pitchTypes.map((pitchType) => {
-        const {
-          speeds,
-          spinRates,
-          horizontalBreaks,
-          verticalAngles,
-          timestamps,
-        } = dataByPitchType[pitchType];
+      {/* Main Content */}
+      <div className="flex-1 p-6">
+        <h1 className="text-2xl font-bold text-gray-700 mb-6">
+          Trackman Session Details
+        </h1>
 
-        return (
-          <div key={pitchType} className="mb-8 bg-white p-6 rounded shadow">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Speed vs. Spin Rate Scatter Plot */}
+          <div className="bg-white p-6 rounded shadow">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">
-              {pitchType} Details
+              Speed vs. Spin Rate
             </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Speed Graph */}
-              <div>
-                <h3 className="text-md font-semibold text-gray-600 mb-2">
-                  Pitch Speeds Over Time
-                </h3>
-                <Line
-                  data={{
-                    labels: timestamps,
-                    datasets: [
-                      {
-                        label: "Pitch Speed (mph)",
-                        data: speeds,
-                        borderColor: "rgba(75, 192, 192, 0.8)",
-                        backgroundColor: "rgba(75, 192, 192, 0.2)",
-                        tension: 0.2,
-                        fill: true,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: "top" as const,
-                      },
-                    },
-                  }}
-                />
-              </div>
-
-              {/* Spin Rate Graph */}
-              <div>
-                <h3 className="text-md font-semibold text-gray-600 mb-2">
-                  Spin Rates Over Time
-                </h3>
-                <Line
-                  data={{
-                    labels: timestamps,
-                    datasets: [
-                      {
-                        label: "Spin Rate (rpm)",
-                        data: spinRates,
-                        borderColor: "rgba(255, 99, 132, 0.8)",
-                        backgroundColor: "rgba(255, 99, 132, 0.2)",
-                        tension: 0.2,
-                        fill: true,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: "top" as const,
-                      },
-                    },
-                  }}
-                />
-              </div>
-
-              {/* Horizontal Break Graph */}
-              <div>
-                <h3 className="text-md font-semibold text-gray-600 mb-2">
-                  Horizontal Break Over Time
-                </h3>
-                <Line
-                  data={{
-                    labels: timestamps,
-                    datasets: [
-                      {
-                        label: "Horizontal Break (inches)",
-                        data: horizontalBreaks,
-                        borderColor: "rgba(54, 162, 235, 0.8)",
-                        backgroundColor: "rgba(54, 162, 235, 0.2)",
-                        tension: 0.2,
-                        fill: true,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: "top" as const,
-                      },
-                    },
-                  }}
-                />
-              </div>
-
-              {/* Vertical Angle Graph */}
-              <div>
-                <h3 className="text-md font-semibold text-gray-600 mb-2">
-                  Vertical Approach Angle Over Time
-                </h3>
-                <Line
-                  data={{
-                    labels: timestamps,
-                    datasets: [
-                      {
-                        label: "Vertical Angle (degrees)",
-                        data: verticalAngles,
-                        borderColor: "rgba(153, 102, 255, 0.8)",
-                        backgroundColor: "rgba(153, 102, 255, 0.2)",
-                        tension: 0.2,
-                        fill: true,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: "top" as const,
-                      },
-                    },
-                  }}
-                />
-              </div>
-            </div>
+            <Scatter
+              data={{
+                datasets: pitchTypes.map((pitchType, index) => ({
+                  label: pitchType,
+                  data: dataByPitchType[pitchType].speeds.map((speed, i) => ({
+                    x: speed,
+                    y: dataByPitchType[pitchType].spinRates[i],
+                  })),
+                  backgroundColor: softColors[index % softColors.length],
+                  pointRadius: 6,
+                })),
+              }}
+              options={{
+                responsive: true,
+                aspectRatio: 1, // Makes it a square plot
+                plugins: {
+                  legend: { position: "top" },
+                },
+                scales: {
+                  x: {
+                    title: { display: true, text: "Speed (mph)" },
+                  },
+                  y: {
+                    title: { display: true, text: "Spin Rate (rpm)" },
+                  },
+                },
+              }}
+            />
           </div>
-        );
-      })}
+
+          {/* Horizontal vs Vertical Break Scatter Plot */}
+          <div className="bg-white p-6 rounded shadow">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+              Horizontal vs. Vertical Break
+            </h2>
+            <Scatter
+              data={{
+                datasets: pitchTypes.map((pitchType, index) => ({
+                  label: pitchType,
+                  data: dataByPitchType[pitchType].horizontalBreaks.map(
+                    (hBreak, i) => ({
+                      x: hBreak,
+                      y: dataByPitchType[pitchType].verticalBreaks[i],
+                    })
+                  ),
+                  backgroundColor: softColors[index % softColors.length],
+                  pointRadius: 6,
+                })),
+              }}
+              options={{
+                responsive: true,
+                aspectRatio: 1, // Makes it a square plot
+                plugins: {
+                  legend: { position: "top" },
+                },
+                scales: {
+                  x: {
+                    title: { display: true, text: "Horizontal Break (inches)" },
+                    min: -30,
+                    max: 30,
+                    grid: {
+                      //   drawBorder: true, // Ensures the axis line is drawn
+                      //   borderWidth: 2, // Line thickness
+                      color: (ctx) =>
+                        ctx.tick.value === 0 ? "#000000" : "#CCCCCC", // Black line at 0, light grid elsewhere
+                    },
+                    ticks: {
+                      color: "#000000", // Ensures tick labels are visible
+                    },
+                  },
+                  y: {
+                    title: { display: true, text: "Vertical Break (inches)" },
+                    min: -30,
+                    max: 30,
+                    grid: {
+                      //   drawBorder: true, // Ensures the axis line is drawn
+                      //   borderWidth: 2, // Line thickness
+                      color: (ctx) =>
+                        ctx.tick.value === 0 ? "#000000" : "#CCCCCC", // Black line at 0, light grid elsewhere
+                    },
+                    ticks: {
+                      color: "#000000", // Ensures tick labels are visible
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
+
+          {/* Location Scatter Plot with Strike Zone */}
+          <div className="lg:col-span-2 bg-white p-6 rounded shadow">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+              Pitch Location (Strike Zone)
+            </h2>
+            <Scatter
+              data={{
+                datasets: pitchTypes.map((pitchType, index) => ({
+                  label: pitchType,
+                  data: dataByPitchType[pitchType].locations.map(
+                    ({ x, y }) => ({
+                      x,
+                      y,
+                    })
+                  ),
+                  backgroundColor: softColors[index % softColors.length],
+                  pointRadius: 6,
+                })),
+              }}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: { position: "top" },
+                  annotation: {
+                    annotations: {
+                      strikeZone: {
+                        type: "box",
+                        xMin: -0.355, // Adjusted for plate width
+                        xMax: 0.355,
+                        yMin: 1.5, // Bottom of the strike zone
+                        yMax: 3.5, // Top of the strike zone
+                        borderWidth: 2,
+                        borderColor: "black",
+                        backgroundColor: "rgba(0, 0, 0, 0.05)",
+                      },
+                    },
+                  },
+                },
+                scales: {
+                  x: {
+                    title: { display: true, text: "Horizontal Location (ft)" },
+                    min: -3,
+                    max: 3,
+                  },
+                  y: {
+                    title: { display: true, text: "Vertical Location (ft)" },
+                    min: 0,
+                    max: 5,
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

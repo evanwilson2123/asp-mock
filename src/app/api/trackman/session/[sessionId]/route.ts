@@ -5,7 +5,6 @@ export async function GET(req: NextRequest, context: any) {
   const { sessionId } = context.params;
 
   try {
-    // Fetch pitches for the given session ID
     const pitches = await prisma.trackman.findMany({
       where: { sessionId },
       select: {
@@ -13,10 +12,10 @@ export async function GET(req: NextRequest, context: any) {
         pitchType: true,
         spinRate: true,
         horizontalBreak: true,
-        verticalApproachAngle: true,
-        createdAt: true,
+        inducedVerticalBreak: true,
+        locationHeight: true,
+        locationSide: true,
       },
-      orderBy: { createdAt: "asc" },
     });
 
     if (!pitches || pitches.length === 0) {
@@ -26,15 +25,14 @@ export async function GET(req: NextRequest, context: any) {
       );
     }
 
-    // Group data by pitch type
     const dataByPitchType: Record<
       string,
       {
         speeds: number[];
         spinRates: number[];
         horizontalBreaks: number[];
-        verticalAngles: number[];
-        timestamps: string[];
+        verticalBreaks: number[];
+        locations: { x: number; y: number }[];
       }
     > = {};
 
@@ -46,33 +44,34 @@ export async function GET(req: NextRequest, context: any) {
           speeds: [],
           spinRates: [],
           horizontalBreaks: [],
-          verticalAngles: [],
-          timestamps: [],
+          verticalBreaks: [],
+          locations: [],
         };
       }
 
-      if (pitch.pitchReleaseSpeed) {
+      if (pitch.pitchReleaseSpeed !== null) {
         dataByPitchType[pitchType].speeds.push(pitch.pitchReleaseSpeed);
       }
 
-      if (pitch.spinRate) {
+      if (pitch.spinRate !== null) {
         dataByPitchType[pitchType].spinRates.push(pitch.spinRate);
       }
 
-      if (pitch.horizontalBreak) {
+      if (pitch.horizontalBreak !== null) {
         dataByPitchType[pitchType].horizontalBreaks.push(pitch.horizontalBreak);
       }
 
-      if (pitch.verticalApproachAngle) {
-        dataByPitchType[pitchType].verticalAngles.push(
-          pitch.verticalApproachAngle
+      if (pitch.inducedVerticalBreak !== null) {
+        dataByPitchType[pitchType].verticalBreaks.push(
+          pitch.inducedVerticalBreak
         );
       }
 
-      if (pitch.createdAt) {
-        dataByPitchType[pitchType].timestamps.push(
-          new Date(pitch.createdAt).toISOString()
-        );
+      if (pitch.locationHeight !== null && pitch.locationSide !== null) {
+        dataByPitchType[pitchType].locations.push({
+          x: pitch.locationSide,
+          y: pitch.locationHeight,
+        });
       }
     });
 
