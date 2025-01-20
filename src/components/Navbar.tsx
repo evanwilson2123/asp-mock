@@ -9,7 +9,7 @@ const Navbar: React.FC = () => {
       {/* Logo and App Name */}
       <Link href="/" className="flex items-center space-x-2">
         <Image src="/logo.PNG" alt="logo" width={50} height={50} />
-        <h1 className="text-xl font-bold">ASP-MOCK</h1>
+        <h1 className="text-xl font-bold">ASP-ANALYTICS</h1>
       </Link>
       {/* Navigation Links */}
       <nav className="flex space-x-6">

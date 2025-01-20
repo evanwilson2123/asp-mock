@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import CoachSidebar from "@/components/Dash/CoachSidebar";
 import Sidebar from "@/components/Dash/Sidebar";
 import Loader from "../Loader";
+import Image from "next/image";
 
 interface Athlete {
   _id: string;
@@ -13,7 +14,10 @@ interface Athlete {
   lastName: string;
   email: string;
   level: string;
-  u?: string;
+  age?: number;
+  height?: string;
+  weight?: string;
+  profilePhotoUrl?: string;
 }
 
 const AthleteDetails = () => {
@@ -22,17 +26,18 @@ const AthleteDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [hoveredTile, setHoveredTile] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [confirmationTech, setConfirmationTech] = useState<string | null>(null);
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+  const [coachNotes, setCoachNotes] = useState<string>("");
 
   const router = useRouter();
   const { athleteId } = useParams();
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
-  // Technologies for the nav bar and CSV upload
   const technologies = ["Blast Motion", "Hittrax", "Trackman", "Armcare"];
 
   useEffect(() => {
-    // Fetch athlete details
     const fetchAthlete = async () => {
       try {
         const response = await fetch(`/api/athlete/${athleteId}`);
@@ -42,6 +47,7 @@ const AthleteDetails = () => {
 
         const data = await response.json();
         setAthlete(data.athlete || null);
+        setCoachNotes(data.athlete?.coachNotes || "");
       } catch (error: any) {
         setError(error.message || "An unexpected error occurred");
       } finally {
@@ -56,7 +62,29 @@ const AthleteDetails = () => {
     router.push("/manage-athletes");
   };
 
-  // Upload logic
+  const handleNotesSave = async () => {
+    try {
+      const response = await fetch(`/api/athlete/${athleteId}/notes`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ notes: coachNotes }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save notes");
+      }
+
+      setUploadStatus("Notes saved successfully");
+    } catch (error) {
+      console.error("Error saving notes:", error);
+      setUploadStatus("Failed to save notes");
+    } finally {
+      setTimeout(() => setUploadStatus(null), 3000);
+    }
+  };
+
   const handleFileUpload = async (tech: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -76,7 +104,7 @@ const AthleteDetails = () => {
         throw new Error("File upload failed");
       }
 
-      setUploadStatus(`File uploaded for ${tech}`);
+      setUploadStatus(`File successfully uploaded for ${tech}`);
     } catch (error: any) {
       setUploadStatus("Error uploading file: " + error.message);
     } finally {
@@ -84,35 +112,23 @@ const AthleteDetails = () => {
     }
   };
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    tech: string
-  ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileUpload(tech, file);
-    }
-  };
-
-  // Drag/Drop logic
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setHoveredTile(null); // Prevent conflict with drag state
-  };
-
-  const handleDragLeave = () => {
-    setHoveredTile(null);
-  };
-
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, tech: string) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) {
-      handleFileUpload(tech, file);
+      setFileToUpload(file); // Temporarily store the file
+      setConfirmationTech(tech); // Set the technology for confirmation
     }
   };
 
-  // Loading & error states
+  const confirmUpload = async (tech: string) => {
+    if (fileToUpload) {
+      await handleFileUpload(tech, fileToUpload);
+    }
+    setFileToUpload(null);
+    setConfirmationTech(null);
+  };
+
   if (loading)
     return (
       <div>
@@ -133,25 +149,8 @@ const AthleteDetails = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 p-6 bg-gray-100">
-        {/* 
-          1) Top Header + Back Button 
-        */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-700">
-            {athlete?.firstName} {athlete?.lastName}&apos;s Details
-          </h1>
-          <button
-            onClick={handleBackClick}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-          >
-            Back to Athletes
-          </button>
-        </div>
-
-        {/* 
-          2) Technology Nav Bar
-        */}
-        <nav className="bg-white rounded-lg shadow-md mb-4 p-3 flex space-x-4">
+        {/* Technology Nav Bar */}
+        <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
           {technologies.map((tech) => (
             <button
               key={tech}
@@ -167,10 +166,6 @@ const AthleteDetails = () => {
               {tech}
             </button>
           ))}
-          {/* 
-            Extra Nav Item: "New Assessment" 
-            This can link to a new page for creating an initial assessment
-          */}
           <button
             onClick={() => router.push(`/athlete/${athleteId}/new-assessment`)}
             className="text-gray-700 font-semibold hover:text-gray-900 transition"
@@ -179,13 +174,84 @@ const AthleteDetails = () => {
           </button>
         </nav>
 
-        {/* 
-          3) CSV Upload Section
-        */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        {/* Top Header + Back Button */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-700">
+            {athlete?.firstName} {athlete?.lastName}&apos;s Profile
+          </h1>
+          <button
+            onClick={handleBackClick}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+          >
+            Back to Athletes
+          </button>
+        </div>
+
+        {/* Profile Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex items-center space-x-6">
+            {/* Profile Photo */}
+            <div className="w-36 h-36 bg-gray-200 overflow-hidden rounded-lg">
+              {athlete?.profilePhotoUrl ? (
+                <Image
+                  src={athlete.profilePhotoUrl || "/default-avatar.png"} // Provide a fallback image
+                  alt={`${athlete.firstName} ${athlete.lastName}`}
+                  width={144} // Adjust dimensions based on your design
+                  height={144}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  No Photo
+                </div>
+              )}
+            </div>
+
+            {/* Athlete Info */}
+            <div>
+              <p className="text-lg font-bold text-gray-700">
+                {athlete?.firstName} {athlete?.lastName}
+              </p>
+              <p className="text-sm text-gray-500">Email: {athlete?.email}</p>
+              <p className="text-sm text-gray-500">
+                Level: {athlete?.level || "N/A"}
+              </p>
+              <p className="text-sm text-gray-500">
+                Age: {athlete?.age || "N/A"}
+              </p>
+              <p className="text-sm text-gray-500">
+                Height: {athlete?.height || "N/A"}
+              </p>
+              <p className="text-sm text-gray-500">
+                Weight: {athlete?.weight || "N/A"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Notes Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-lg font-bold text-gray-700 mb-4">
-            Upload CSV Data
+            Coachs&apos; Notes
           </h2>
+          <textarea
+            value={coachNotes}
+            onChange={(e) => setCoachNotes(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={4}
+            placeholder="Add notes about this athlete..."
+          ></textarea>
+          <button
+            onClick={handleNotesSave}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+          >
+            Save Notes
+          </button>
+        </div>
+
+        {/* CSV Upload Section */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-lg font-bold text-gray-700 mb-4">Upload CSV</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {technologies.map((tech) => (
               <div
@@ -195,36 +261,53 @@ const AthleteDetails = () => {
                     ? "border-blue-500 bg-blue-50"
                     : "border-gray-300 bg-gray-100"
                 }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
+                onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, tech)}
                 onMouseEnter={() => setHoveredTile(tech)}
                 onMouseLeave={() => setHoveredTile(null)}
               >
                 <p className="text-gray-700 font-semibold">{tech}</p>
                 <p className="text-sm text-gray-500 mt-2">
-                  Drag and drop a CSV file here or click to upload
+                  Drag and drop a CSV file here
                 </p>
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    id={`upload-input-${tech}`}
-                    className="hidden"
-                    accept=".csv"
-                    onChange={(e) => handleFileChange(e, tech)}
-                  />
-                  <span className="text-blue-600 underline">
-                    Click to upload
-                  </span>
-                </label>
+                <input
+                  type="file"
+                  id="file-input"
+                  className="hidden"
+                  accept=".csv"
+                />
               </div>
             ))}
           </div>
         </div>
 
-        {/* 
-          4) Upload Status
-        */}
+        {/* Confirmation Modal */}
+        {confirmationTech && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+              <p className="text-gray-700 mb-4">
+                Are you sure you want to upload this file for{" "}
+                <span className="font-semibold">{confirmationTech}</span>?
+              </p>
+              <div className="flex space-x-4 justify-center">
+                <button
+                  onClick={() => confirmUpload(confirmationTech)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setConfirmationTech(null)}
+                  className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Status */}
         {uploadStatus && (
           <div className="mt-4 p-2 bg-green-200 text-green-800 rounded-lg">
             {uploadStatus}

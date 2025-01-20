@@ -30,7 +30,7 @@ const Sidebar: React.FC = () => {
       <aside className="hidden md:block w-64 bg-gray-900 text-white flex flex-col">
         {/* Sidebar Header */}
         <div className="p-6 border-b border-gray-700">
-          <h1 className="text-2xl font-bold">CSV CENTRAL BABY</h1>
+          <h1 className="text-2xl font-bold">TOOLS</h1>
         </div>
 
         {/* Navigation */}

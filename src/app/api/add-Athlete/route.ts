@@ -14,10 +14,20 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     // Parse the request body
-    const { firstName, lastName, email, password, level, u } = await req.json();
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      level,
+      u,
+      age,
+      height,
+      weight,
+    } = await req.json();
 
     // Check for null values
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !email || !password || !level) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
@@ -34,6 +44,9 @@ export async function POST(req: NextRequest) {
       email,
       u,
       level,
+      age: age,
+      height: height,
+      weight: weight,
     });
 
     await athlete.save();
