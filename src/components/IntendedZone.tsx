@@ -22,8 +22,8 @@ const softColors = [
   "rgba(153, 102, 255, 0.5)",
   "rgba(255, 159, 64, 0.5)",
 ];
-const FIELD_WIDTH_FEET = 1.66; // Strike zone width in feet
-// const FIELD_HEIGHT_FEET = 2.157; // Strike zone height in feet
+const FIELD_WIDTH_FEET = 1.66; // Horizontal strike zone width in feet
+const FIELD_HEIGHT_FEET = 2.157; // Vertical strike zone height in feet
 
 const IntendedZone: React.FC = () => {
   const chartRef = useRef<ChartJS<"scatter"> | null>(null);
@@ -55,29 +55,25 @@ const IntendedZone: React.FC = () => {
 
     if (type === "intended") {
       setIntended(point);
-      chart.data.datasets.find(
-        (dataset) => dataset.label === "Intended"
-      )!.data = [point];
     } else {
       setActual(point);
-      chart.data.datasets.find((dataset) => dataset.label === "Actual")!.data =
-        [point];
     }
-
-    chart.update(); // Refresh the chart to show the new point
   };
 
   const handleAddPitch = () => {
     if (intended && actual) {
-      // Calculate the delta in feet directly
-      const deltaXFeet = actual.x - intended.x;
+      // Normalize the horizontal (x) distance to match vertical (y) scale
+      const normalizedDeltaX =
+        (actual.x - intended.x) * (FIELD_HEIGHT_FEET / FIELD_WIDTH_FEET);
       const deltaYFeet = actual.y - intended.y;
 
-      // Calculate the distance in feet using the Euclidean formula
-      const distanceFeet = Math.sqrt(deltaXFeet ** 2 + deltaYFeet ** 2);
+      // Calculate the Euclidean distance in feet
+      const distanceFeet = Math.sqrt(normalizedDeltaX ** 2 + deltaYFeet ** 2);
 
-      // Convert the distance to inches
-      // const distanceInches = distanceFeet * 12;
+      // Calculate the percentage distance (optional, for display)
+      const distancePercent = Math.sqrt(
+        (actual.x - intended.x) ** 2 + (actual.y - intended.y) ** 2
+      );
 
       setPitches([
         ...pitches,
@@ -87,7 +83,7 @@ const IntendedZone: React.FC = () => {
           pitchType,
           distance: {
             feet: parseFloat(distanceFeet.toFixed(2)),
-            percent: parseFloat((distanceFeet / FIELD_WIDTH_FEET).toFixed(2)),
+            percent: parseFloat(distancePercent.toFixed(2)),
           },
         },
       ]);
@@ -101,6 +97,14 @@ const IntendedZone: React.FC = () => {
 
   const data = {
     datasets: [
+      ...pitchTypes.map((type, index) => ({
+        label: type,
+        data: pitches
+          .filter((pitch) => pitch.pitchType === type)
+          .map((pitch) => ({ x: pitch.actual.x, y: pitch.actual.y })),
+        backgroundColor: softColors[index % softColors.length],
+        pointRadius: 6,
+      })),
       {
         label: "Intended",
         data: intended ? [intended] : [],
@@ -113,12 +117,6 @@ const IntendedZone: React.FC = () => {
         backgroundColor: "red",
         pointRadius: 8,
       },
-      ...pitches.map((pitch) => ({
-        label: pitch.pitchType,
-        data: [{ x: pitch.actual.x, y: pitch.actual.y }],
-        backgroundColor: softColors[pitchTypes.indexOf(pitch.pitchType)],
-        pointRadius: 6,
-      })),
     ],
   };
 
@@ -126,9 +124,7 @@ const IntendedZone: React.FC = () => {
     responsive: true,
     maintainAspectRatio: true,
     plugins: {
-      legend: {
-        position: "top",
-      },
+      legend: { position: "top" },
       annotation: {
         annotations: {
           outerStrikeZone: {
@@ -178,14 +174,21 @@ const IntendedZone: React.FC = () => {
         },
       },
     },
+    layout: {
+      padding: {
+        top: 20,
+      },
+    },
+    aspectRatio: 1,
   };
 
   return (
-    <div className="flex flex-col items-center bg-gray-100 min-h-screen p-6">
-      <div className="mb-6 w-full max-w-md">
+    <div className="flex flex-col items-center bg-gray-50 min-h-screen p-8">
+      {/* Dropdown */}
+      <div className="mb-6 w-full max-w-sm">
         <label
           htmlFor="pitch-type"
-          className="block text-sm font-medium text-gray-700 mb-2"
+          className="block text-lg font-medium text-gray-700 mb-2 text-center"
         >
           Select Pitch Type:
         </label>
@@ -193,7 +196,7 @@ const IntendedZone: React.FC = () => {
           id="pitch-type"
           value={pitchType}
           onChange={(e) => setPitchType(e.target.value)}
-          className="border border-gray-300 rounded-md p-2 bg-white text-gray-700 w-full"
+          className="border border-gray-300 rounded-md p-3 bg-white text-gray-700 w-full shadow-md focus:outline-blue-400 focus:ring focus:ring-blue-300"
         >
           {pitchTypes.map((type) => (
             <option key={type} value={type}>
@@ -202,42 +205,65 @@ const IntendedZone: React.FC = () => {
           ))}
         </select>
       </div>
-      <div className="lg:col-span-2 bg-white p-6 rounded shadow">
-        <h2 className="text-lg font-semibold text-gray-700 mb-4 text-center">
-          Pitch Location (Strike Zone)
-        </h2>
-        <div style={{ width: "600px", height: "600px" }}>
-          <Scatter
-            ref={chartRef}
-            data={data}
-            options={options}
-            onClick={(event) =>
-              handleChartClick(
-                event as React.MouseEvent<HTMLCanvasElement>,
-                intended === null ? "intended" : "actual"
-              )
-            }
-          />
+
+      {/* Chart */}
+      <div className="flex justify-center items-center lg:col-span-2 bg-white p-6 rounded shadow">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-700 mb-4 text-center">
+            Pitch Location (Strike Zone)
+          </h2>
+          <div
+            style={{
+              width: "600px",
+              height: "600px",
+            }}
+          >
+            <Scatter
+              ref={chartRef}
+              data={data}
+              options={options}
+              onClick={(event) =>
+                handleChartClick(
+                  event as React.MouseEvent<HTMLCanvasElement>,
+                  intended === null ? "intended" : "actual"
+                )
+              }
+            />
+          </div>
         </div>
       </div>
-      <div className="mt-6 flex justify-center">
+
+      {/* Buttons */}
+      <div className="mt-8 flex gap-4">
         <button
           onClick={handleAddPitch}
-          className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-600"
+          className="bg-blue-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-blue-600 transition"
         >
           Add Pitch
         </button>
+        <button
+          onClick={() => {
+            setPitches([]);
+            setIntended(null);
+            setActual(null);
+          }}
+          className="bg-red-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-red-600 transition"
+        >
+          Reset
+        </button>
       </div>
-      <div className="mt-6">
-        <h2 className="text-lg font-medium text-gray-700 mb-4">Pitch Data</h2>
-        <ul className="list-disc pl-6 space-y-2">
+
+      {/* Pitch Data */}
+      <div className="mt-10 max-w-4xl w-full bg-white p-6 rounded-lg shadow-lg">
+        <h2 className="text-lg font-medium text-gray-800 mb-4">Pitch Data</h2>
+        <ul className="list-disc pl-6 space-y-3">
           {pitches.map((pitch, index) => (
             <li key={index} className="text-gray-700">
               <span className="font-bold">Pitch Type:</span> {pitch.pitchType} |{" "}
               <span className="font-bold">Intended:</span> (
-              {pitch.intended.x.toFixed(2)}%, {pitch.intended.y.toFixed(2)}%) |{" "}
-              <span className="font-bold">Actual:</span> (
-              {pitch.actual.x.toFixed(2)}%, {pitch.actual.y.toFixed(2)}%) |{" "}
+              {pitch.intended.x.toFixed(2)} ft, {pitch.intended.y.toFixed(2)}{" "}
+              ft) | <span className="font-bold">Actual:</span> (
+              {pitch.actual.x.toFixed(2)} ft, {pitch.actual.y.toFixed(2)} ft) |{" "}
               <span className="font-bold">Distance:</span>{" "}
               {(pitch.distance.feet * 12).toFixed(2)} inches (
               {pitch.distance.percent.toFixed(2)}%)
