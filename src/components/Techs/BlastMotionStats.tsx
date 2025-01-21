@@ -66,7 +66,7 @@ const BlastMotionStats: React.FC = () => {
         if (!res.ok) {
           const errorMessage =
             res.status === 404
-              ? "Hittrax data could not be found."
+              ? "Blast Motion data could not be found."
               : res.status == 500
               ? "We encountered an issue on our end. Please try again later."
               : "An unexpected issue occured. Please try again.";
