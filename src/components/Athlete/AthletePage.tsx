@@ -204,47 +204,47 @@ const AthleteDetails = () => {
 
         {/* Profile Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between">
-            {/* Profile Photo */}
-            <div className="w-36 h-36 bg-gray-200 overflow-hidden rounded-lg">
-              {athlete?.profilePhotoUrl ? (
-                <Image
-                  src={athlete.profilePhotoUrl}
-                  alt={`${athlete.firstName} ${athlete.lastName}`}
-                  width={144}
-                  height={144}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
-                  No Photo
-                </div>
-              )}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+            {/* Profile Info */}
+            <div className="flex items-center space-x-6">
+              <div className="w-36 h-36 bg-gray-200 overflow-hidden rounded-lg">
+                {athlete?.profilePhotoUrl ? (
+                  <Image
+                    src={athlete.profilePhotoUrl}
+                    alt={`${athlete.firstName} ${athlete.lastName}`}
+                    width={144}
+                    height={144}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No Photo
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="text-lg font-bold text-gray-700">
+                  {athlete?.firstName} {athlete?.lastName}
+                </p>
+                <p className="text-sm text-gray-500">Email: {athlete?.email}</p>
+                <p className="text-sm text-gray-500">
+                  Age: {athlete?.age || "N/A"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Height: {athlete?.height || "N/A"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Weight: {athlete?.weight || "N/A"}
+                </p>
+              </div>
             </div>
 
-            {/* Athlete Info */}
-            <div className="ml-6 flex-1">
-              <p className="text-lg font-bold text-gray-700">
-                {athlete?.firstName} {athlete?.lastName}
-              </p>
-              <p className="text-sm text-gray-500">Email: {athlete?.email}</p>
-              <p className="text-sm text-gray-500">
-                Age: {athlete?.age || "N/A"}
-              </p>
-              <p className="text-sm text-gray-500">
-                Height: {athlete?.height || "N/A"}
-              </p>
-              <p className="text-sm text-gray-500">
-                Weight: {athlete?.weight || "N/A"}
-              </p>
-            </div>
-
-            {/* Dropdowns */}
-            <div className="flex items-center space-x-6 bg-gray-50 p-4 rounded shadow-lg">
+            {/* Dropdowns Section */}
+            <div className="flex flex-wrap justify-start items-center space-x-6 mt-6 md:mt-0 bg-gray-50 p-4 rounded shadow-lg">
               <div className="flex flex-col">
                 <label
                   htmlFor="level"
-                  className="text-sm font-medium text-gray-700 mb-1"
+                  className="text-xs font-medium text-gray-700 mb-1"
                 >
                   Level
                 </label>
@@ -252,7 +252,7 @@ const AthleteDetails = () => {
                   id="level"
                   value={updatedFields.level}
                   onChange={(e) => handleFieldUpdate("level", e.target.value)}
-                  className="block w-40 px-3 py-2 text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   {["Youth", "High School", "College", "Pro"].map((option) => (
                     <option key={option} value={option}>
@@ -264,7 +264,7 @@ const AthleteDetails = () => {
               <div className="flex flex-col">
                 <label
                   htmlFor="programType"
-                  className="text-sm font-medium text-gray-700 mb-1"
+                  className="text-xs font-medium text-gray-700 mb-1"
                 >
                   Program
                 </label>
@@ -274,9 +274,9 @@ const AthleteDetails = () => {
                   onChange={(e) =>
                     handleFieldUpdate("programType", e.target.value)
                   }
-                  className="block w-40 px-3 py-2 text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  {["Pitching", "Hitting", "Pitching + Hitting"].map(
+                  {["Pitching", "Hitting", "Pitching + Hitting", "S + C"].map(
                     (option) => (
                       <option key={option} value={option}>
                         {option}
@@ -287,8 +287,28 @@ const AthleteDetails = () => {
               </div>
               <div className="flex flex-col">
                 <label
+                  htmlFor="season"
+                  className="text-xs font-medium text-gray-700 mb-1"
+                >
+                  Season
+                </label>
+                <select
+                  id="season"
+                  value={updatedFields.season || ""}
+                  onChange={(e) => handleFieldUpdate("season", e.target.value)}
+                  className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  {["In Season", "Off Season"].map((season) => (
+                    <option key={season} value={season}>
+                      {season}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label
                   htmlFor="status"
-                  className="text-sm font-medium text-gray-700 mb-1"
+                  className="text-xs font-medium text-gray-700 mb-1"
                 >
                   Status
                 </label>
@@ -298,7 +318,7 @@ const AthleteDetails = () => {
                   onChange={(e) =>
                     handleFieldUpdate("active", e.target.value === "Active")
                   }
-                  className="block w-40 px-3 py-2 text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   {["Active", "Inactive"].map((status) => (
                     <option key={status} value={status}>
