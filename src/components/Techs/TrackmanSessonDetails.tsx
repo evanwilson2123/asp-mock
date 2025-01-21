@@ -16,6 +16,9 @@ import {
 import annotationPlugin from "chartjs-plugin-annotation";
 import Loader from "@/components/Loader";
 import Sidebar from "@/components/Dash/Sidebar";
+import CoachSidebar from "../Dash/CoachSidebar";
+import ErrorMessage from "../ErrorMessage";
+import { useUser } from "@clerk/nextjs";
 
 ChartJS.register(
   CategoryScale,
@@ -39,16 +42,25 @@ const TrackmanSessionDetails: React.FC = () => {
     };
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { sessionId } = useParams();
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role;
 
   useEffect(() => {
     const fetchSessionData = async () => {
       try {
         const res = await fetch(`/api/trackman/session/${sessionId}`);
         if (!res.ok) {
-          throw new Error("Failed to fetch session data");
+          const errorMessage =
+            res.status === 404
+              ? "Trackman data could not be found."
+              : res.status == 500
+              ? "We encountered an issue on our end. Please try again later."
+              : "An unexpected issue occured. Please try again.";
+          setErrorMessage(errorMessage);
+          return;
         }
 
         const data = await res.json();
@@ -58,7 +70,7 @@ const TrackmanSessionDetails: React.FC = () => {
 
         setDataByPitchType(data.dataByPitchType || {});
       } catch (err: any) {
-        setError(err.message);
+        setErrorMessage(err.message);
       } finally {
         setLoading(false);
       }
@@ -68,7 +80,12 @@ const TrackmanSessionDetails: React.FC = () => {
   }, [sessionId]);
 
   if (loading) return <Loader />;
-  if (error) return <div className="text-red-500">Error: {error}</div>;
+  if (errorMessage)
+    return (
+      <div className="text-red-500">
+        <ErrorMessage role={role as string} message={errorMessage} />
+      </div>
+    );
   if (!dataByPitchType) return <div>No data available for this session.</div>;
 
   const pitchTypes = Object.keys(dataByPitchType);
@@ -83,8 +100,12 @@ const TrackmanSessionDetails: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
+      {/* Conditional Sidebar */}
+      <div className="md:hidden bg-gray-100">
+        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+      </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        <Sidebar />
+        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content */}

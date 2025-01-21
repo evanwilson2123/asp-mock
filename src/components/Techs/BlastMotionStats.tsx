@@ -20,6 +20,7 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import ErrorMessage from "../ErrorMessage";
 
 // Register chart.js modules
 ChartJS.register(
@@ -49,7 +50,7 @@ const BlastMotionStats: React.FC = () => {
   const [sessionData, setSessionData] = useState<SessionAvg[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]); // Added for clickable sessions
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { athleteId } = useParams();
   const { user } = useUser();
@@ -63,7 +64,14 @@ const BlastMotionStats: React.FC = () => {
           `/api/athlete/${athleteId}/reports/blast-motion`
         );
         if (!res.ok) {
-          throw new Error("Failed to fetch Blast Motion data");
+          const errorMessage =
+            res.status === 404
+              ? "Hittrax data could not be found."
+              : res.status == 500
+              ? "We encountered an issue on our end. Please try again later."
+              : "An unexpected issue occured. Please try again.";
+          setErrorMessage(errorMessage);
+          return;
         }
 
         const data = await res.json();
@@ -76,7 +84,7 @@ const BlastMotionStats: React.FC = () => {
         setSessionData(data.sessionAverages || []);
         setSessions(data.sessions || []); // Set sessions for clickable list
       } catch (err: any) {
-        setError(err.message);
+        setErrorMessage(err.message);
       } finally {
         setLoading(false);
       }
@@ -88,8 +96,12 @@ const BlastMotionStats: React.FC = () => {
   if (loading) {
     return <Loader />;
   }
-  if (error) {
-    return <div className="text-red-500">Error: {error}</div>;
+  if (errorMessage) {
+    return (
+      <div className="text-red-500">
+        <ErrorMessage role={role as string} message={errorMessage} />
+      </div>
+    );
   }
 
   // Prepare chart data from sessionData

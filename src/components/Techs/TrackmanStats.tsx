@@ -19,6 +19,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import ErrorMessage from "../ErrorMessage";
 
 ChartJS.register(
   CategoryScale,
@@ -41,7 +42,7 @@ const TrackmanStats: React.FC = () => {
     { sessionId: string; date: string }[]
   >([]); // Clickable sessions
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { athleteId } = useParams();
   const { user, isLoaded } = useUser(); // Use isLoaded to avoid premature rendering
@@ -52,7 +53,14 @@ const TrackmanStats: React.FC = () => {
       try {
         const res = await fetch(`/api/athlete/${athleteId}/reports/trackman`);
         if (!res.ok) {
-          throw new Error("Failed to fetch Trackman data");
+          const errorMessage =
+            res.status === 404
+              ? "Trackman data could not be found."
+              : res.status == 500
+              ? "We encountered an issue on our end. Please try again later."
+              : "An unexpected issue occured. Please try again.";
+          setErrorMessage(errorMessage);
+          return;
         }
 
         const data = await res.json();
@@ -64,7 +72,7 @@ const TrackmanStats: React.FC = () => {
         setAverageVelocities(data.avgPitchSpeeds || []);
         setSessions(data.sessions || []); // Add sessions for clickable list
       } catch (err: any) {
-        setError(err.message);
+        setErrorMessage(err.message);
       } finally {
         setLoading(false);
       }
@@ -83,8 +91,12 @@ const TrackmanStats: React.FC = () => {
     return <SignInPrompt />;
   }
 
-  if (error) {
-    return <div className="text-red-500">Error: {error}</div>;
+  if (errorMessage) {
+    return (
+      <div className="text-red-500">
+        <ErrorMessage role={role as string} message={errorMessage} />
+      </div>
+    );
   }
 
   const colors = [

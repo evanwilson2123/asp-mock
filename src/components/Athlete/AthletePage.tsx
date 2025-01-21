@@ -7,6 +7,7 @@ import CoachSidebar from "@/components/Dash/CoachSidebar";
 import Sidebar from "@/components/Dash/Sidebar";
 import Loader from "../Loader";
 import Image from "next/image";
+import ErrorMessage from "../ErrorMessage";
 
 interface Athlete {
   _id: string;
@@ -26,7 +27,7 @@ interface Athlete {
 const AthleteDetails = () => {
   const [athlete, setAthlete] = useState<Athlete | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hoveredTile, setHoveredTile] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [confirmationTech, setConfirmationTech] = useState<string | null>(null);
@@ -51,8 +52,17 @@ const AthleteDetails = () => {
       try {
         const response = await fetch(`/api/athlete/${athleteId}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch athlete details");
+          const errorMessage =
+            response.status === 404
+              ? "Athlete data could not be found."
+              : response.status == 500
+              ? "We encountered an issue on our end. Please try again later."
+              : "An unexpected issue occured. Please try again.";
+          setErrorMessage(errorMessage);
+          return;
         }
+
+        setErrorMessage(null);
 
         const data = await response.json();
         setAthlete(data.athlete || null);
@@ -64,7 +74,7 @@ const AthleteDetails = () => {
           programType: data.athlete?.programType || "",
         });
       } catch (error: any) {
-        setError(error.message || "An unexpected error occurred");
+        setErrorMessage(error.message || "An unexpected error occurred");
       } finally {
         setLoading(false);
       }
@@ -169,7 +179,12 @@ const AthleteDetails = () => {
   };
 
   if (loading) return <Loader />;
-  if (error) return <div>Error: {error}</div>;
+  if (errorMessage)
+    return (
+      <div>
+        <ErrorMessage role={role as string} message={errorMessage} />
+      </div>
+    );
 
   return (
     <div className="flex min-h-screen">

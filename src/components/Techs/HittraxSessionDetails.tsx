@@ -17,6 +17,7 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import ErrorMessage from "../ErrorMessage";
 
 ChartJS.register(
   CategoryScale,
@@ -40,7 +41,7 @@ const HitTraxSessionDetails: React.FC = () => {
   const [maxDistance, setMaxDistance] = useState<number>(0);
   const [avgLaunchAngle, setAvgLaunchAngle] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { sessionId } = useParams();
   const { user } = useUser();
@@ -51,7 +52,14 @@ const HitTraxSessionDetails: React.FC = () => {
       try {
         const res = await fetch(`/api/hittrax/session/${sessionId}`);
         if (!res.ok) {
-          throw new Error("Failed to fetch session data");
+          const errorMessage =
+            res.status === 404
+              ? "Hittrax data could not be found."
+              : res.status == 500
+              ? "We encountered an issue on our end. Please try again later."
+              : "An unexpected issue occured. Please try again.";
+          setErrorMessage(errorMessage);
+          return;
         }
 
         const data = await res.json();
@@ -64,7 +72,7 @@ const HitTraxSessionDetails: React.FC = () => {
         setMaxDistance(data.maxDistance || 0);
         setAvgLaunchAngle(data.avgLaunchAngle || 0);
       } catch (err: any) {
-        setError(err.message);
+        setErrorMessage(err.message);
       } finally {
         setLoading(false);
       }
@@ -74,7 +82,12 @@ const HitTraxSessionDetails: React.FC = () => {
   }, [sessionId]);
 
   if (loading) return <Loader />;
-  if (error) return <div className="text-red-500">Error: {error}</div>;
+  if (errorMessage)
+    return (
+      <div className="text-red-500">
+        <ErrorMessage role={role as string} message={errorMessage} />
+      </div>
+    );
 
   const labels = hits.map((_, i) => `Swing ${i + 1}`);
   const exitVeloData = hits.map((h) => (h.velo !== null ? h.velo : 0));
