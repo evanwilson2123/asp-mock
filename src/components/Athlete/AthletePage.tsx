@@ -13,11 +13,14 @@ interface Athlete {
   firstName: string;
   lastName: string;
   email: string;
-  level: string;
   age?: number;
   height?: string;
   weight?: string;
   profilePhotoUrl?: string;
+  level: string;
+  season?: string;
+  programType?: string;
+  active: boolean;
 }
 
 const AthleteDetails = () => {
@@ -29,6 +32,12 @@ const AthleteDetails = () => {
   const [confirmationTech, setConfirmationTech] = useState<string | null>(null);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [coachNotes, setCoachNotes] = useState<string>("");
+  const [updatedFields, setUpdatedFields] = useState({
+    active: false,
+    level: "",
+    season: "",
+    programType: "",
+  });
 
   const router = useRouter();
   const { athleteId } = useParams();
@@ -48,6 +57,12 @@ const AthleteDetails = () => {
         const data = await response.json();
         setAthlete(data.athlete || null);
         setCoachNotes(data.athlete?.coachNotes || "");
+        setUpdatedFields({
+          active: data.athlete?.active || false,
+          level: data.athlete?.level || "",
+          season: data.athlete?.season || "",
+          programType: data.athlete?.programType || "",
+        });
       } catch (error: any) {
         setError(error.message || "An unexpected error occurred");
       } finally {
@@ -58,9 +73,9 @@ const AthleteDetails = () => {
     fetchAthlete();
   }, [athleteId]);
 
-  const handleBackClick = () => {
-    router.push("/manage-athletes");
-  };
+  // const handleBackClick = () => {
+  //   router.push("/manage-athletes");
+  // };
 
   const handleNotesSave = async () => {
     try {
@@ -80,6 +95,30 @@ const AthleteDetails = () => {
     } catch (error) {
       console.error("Error saving notes:", error);
       setUploadStatus("Failed to save notes");
+    } finally {
+      setTimeout(() => setUploadStatus(null), 3000);
+    }
+  };
+
+  const handleFieldUpdate = async (field: keyof Athlete, value: any) => {
+    try {
+      const response = await fetch(`/api/athlete/${athleteId}/update`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ [field]: value }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update field");
+      }
+
+      setUpdatedFields((prev) => ({ ...prev, [field]: value }));
+      setUploadStatus(`${field} updated successfully.`);
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error);
+      setUploadStatus(`Failed to update ${field}.`);
     } finally {
       setTimeout(() => setUploadStatus(null), 3000);
     }
@@ -129,12 +168,7 @@ const AthleteDetails = () => {
     setConfirmationTech(null);
   };
 
-  if (loading)
-    return (
-      <div>
-        <Loader />
-      </div>
-    );
+  if (loading) return <Loader />;
   if (error) return <div>Error: {error}</div>;
 
   return (
@@ -166,37 +200,18 @@ const AthleteDetails = () => {
               {tech}
             </button>
           ))}
-          <button
-            onClick={() => router.push(`/athlete/${athleteId}/new-assessment`)}
-            className="text-gray-700 font-semibold hover:text-gray-900 transition"
-          >
-            New Assessment
-          </button>
         </nav>
-
-        {/* Top Header + Back Button */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-700">
-            {athlete?.firstName} {athlete?.lastName}&apos;s Profile
-          </h1>
-          <button
-            onClick={handleBackClick}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-          >
-            Back to Athletes
-          </button>
-        </div>
 
         {/* Profile Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center space-x-6">
+          <div className="flex justify-between">
             {/* Profile Photo */}
             <div className="w-36 h-36 bg-gray-200 overflow-hidden rounded-lg">
               {athlete?.profilePhotoUrl ? (
                 <Image
-                  src={athlete.profilePhotoUrl || "/default-avatar.png"} // Provide a fallback image
+                  src={athlete.profilePhotoUrl}
                   alt={`${athlete.firstName} ${athlete.lastName}`}
-                  width={144} // Adjust dimensions based on your design
+                  width={144}
                   height={144}
                   className="w-full h-full object-cover rounded-lg"
                 />
@@ -208,14 +223,11 @@ const AthleteDetails = () => {
             </div>
 
             {/* Athlete Info */}
-            <div>
+            <div className="ml-6 flex-1">
               <p className="text-lg font-bold text-gray-700">
                 {athlete?.firstName} {athlete?.lastName}
               </p>
               <p className="text-sm text-gray-500">Email: {athlete?.email}</p>
-              <p className="text-sm text-gray-500">
-                Level: {athlete?.level || "N/A"}
-              </p>
               <p className="text-sm text-gray-500">
                 Age: {athlete?.age || "N/A"}
               </p>
@@ -225,6 +237,76 @@ const AthleteDetails = () => {
               <p className="text-sm text-gray-500">
                 Weight: {athlete?.weight || "N/A"}
               </p>
+            </div>
+
+            {/* Dropdowns */}
+            <div className="flex items-center space-x-6 bg-gray-50 p-4 rounded shadow-lg">
+              <div className="flex flex-col">
+                <label
+                  htmlFor="level"
+                  className="text-sm font-medium text-gray-700 mb-1"
+                >
+                  Level
+                </label>
+                <select
+                  id="level"
+                  value={updatedFields.level}
+                  onChange={(e) => handleFieldUpdate("level", e.target.value)}
+                  className="block w-40 px-3 py-2 text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {["Youth", "High School", "College", "Pro"].map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label
+                  htmlFor="programType"
+                  className="text-sm font-medium text-gray-700 mb-1"
+                >
+                  Program
+                </label>
+                <select
+                  id="programType"
+                  value={updatedFields.programType}
+                  onChange={(e) =>
+                    handleFieldUpdate("programType", e.target.value)
+                  }
+                  className="block w-40 px-3 py-2 text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {["Pitching", "Hitting", "Pitching + Hitting"].map(
+                    (option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label
+                  htmlFor="status"
+                  className="text-sm font-medium text-gray-700 mb-1"
+                >
+                  Status
+                </label>
+                <select
+                  id="status"
+                  value={updatedFields.active ? "Active" : "Inactive"}
+                  onChange={(e) =>
+                    handleFieldUpdate("active", e.target.value === "Active")
+                  }
+                  className="block w-40 px-3 py-2 text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {["Active", "Inactive"].map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -270,12 +352,6 @@ const AthleteDetails = () => {
                 <p className="text-sm text-gray-500 mt-2">
                   Drag and drop a CSV file here
                 </p>
-                <input
-                  type="file"
-                  id="file-input"
-                  className="hidden"
-                  accept=".csv"
-                />
               </div>
             ))}
           </div>

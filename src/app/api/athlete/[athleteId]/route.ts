@@ -14,7 +14,7 @@ export async function GET(
 
   try {
     await connectDB();
-    const athleteId = context.params.athleteId; // Access `athleteId` from `context.params`
+    const athleteId = await context.params.athleteId; // Access `athleteId` from `context.params`
 
     if (!athleteId) {
       return NextResponse.json(

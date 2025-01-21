@@ -11,6 +11,9 @@ export interface IAthlete {
   age?: number;
   height?: string;
   weight?: string;
+  active: boolean;
+  season?: string;
+  programType?: string;
   blastMotion: string[];
   hitTrax?: string[];
   trackman?: string[];
@@ -28,6 +31,9 @@ const athleteSchema = new Schema<IAthlete>({
   age: { type: Number, required: false },
   height: { type: String, required: false },
   weight: { type: String, required: false },
+  active: { type: Boolean, required: true, default: true },
+  season: { type: String, required: false },
+  programType: { type: String, required: false },
   blastMotion: [{ type: String, required: false }],
   hitTrax: [{ type: String, required: false }],
   trackman: [{ type: String, required: false }],
