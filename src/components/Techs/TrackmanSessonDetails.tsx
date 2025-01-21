@@ -210,7 +210,7 @@ const TrackmanSessionDetails: React.FC = () => {
           </div>
 
           {/* Location Scatter Plot with Strike Zone */}
-          <div className="lg:col-span-2 bg-white p-6 rounded shadow">
+          {/* <div className="lg:col-span-2 bg-white p-6 rounded shadow">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">
               Pitch Location (Strike Zone)
             </h2>
@@ -236,10 +236,10 @@ const TrackmanSessionDetails: React.FC = () => {
                     annotations: {
                       strikeZone: {
                         type: "box",
-                        xMin: -0.355, // Adjusted for plate width
-                        xMax: 0.355,
-                        yMin: 1.5, // Bottom of the strike zone
-                        yMax: 3.5, // Top of the strike zone
+                        xMin: -0.708, // Adjusted for plate width
+                        xMax: 0.708,
+                        yMin: 1.548, // Bottom of the strike zone
+                        yMax: 3.452, // Top of the strike zone
                         borderWidth: 2,
                         borderColor: "black",
                         backgroundColor: "rgba(0, 0, 0, 0.05)",
@@ -261,6 +261,91 @@ const TrackmanSessionDetails: React.FC = () => {
                 },
               }}
             />
+          </div> */}
+          <div className="flex justify-center items-center lg:col-span-2 bg-white p-6 rounded shadow">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-700 mb-4 text-center">
+                Pitch Location (Strike Zone)
+              </h2>
+              <div
+                style={{
+                  width: "600px",
+                  height: "600px",
+                }}
+              >
+                <Scatter
+                  data={{
+                    datasets: pitchTypes.map((pitchType, index) => ({
+                      label: pitchType,
+                      data: dataByPitchType[pitchType].locations,
+                      backgroundColor: softColors[index % softColors.length],
+                      pointRadius: 6,
+                    })),
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                      legend: { position: "top" },
+                      annotation: {
+                        annotations: {
+                          outerStrikeZone: {
+                            type: "box",
+                            xMin: -0.83,
+                            xMax: 0.83,
+                            yMin: 1.513,
+                            yMax: 3.67,
+                            borderWidth: 2,
+                            borderColor: "rgba(0, 0, 0, 0.7)",
+                            backgroundColor: "rgba(0, 0, 0, 0.05)",
+                          },
+                          innerStrikeZone: {
+                            type: "box",
+                            xMin: -0.703,
+                            xMax: 0.703,
+                            yMin: 1.64,
+                            yMax: 3.55,
+                            borderWidth: 1,
+                            borderColor: "rgba(0, 0, 0, 0.7)",
+                            backgroundColor: "rgba(0, 0, 0, 0.05)",
+                          },
+                        },
+                      },
+                    },
+                    scales: {
+                      x: {
+                        title: {
+                          display: true,
+                          text: "Horizontal Location (ft)",
+                        },
+                        min: -3,
+                        max: 3,
+                        ticks: {
+                          stepSize: 1,
+                        },
+                      },
+                      y: {
+                        title: {
+                          display: true,
+                          text: "Vertical Location (ft)",
+                        },
+                        min: 0,
+                        max: 5,
+                        ticks: {
+                          stepSize: 1,
+                        },
+                      },
+                    },
+                    layout: {
+                      padding: {
+                        top: 20,
+                      },
+                    },
+                    aspectRatio: 1,
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
