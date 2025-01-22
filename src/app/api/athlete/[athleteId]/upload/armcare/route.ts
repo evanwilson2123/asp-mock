@@ -190,6 +190,7 @@ export async function POST(req: NextRequest, context: any) {
           sessionId,
           athlete: athleteId,
           examDate: parseDate(row["examDate"]),
+          playLevel: athlete.level,
           email: parseStr(row["email"]),
           armCareId: parseStr(row["armCareId"]),
           lastName: parseStr(row["lastName"]),
