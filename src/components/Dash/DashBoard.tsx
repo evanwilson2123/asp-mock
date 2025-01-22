@@ -6,7 +6,7 @@ import Sidebar from "./Sidebar";
 const DashBoard = () => {
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
-  const [level, setLevel] = useState<string | null>(null);
+  // const [level, setLevel] = useState<string | null>(null);
 
   useEffect(() => {});
 
@@ -20,7 +20,7 @@ const DashBoard = () => {
         {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
       </div>
       {/* Main Content */}
-      
+
       <h1>DashBoard</h1>
     </div>
   );
