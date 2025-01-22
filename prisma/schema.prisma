@@ -12,6 +12,7 @@ model BlastMotion {
   sessionId              String
   athlete                String   // Store MongoDB ObjectId as a string
   date                   DateTime @default(now())
+  playLevel              String @default("None")
   equipment              String?
   handedness             String?
   swingDetails           String?
@@ -38,6 +39,7 @@ model HitTrax {
   athlete             String?  // Store MongoDB ObjectId as a string
   AB                  Int?
   date                String?
+  playLevel           String
   timestamp           String?
   pitch               Float?
   strikeZone          String?
@@ -77,6 +79,7 @@ model ArmCare {
   sessionId             String
   athlete               String?  // Store MongoDB ObjectId as a string
   examDate              DateTime?
+  playLevel             String
   email                 String?
   armCareId             String?
   lastName              String?
@@ -201,6 +204,7 @@ model Trackman {
   id                     Int      @id @default(autoincrement())
   sessionId              String   // Unique session ID for grouping
   athleteId              String?  // Mongo ObjectId as a string reference
+  playLevel              String
   pitchReleaseSpeed      Float?   // mph
   pitchType              String?  // Type of pitch
   pitcherName            String?  // Name of the pitcher

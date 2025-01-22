@@ -95,6 +95,7 @@ export async function POST(req: NextRequest, context: any) {
       trackmanRows.push({
         sessionId,
         athleteId,
+        playLevel: athlete.level,
         pitchReleaseSpeed,
         pitchType: row["Pitch Type"]?.trim() || null,
         pitcherName: row["Pitcher Name"]?.trim() || null,

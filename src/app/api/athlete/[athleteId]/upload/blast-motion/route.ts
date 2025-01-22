@@ -54,6 +54,7 @@ export async function POST(req: NextRequest, context: any) {
         sessionId, // Associate each row with the same session ID
         athlete: athleteId,
         date: new Date(), // Replace with a valid column if the date is in the CSV
+        playLevel: athlete.level,
         equipment: row["_1"]?.trim() || null,
         handedness: row["_2"]?.trim() || null,
         swingDetails: row["_3"]?.trim() || null,
