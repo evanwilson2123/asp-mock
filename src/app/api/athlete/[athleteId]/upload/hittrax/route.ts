@@ -69,6 +69,7 @@ export async function POST(req: NextRequest, context: any) {
         athlete: athleteId,
         AB: row["AB"] ? parseInt(row["AB"], 10) || null : null,
         date: row["Date"]?.trim() || null,
+        playLevel: athlete.level,
         timestamp: row["Time Stamp"]?.trim() || null,
         pitch: row["Pitch"] ? parseFloat(row["Pitch"]) || null : null,
         strikeZone: row["Strike Zone"]?.trim() || null,

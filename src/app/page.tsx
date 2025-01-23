@@ -1,10 +1,10 @@
-import DashMock from "@/components/DashMock";
+import Dashboard from "@/components/Dash/DashBoard";
 
 export default function Home() {
   return (
     <div className="h-screen w-screen flex flex-col">
       {/* Dashboard Mock */}
-      <DashMock />
+      <Dashboard />
     </div>
   );
 }
