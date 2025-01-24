@@ -27,7 +27,7 @@ const Sidebar: React.FC = () => {
           onClose={() => setIsMobileOpen(false)}
         />
       </div>
-      <aside className="hidden md:block w-64 bg-gray-900 text-white flex flex-col">
+      <aside className="fixed overflow-y-auto z-20 hidden md:block w-64 bg-gray-900 text-white flex flex-col min-h-screen">
         {/* Sidebar Header */}
         <div className="p-6 border-b border-gray-700">
           <h1 className="text-2xl font-bold">TOOLS</h1>
