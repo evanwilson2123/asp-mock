@@ -9,7 +9,7 @@ const CoachSidebar: React.FC = () => {
   const [isReportsOpen, setIsReportsOpen] = useState(false); // State to manage reports drop down
 
   return (
-    <aside className="hidden md:block w-64 bg-gray-900 text-white flex flex-col">
+    <aside className="fixed overflow-y-auto z-20 hidden md:block w-64 bg-gray-900 text-white flex flex-col min-h-screen">
       {/* Sidebar Header */}
       <div className="p-6 border-b border-gray-700">
         <h1 className="text-2xl font-bold">CSV CENTRAL BABY</h1>

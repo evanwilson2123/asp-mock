@@ -144,16 +144,16 @@ const Dashboard: React.FC = () => {
       {
         label: "Avg Bat Speed",
         data: blastData?.sessionAverages?.map((s) => s.avgBatSpeed) ?? [],
-        borderColor: "rgba(54, 162, 235, 0.8)",
-        backgroundColor: "rgba(54, 162, 235, 0.2)",
+        borderColor: "rgba(54, 162, 235, 0.9)",
+        backgroundColor: "rgba(54, 162, 235, 0.1)",
         fill: true,
         tension: 0.3,
       },
       {
         label: "Avg Hand Speed",
         data: blastData?.sessionAverages?.map((s) => s.avgHandSpeed) ?? [],
-        borderColor: "rgba(75, 192, 192, 0.8)",
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        borderColor: "rgba(75, 192, 192, 0.9)",
+        backgroundColor: "rgba(75, 192, 192, 0.1)",
         fill: true,
         tension: 0.3,
       },
@@ -168,8 +168,8 @@ const Dashboard: React.FC = () => {
       {
         label: "Avg Exit Velo",
         data: hitTraxData?.sessionAverages?.map((s) => s.avgExitVelo) ?? [],
-        borderColor: "rgba(255, 99, 132, 0.8)",
-        backgroundColor: "rgba(255, 99, 132, 0.2)",
+        borderColor: "rgba(255, 99, 132, 0.9)",
+        backgroundColor: "rgba(255, 99, 132, 0.1)",
         fill: true,
         tension: 0.3,
       },
@@ -228,10 +228,47 @@ const Dashboard: React.FC = () => {
   // ====================== Chart Options ======================
   const chartOptions = {
     responsive: true,
-    maintainAspectRatio: false as const,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: "top" as const,
+        labels: {
+          boxWidth: 14,
+          font: {
+            size: 12,
+          },
+        },
+      },
+      tooltip: {
+        titleFont: { size: 13 },
+        bodyFont: { size: 12 },
+      },
+    },
+    elements: {
+      line: {
+        borderWidth: 2,
+      },
+      point: {
+        radius: 3,
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          font: {
+            size: 11,
+          },
+        },
+      },
+      y: {
+        ticks: {
+          font: {
+            size: 11,
+          },
+        },
       },
     },
   };
@@ -240,7 +277,12 @@ const Dashboard: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-gray-100 overflow-y-auto">
       {/* Sidebar */}
-      {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+      <div className="md:hidden bg-gray-100">
+        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+      </div>
+      <div className="hidden md:block w-64 bg-gray-900 text-white">
+        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+      </div>
 
       <div className="flex-1 p-4 text-gray-800">
         <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
@@ -294,8 +336,8 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Line Chart (smaller height) */}
-            <div className="flex-1 h-48">
+            {/* Chart Container */}
+            <div className="relative w-full h-60 sm:h-64 md:h-72">
               {blastChartData.labels.length > 0 ? (
                 <Line data={blastChartData} options={chartOptions} />
               ) : (
@@ -346,8 +388,8 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Line Chart (smaller height) */}
-            <div className="flex-1 h-48">
+            {/* Chart Container */}
+            <div className="relative w-full h-60 sm:h-64 md:h-72">
               {hitTraxChartData.labels.length > 0 ? (
                 <Line data={hitTraxChartData} options={chartOptions} />
               ) : (
@@ -379,8 +421,8 @@ const Dashboard: React.FC = () => {
               ))}
             </div>
 
-            {/* One line per pitch type, over time (smaller height) */}
-            <div className="flex-1 h-48">
+            {/* Chart Container */}
+            <div className="relative w-full h-60 sm:h-64 md:h-72">
               {trackmanChartData.labels.length > 0 ? (
                 <Line data={trackmanChartData} options={chartOptions} />
               ) : (
@@ -388,6 +430,7 @@ const Dashboard: React.FC = () => {
               )}
             </div>
           </div>
+          <div className="mb-44"></div>
         </div>
       </div>
     </div>
