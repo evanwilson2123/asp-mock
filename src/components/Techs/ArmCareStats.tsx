@@ -125,11 +125,6 @@ const ArmCareStats: React.FC = () => {
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
-  // If no role found, prompt sign-in
-  if (!role) {
-    return <SignInPrompt />;
-  }
-
   // Fetch
   useEffect(() => {
     const fetchArmData = async () => {
@@ -182,6 +177,11 @@ const ArmCareStats: React.FC = () => {
 
     fetchArmData();
   }, [athleteId]);
+
+  // If no role found, prompt sign-in
+  if (!role) {
+    return <SignInPrompt />;
+  }
 
   if (loading) {
     return <Loader />;
