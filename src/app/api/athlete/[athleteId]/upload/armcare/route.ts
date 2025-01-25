@@ -34,8 +34,10 @@ function parseStr(value: string | undefined): string | null {
 }
 
 export async function POST(req: NextRequest, context: any) {
+  // Auth & Athlete check
   const { userId } = await auth();
   const athleteId = context.params.athleteId;
+
   if (!athleteId) {
     return NextResponse.json({ error: "Athlete ID missing" }, { status: 400 });
   }
@@ -44,6 +46,7 @@ export async function POST(req: NextRequest, context: any) {
   }
 
   try {
+    // Connect to DB (Mongo) & find athlete
     await connectDB();
     const athlete = await Athlete.findById(athleteId).exec();
     if (!athlete) {
@@ -52,10 +55,14 @@ export async function POST(req: NextRequest, context: any) {
         { status: 404 }
       );
     }
+
+    // Ensure `armcare` is an array
     if (!athlete.armcare) {
       athlete.armcare = [];
     }
-    const sessionId = randomUUID(); // Generate a unique session ID
+
+    // Generate a unique session ID
+    const sessionId = randomUUID();
 
     // 1) Pull the CSV File from form data
     const formData = await req.formData();
@@ -77,14 +84,14 @@ export async function POST(req: NextRequest, context: any) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const fileStream = Readable.from(buffer);
 
-    // 3) Set up csv-parser with mapHeaders to match your CSV column names to database fields
+    // 3) Set up csv-parser with mapHeaders to match CSV column names -> DB fields
     const parseStream = fileStream.pipe(
       csvParser({
         mapHeaders: ({ header }) => {
-          // Add all column mappings here
           switch (header.trim()) {
             case "Athlete ID":
               return "athlete";
+
             case "Exam Date":
               return "examDate";
             case "Email":
@@ -133,6 +140,7 @@ export async function POST(req: NextRequest, context: any) {
               return "timezone";
             case "Exam Type":
               return "examType";
+
             case "Arm Score":
               return "armScore";
             case "Total Strength":
@@ -167,6 +175,26 @@ export async function POST(req: NextRequest, context: any) {
               return "velo";
             case "SVR":
               return "svr";
+
+            // ROM fields
+            case "IRTARM ROM":
+              return "irtarmRom";
+            case "IRNTARM ROM":
+              return "irntarmRom";
+            case "ERTARM ROM":
+              return "ertarmRom";
+            case "ERNTARM ROM":
+              return "erntarmRom";
+            case "TARM TARC":
+              return "tarmTarc";
+            case "NTARM TARC":
+              return "ntarmTarc";
+            case "FTARM ROM":
+              return "ftarmRom";
+            case "FNTARM ROM":
+              return "fntarmRom";
+
+            // Force-lbs columns (example for IRTARM)
             case "IRTARM Peak Force-Lbs 1":
               return "irtarmPeakForceLbs1";
             case "IRTARM Peak Force-Lbs 2":
@@ -175,7 +203,9 @@ export async function POST(req: NextRequest, context: any) {
               return "irtarmPeakForceLbs3";
             case "IRTARM Max-Lbs":
               return "irtarmMaxLbs";
-            // Add other cases as necessary
+
+            // (Add other columns as needed)
+
             default:
               return null; // Ignore unrecognized headers
           }
@@ -189,8 +219,9 @@ export async function POST(req: NextRequest, context: any) {
         data: {
           sessionId,
           athlete: athleteId,
+
           examDate: parseDate(row["examDate"]),
-          playLevel: athlete.level,
+          playLevel: athlete.level, // from your Mongoose Athlete doc
           email: parseStr(row["email"]),
           armCareId: parseStr(row["armCareId"]),
           lastName: parseStr(row["lastName"]),
@@ -214,8 +245,11 @@ export async function POST(req: NextRequest, context: any) {
           time: parseStr(row["time"]),
           timezone: parseStr(row["timezone"]),
           examType: parseStr(row["examType"]),
+
           armScore: parseNum(row["armScore"]),
           totalStrength: parseNum(row["totalStrength"]),
+
+          // Strength
           irtarmStrength: parseNum(row["irtarmStrength"]),
           irtarmRs: parseNum(row["irtarmRs"]),
           irtarmRecovery: parseStr(row["irtarmRecovery"]),
@@ -228,15 +262,34 @@ export async function POST(req: NextRequest, context: any) {
           gtarmStrength: parseNum(row["gtarmStrength"]),
           gtarmRs: parseNum(row["gtarmRs"]),
           gtarmRecovery: parseStr(row["gtarmRecovery"]),
+
           shoulderBalance: parseNum(row["shoulderBalance"]),
           velo: parseNum(row["velo"]),
           svr: parseNum(row["svr"]),
+
+          // ROM
+          irtarmRom: parseNum(row["irtarmRom"]),
+          irntarmRom: parseNum(row["irntarmRom"]),
+          ertarmRom: parseNum(row["ertarmRom"]),
+          erntarmRom: parseNum(row["erntarmRom"]),
+          tarmTarc: parseNum(row["tarmTarc"]),
+          ntarmTarc: parseNum(row["ntarmTarc"]),
+          ftarmRom: parseNum(row["ftarmRom"]),
+          fntarmRom: parseNum(row["fntarmRom"]),
+
+          // Example: IRTARM peak force
+          irtarmPeakForceLbs1: parseNum(row["irtarmPeakForceLbs1"]),
+          irtarmPeakForceLbs2: parseNum(row["irtarmPeakForceLbs2"]),
+          irtarmPeakForceLbs3: parseNum(row["irtarmPeakForceLbs3"]),
+          irtarmMaxLbs: parseNum(row["irtarmMaxLbs"]),
+
+          // Add other "Peak Force" or "Max Force" fields similarly
         },
       });
     }
 
+    // Store the sessionId in the Mongoose athlete doc
     athlete.armcare.push(sessionId);
-
     await athlete.save();
 
     return NextResponse.json({
