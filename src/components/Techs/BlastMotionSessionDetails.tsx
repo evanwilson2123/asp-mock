@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import CoachSidebar from "@/components/Dash/CoachSidebar";
-import Sidebar from "@/components/Dash/Sidebar";
-import Loader from "@/components/Loader";
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import CoachSidebar from '@/components/Dash/CoachSidebar';
+import Sidebar from '@/components/Dash/Sidebar';
+import Loader from '@/components/Loader';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,9 +15,9 @@ import {
   Title,
   Tooltip,
   Legend,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-import ErrorMessage from "../ErrorMessage";
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import ErrorMessage from '../ErrorMessage';
 
 ChartJS.register(
   CategoryScale,
@@ -52,10 +52,10 @@ const BlastMotionSessionDetails: React.FC = () => {
         if (!res.ok) {
           const errorMessage =
             res.status === 404
-              ? "Blast Motion data could not be found."
+              ? 'Blast Motion data could not be found.'
               : res.status == 500
-              ? "We encountered an issue on our end. Please try again later."
-              : "An unexpected issue occured. Please try again.";
+                ? 'We encountered an issue on our end. Please try again later.'
+                : 'An unexpected issue occured. Please try again.';
           setErrorMessage(errorMessage);
           return;
         }
@@ -98,18 +98,18 @@ const BlastMotionSessionDetails: React.FC = () => {
     labels,
     datasets: [
       {
-        label: "Bat Speed",
+        label: 'Bat Speed',
         data: batSpeedData,
-        borderColor: "rgba(54, 162, 235, 0.8)",
-        backgroundColor: "rgba(54, 162, 235, 0.2)",
+        borderColor: 'rgba(54, 162, 235, 0.8)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
         fill: true,
         tension: 0.2,
       },
       {
-        label: "Hand Speed",
+        label: 'Hand Speed',
         data: handSpeedData,
-        borderColor: "rgba(75, 192, 192, 0.8)",
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        borderColor: 'rgba(75, 192, 192, 0.8)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
         fill: true,
         tension: 0.2,
       },
@@ -120,7 +120,7 @@ const BlastMotionSessionDetails: React.FC = () => {
     responsive: true,
     plugins: {
       legend: {
-        position: "top" as const,
+        position: 'top' as const,
       },
     },
   };
@@ -129,14 +129,14 @@ const BlastMotionSessionDetails: React.FC = () => {
     <div className="flex min-h-screen">
       {/* Conditional Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 bg-gray-100">
+      <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Session Details for {sessionId}
         </h1>
