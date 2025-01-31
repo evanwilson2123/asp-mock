@@ -197,7 +197,7 @@ const AthleteDetails = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-6 bg-gray-100">
+      <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         {/* Technology Nav Bar */}
         <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
           {technologies.map((tech) => (

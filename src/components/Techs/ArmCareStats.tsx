@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import CoachSidebar from "../Dash/CoachSidebar";
-import Sidebar from "../Dash/Sidebar";
-import Loader from "../Loader";
-import Link from "next/link";
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import CoachSidebar from '../Dash/CoachSidebar';
+import Sidebar from '../Dash/Sidebar';
+import Loader from '../Loader';
+import Link from 'next/link';
 
 // Chart Imports
 import {
@@ -18,10 +18,10 @@ import {
   Title,
   Tooltip,
   Legend,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-import ErrorMessage from "../ErrorMessage";
-import SignInPrompt from "../SignInPrompt";
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import ErrorMessage from '../ErrorMessage';
+import SignInPrompt from '../SignInPrompt';
 
 ChartJS.register(
   CategoryScale,
@@ -45,9 +45,9 @@ interface Session {
 
 // --- COLOR HELPERS ---
 
-const NORMAL_CLASS = "text-blue-600";
-const WATCH_CLASS = "text-yellow-600";
-const WARNING_CLASS = "text-pink-600";
+const NORMAL_CLASS = 'text-blue-600';
+const WATCH_CLASS = 'text-yellow-600';
+const WARNING_CLASS = 'text-pink-600';
 
 /**
  * getStrengthColor
@@ -59,23 +59,23 @@ const WARNING_CLASS = "text-pink-600";
  */
 function getStrengthColor(
   percentBW: number,
-  type: "IR" | "ER" | "Scaption" | "Total"
+  type: 'IR' | 'ER' | 'Scaption' | 'Total'
 ) {
-  if (type === "IR" || type === "ER") {
+  if (type === 'IR' || type === 'ER') {
     if (percentBW > 20) return NORMAL_CLASS;
     if (percentBW >= 15) return WATCH_CLASS;
     return WARNING_CLASS;
-  } else if (type === "Scaption") {
+  } else if (type === 'Scaption') {
     if (percentBW > 15) return NORMAL_CLASS;
     if (percentBW >= 10) return WATCH_CLASS;
     return WARNING_CLASS;
-  } else if (type === "Total") {
+  } else if (type === 'Total') {
     // E.g. normal>70%, watch=50-70%, warning<50%
     if (percentBW > 70) return NORMAL_CLASS;
     if (percentBW >= 50) return WATCH_CLASS;
     return WARNING_CLASS;
   }
-  return "";
+  return '';
 }
 
 /**
@@ -133,10 +133,10 @@ const ArmCareStats: React.FC = () => {
         if (!res.ok) {
           const errorMsg =
             res.status === 404
-              ? "Arm Care data could not be found."
+              ? 'Arm Care data could not be found.'
               : res.status === 500
-              ? "We encountered an issue on our end. Please try again later."
-              : "An unexpected issue occurred. Please try again.";
+                ? 'We encountered an issue on our end. Please try again later.'
+                : 'An unexpected issue occurred. Please try again.';
           setErrorMessage(errorMsg);
           return;
         }
@@ -197,10 +197,10 @@ const ArmCareStats: React.FC = () => {
     labels,
     datasets: [
       {
-        label: "Arm Score",
+        label: 'Arm Score',
         data: scoreData,
-        borderColor: "rgba(54, 162, 235, 0.8)",
-        backgroundColor: "rgba(54, 162, 235, 0.2)",
+        borderColor: 'rgba(54, 162, 235, 0.8)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
         fill: true,
         tension: 0.2,
       },
@@ -208,7 +208,7 @@ const ArmCareStats: React.FC = () => {
   };
   const chartOptions = {
     responsive: true,
-    plugins: { legend: { position: "top" as const } },
+    plugins: { legend: { position: 'top' as const } },
   };
 
   // --- Compute % of BW for the LATEST strengths ---
@@ -224,23 +224,23 @@ const ArmCareStats: React.FC = () => {
   const ratio = latestInternal === 0 ? 0 : latestExternal / latestInternal;
 
   // Determine color classes
-  const irClass = getStrengthColor(irPercent, "IR");
-  const erClass = getStrengthColor(erPercent, "ER");
-  const scapClass = getStrengthColor(scapPercent, "Scaption");
+  const irClass = getStrengthColor(irPercent, 'IR');
+  const erClass = getStrengthColor(erPercent, 'ER');
+  const scapClass = getStrengthColor(scapPercent, 'Scaption');
   const sbClass = getShoulderBalanceColor(ratio);
 
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 bg-gray-100">
+      <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Arm Care Report
         </h1>

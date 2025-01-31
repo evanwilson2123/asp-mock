@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import CoachSidebar from "@/components/Dash/CoachSidebar";
-import Sidebar from "../Dash/Sidebar";
-import Loader from "../Loader";
-import Link from "next/link"; // Correct import
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import CoachSidebar from '@/components/Dash/CoachSidebar';
+import Sidebar from '../Dash/Sidebar';
+import Loader from '../Loader';
+import Link from 'next/link'; // Correct import
 
 // Chart imports
 import {
@@ -18,9 +18,9 @@ import {
   Title,
   Tooltip,
   Legend,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-import ErrorMessage from "../ErrorMessage";
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import ErrorMessage from '../ErrorMessage';
 
 // Register chart.js modules
 ChartJS.register(
@@ -66,10 +66,10 @@ const BlastMotionStats: React.FC = () => {
         if (!res.ok) {
           const errorMessage =
             res.status === 404
-              ? "Blast Motion data could not be found."
+              ? 'Blast Motion data could not be found.'
               : res.status == 500
-              ? "We encountered an issue on our end. Please try again later."
-              : "An unexpected issue occured. Please try again.";
+                ? 'We encountered an issue on our end. Please try again later.'
+                : 'An unexpected issue occured. Please try again.';
           setErrorMessage(errorMessage);
           return;
         }
@@ -114,18 +114,18 @@ const BlastMotionStats: React.FC = () => {
     labels,
     datasets: [
       {
-        label: "Avg Bat Speed",
+        label: 'Avg Bat Speed',
         data: batSpeedData,
-        borderColor: "rgba(54, 162, 235, 0.8)",
-        backgroundColor: "rgba(54, 162, 235, 0.2)",
+        borderColor: 'rgba(54, 162, 235, 0.8)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
         fill: true,
         tension: 0.2,
       },
       {
-        label: "Avg Hand Speed",
+        label: 'Avg Hand Speed',
         data: handSpeedData,
-        borderColor: "rgba(75, 192, 192, 0.8)",
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        borderColor: 'rgba(75, 192, 192, 0.8)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
         fill: true,
         tension: 0.2,
       },
@@ -136,7 +136,7 @@ const BlastMotionStats: React.FC = () => {
     responsive: true,
     plugins: {
       legend: {
-        position: "top" as const,
+        position: 'top' as const,
       },
     },
   };
@@ -145,14 +145,14 @@ const BlastMotionStats: React.FC = () => {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 bg-gray-100">
+      <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Blast Motion Report
         </h1>

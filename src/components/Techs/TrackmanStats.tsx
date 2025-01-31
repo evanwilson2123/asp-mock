@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import CoachSidebar from "@/components/Dash/CoachSidebar";
-import Sidebar from "@/components/Dash/Sidebar";
-import Loader from "@/components/Loader";
-import SignInPrompt from "../SignInPrompt";
-import { Line } from "react-chartjs-2";
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import CoachSidebar from '@/components/Dash/CoachSidebar';
+import Sidebar from '@/components/Dash/Sidebar';
+import Loader from '@/components/Loader';
+import SignInPrompt from '../SignInPrompt';
+import { Line } from 'react-chartjs-2';
 
 import {
   Chart as ChartJS,
@@ -18,8 +18,8 @@ import {
   Title,
   Tooltip,
   Legend,
-} from "chart.js";
-import ErrorMessage from "../ErrorMessage";
+} from 'chart.js';
+import ErrorMessage from '../ErrorMessage';
 
 ChartJS.register(
   CategoryScale,
@@ -55,10 +55,10 @@ const TrackmanStats: React.FC = () => {
         if (!res.ok) {
           const errorMessage =
             res.status === 404
-              ? "Trackman data could not be found."
+              ? 'Trackman data could not be found.'
               : res.status == 500
-              ? "We encountered an issue on our end. Please try again later."
-              : "An unexpected issue occured. Please try again.";
+                ? 'We encountered an issue on our end. Please try again later.'
+                : 'An unexpected issue occured. Please try again.';
           setErrorMessage(errorMessage);
           return;
         }
@@ -100,26 +100,26 @@ const TrackmanStats: React.FC = () => {
   }
 
   const colors = [
-    "#FF6384", // Red
-    "#36A2EB", // Blue
-    "#FFCE56", // Yellow
-    "#4BC0C0", // Teal
-    "#9966FF", // Purple
-    "#FF9F40", // Orange
+    '#FF6384', // Red
+    '#36A2EB', // Blue
+    '#FFCE56', // Yellow
+    '#4BC0C0', // Teal
+    '#9966FF', // Purple
+    '#FF9F40', // Orange
   ];
 
   return (
     <div className="flex min-h-screen overflow-x-hidden">
       {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 bg-gray-100">
+      <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Trackman Stats
         </h1>
@@ -190,18 +190,21 @@ const TrackmanStats: React.FC = () => {
                 data={{
                   labels: [...new Set(averageVelocities.map((d) => d.date))],
                   datasets: Object.entries(
-                    averageVelocities.reduce((acc, curr) => {
-                      if (!acc[curr.pitchType]) {
-                        acc[curr.pitchType] = [];
-                      }
-                      acc[curr.pitchType].push(curr.avgSpeed);
-                      return acc;
-                    }, {} as { [key: string]: number[] })
+                    averageVelocities.reduce(
+                      (acc, curr) => {
+                        if (!acc[curr.pitchType]) {
+                          acc[curr.pitchType] = [];
+                        }
+                        acc[curr.pitchType].push(curr.avgSpeed);
+                        return acc;
+                      },
+                      {} as { [key: string]: number[] }
+                    )
                   ).map(([pitchType, avgSpeeds], index) => ({
                     label: pitchType,
                     data: avgSpeeds,
                     borderColor: colors[index % colors.length],
-                    backgroundColor: colors[index % colors.length] + "33", // Add transparency
+                    backgroundColor: colors[index % colors.length] + '33', // Add transparency
                     fill: true,
                     tension: 0.3,
                   })),
@@ -210,7 +213,7 @@ const TrackmanStats: React.FC = () => {
                   responsive: true,
                   plugins: {
                     legend: {
-                      position: "top" as const,
+                      position: 'top' as const,
                     },
                   },
                 }}
