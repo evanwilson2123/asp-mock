@@ -401,9 +401,7 @@ const Dashboard: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-sm text-gray-600">
-                    ArmCares Tracked
-                  </span>
+                  <span className="text-sm text-gray-600">ArmCare Exams</span>
                   <span className="mt-1 text-3xl font-semibold text-gray-800">
                     {athleteNums.armCount}
                   </span>
