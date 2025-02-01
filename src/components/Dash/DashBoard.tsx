@@ -536,7 +536,7 @@ const Dashboard: React.FC = () => {
               )}
             </div>
           </div>
-          <div className="mb-44"></div>
+          <div className="mb-3"></div>
         </div>
       </div>
     </div>
