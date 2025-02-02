@@ -125,15 +125,15 @@ export async function GET(req: NextRequest, context: any) {
     }
 
     // Fetch handedness from BlastMotion (assuming one record exists for the athlete)
-    const athleteInfo = await prisma.blastMotion.findFirst({
+    const athleteInfo = await prisma.hitTrax.findFirst({
       where: { athlete: athleteId },
-      select: { handedness: true },
+      select: { batting: true },
     });
-    const handedness = athleteInfo?.handedness || 'R'; // Default to Right-handed if undefined
+    const handedness = athleteInfo?.batting || 'Right'; // Default to Right-handed if undefined
 
     // Define a margin for the center zone. Any sprayChartX between -centerZoneMargin and
     // centerZoneMargin is considered "center". This gives the center zone some room on either side.
-    const centerZoneMargin = 10;
+    const centerZoneMargin = 15;
 
     // Group records by sessionId and initialize zone-specific arrays.
     const sessions: Record<
@@ -181,7 +181,7 @@ export async function GET(req: NextRequest, context: any) {
       // Determine hit direction based on handedness using the updated center zone margin.
       // Also, record zone-specific velocities and launch angles.
       if (sprayChartX !== null && dist) {
-        if (handedness === 'L') {
+        if (handedness === 'Left') {
           if (sprayChartX < -centerZoneMargin) {
             maxPullDistance = Math.max(maxPullDistance, dist);
             if (velo) sessions[sessionId].zonePullVelo.push(velo);
