@@ -15,12 +15,12 @@ const ComingSoon: React.FC<ComingSoonProps> = ({ description }) => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="hidden md:block w-64 bg-gray-900 text-white fixed left-0 h-full">
+      <div className="hidden md:block w-64 bg-gray-900 text-white min-h-screen">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 ml-0 md:ml-64 flex flex-col items-center justify-center min-h-screen p-6">
+      <div className="flex-1 p-6 flex flex-col items-center justify-center overflow-y-auto">
         <h1 className="text-5xl font-extrabold mb-4 tracking-wide animate-bounce text-gray-900">
           🚀 Coming Soon!
         </h1>
