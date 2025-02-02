@@ -1,6 +1,68 @@
-import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prismaDb";
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prismaDb';
 
+/**
+ * GET /api/trackman/:athleteId
+ *
+ * This API endpoint retrieves **Trackman** data for a specific athlete. It provides:
+ * - **Peak velocity** by pitch type (maximum speed recorded for each pitch type)
+ * - **Average pitch speed** over time, grouped by date and pitch type
+ * - **Clickable session metadata** (session IDs and dates) for navigation and charting
+ *
+ * ---
+ *
+ * @auth
+ * - **No authentication required** (if needed, authentication can be added with Clerk).
+ *
+ * ---
+ *
+ * @pathParam {string} athleteId - The unique ID of the athlete whose Trackman data is being requested.
+ *
+ * ---
+ *
+ * @returns {Promise<NextResponse>} JSON response containing:
+ *
+ * - **Success (200):**
+ *   Returns the peak velocity stats, average pitch speeds, and session information for the athlete.
+ *   ```json
+ *   {
+ *     "pitchStats": [
+ *       { "pitchType": "Fastball", "peakSpeed": 95 },
+ *       { "pitchType": "Slider", "peakSpeed": 85 }
+ *     ],
+ *     "avgPitchSpeeds": [
+ *       { "date": "2024-05-01", "pitchType": "Fastball", "avgSpeed": 90 },
+ *       { "date": "2024-05-01", "pitchType": "Slider", "avgSpeed": 82 }
+ *     ],
+ *     "sessions": [
+ *       { "sessionId": "sess_001", "date": "2024-05-01" },
+ *       { "sessionId": "sess_002", "date": "2024-06-01" }
+ *     ]
+ *   }
+ *   ```
+ *
+ * - **Error (404):**
+ *   Occurs when no Trackman data is found for the specified athlete.
+ *   ```json
+ *   { "error": "No data found for this athlete." }
+ *   ```
+ *
+ * - **Error (500):**
+ *   Occurs due to server/database errors during data fetching.
+ *   ```json
+ *   { "error": "Internal Server Error", "details": "Error message details" }
+ *   ```
+ *
+ * ---
+ *
+ * @example
+ * // Example request to fetch Trackman data for an athlete
+ * GET /api/trackman/athlete_12345
+ *
+ * @errorHandling
+ * - Returns **404** if no Trackman data exists for the athlete.
+ * - Returns **500** for internal server/database errors.
+ */
 export async function GET(req: NextRequest, context: any) {
   const athleteId = context.params.athleteId;
 
@@ -8,12 +70,12 @@ export async function GET(req: NextRequest, context: any) {
     // Fetch all Trackman data for the athlete
     const sessions = await prisma.trackman.findMany({
       where: { athleteId },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
     });
 
     if (!sessions || sessions.length === 0) {
       return NextResponse.json(
-        { error: "No data found for this athlete." },
+        { error: 'No data found for this athlete.' },
         { status: 404 }
       );
     }
@@ -36,7 +98,7 @@ export async function GET(req: NextRequest, context: any) {
       if (!sessionMap[sessionId]) {
         sessionMap[sessionId] = {
           sessionId,
-          date: new Date(createdAt).toISOString().split("T")[0],
+          date: new Date(createdAt).toISOString().split('T')[0],
         };
       }
 
@@ -49,7 +111,7 @@ export async function GET(req: NextRequest, context: any) {
         }
 
         // Prepare average velocity over time by pitch type
-        const date = new Date(createdAt).toISOString().split("T")[0];
+        const date = new Date(createdAt).toISOString().split('T')[0];
 
         if (!avgPitchSpeedsByType[date]) {
           avgPitchSpeedsByType[date] = {};
@@ -91,7 +153,7 @@ export async function GET(req: NextRequest, context: any) {
       sessions: clickableSessions, // List of clickable sessions
     });
   } catch (error: any) {
-    console.error("Error fetching Trackman data:", error);
+    console.error('Error fetching Trackman data:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

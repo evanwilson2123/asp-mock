@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import CoachSidebar from "@/components/Dash/CoachSidebar";
-import Sidebar from "@/components/Dash/Sidebar";
-import Loader from "../Loader";
-import Image from "next/image";
-import ErrorMessage from "../ErrorMessage";
+import React, { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import CoachSidebar from '@/components/Dash/CoachSidebar';
+import Sidebar from '@/components/Dash/Sidebar';
+import Loader from '../Loader';
+import Image from 'next/image';
+import ErrorMessage from '../ErrorMessage';
 
 interface Athlete {
   _id: string;
@@ -24,7 +24,21 @@ interface Athlete {
   active: boolean;
 }
 
+/**
+ * AthleteDetails Component
+ *
+ * This component displays detailed information about an athlete, including personal details,
+ * program information, coach notes, and performance data upload options.
+ *
+ * Features:
+ * - Displays athlete profile with editable fields (level, season, program type, status).
+ * - Allows coaches to add/save notes for the athlete.
+ * - Supports CSV uploads for performance technologies like Blast Motion, HitTrax, etc.
+ * - Responsive design with sidebars for both coaches and admins.
+ */
+
 const AthleteDetails = () => {
+  // ========== State Management ==========
   const [athlete, setAthlete] = useState<Athlete | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -32,21 +46,22 @@ const AthleteDetails = () => {
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [confirmationTech, setConfirmationTech] = useState<string | null>(null);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
-  const [coachNotes, setCoachNotes] = useState<string>("");
+  const [coachNotes, setCoachNotes] = useState<string>('');
   const [updatedFields, setUpdatedFields] = useState({
     active: false,
-    level: "",
-    season: "",
-    programType: "",
+    level: '',
+    season: '',
+    programType: '',
   });
-
+  // ========== Authentication ==========
   const router = useRouter();
   const { athleteId } = useParams();
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
-  const technologies = ["Blast Motion", "Hittrax", "Trackman", "Armcare"];
+  const technologies = ['Blast Motion', 'Hittrax', 'Trackman', 'Armcare'];
 
+  // ========== Fetch Athlete Data ==========
   useEffect(() => {
     const fetchAthlete = async () => {
       try {
@@ -54,10 +69,10 @@ const AthleteDetails = () => {
         if (!response.ok) {
           const errorMessage =
             response.status === 404
-              ? "Athlete data could not be found."
+              ? 'Athlete data could not be found.'
               : response.status == 500
-              ? "We encountered an issue on our end. Please try again later."
-              : "An unexpected issue occured. Please try again.";
+                ? 'We encountered an issue on our end. Please try again later.'
+                : 'An unexpected issue occured. Please try again.';
           setErrorMessage(errorMessage);
           return;
         }
@@ -66,15 +81,15 @@ const AthleteDetails = () => {
 
         const data = await response.json();
         setAthlete(data.athlete || null);
-        setCoachNotes(data.athlete?.coachNotes || "");
+        setCoachNotes(data.athlete?.coachNotes || '');
         setUpdatedFields({
           active: data.athlete?.active || false,
-          level: data.athlete?.level || "",
-          season: data.athlete?.season || "",
-          programType: data.athlete?.programType || "",
+          level: data.athlete?.level || '',
+          season: data.athlete?.season || '',
+          programType: data.athlete?.programType || '',
         });
       } catch (error: any) {
-        setErrorMessage(error.message || "An unexpected error occurred");
+        setErrorMessage(error.message || 'An unexpected error occurred');
       } finally {
         setLoading(false);
       }
@@ -90,21 +105,21 @@ const AthleteDetails = () => {
   const handleNotesSave = async () => {
     try {
       const response = await fetch(`/api/athlete/${athleteId}/notes`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ notes: coachNotes }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save notes");
+        throw new Error('Failed to save notes');
       }
 
-      setUploadStatus("Notes saved successfully");
+      setUploadStatus('Notes saved successfully');
     } catch (error) {
-      console.error("Error saving notes:", error);
-      setUploadStatus("Failed to save notes");
+      console.error('Error saving notes:', error);
+      setUploadStatus('Failed to save notes');
     } finally {
       setTimeout(() => setUploadStatus(null), 3000);
     }
@@ -113,15 +128,15 @@ const AthleteDetails = () => {
   const handleFieldUpdate = async (field: keyof Athlete, value: any) => {
     try {
       const response = await fetch(`/api/athlete/${athleteId}/update`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ [field]: value }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update field");
+        throw new Error('Failed to update field');
       }
 
       setUpdatedFields((prev) => ({ ...prev, [field]: value }));
@@ -136,26 +151,26 @@ const AthleteDetails = () => {
 
   const handleFileUpload = async (tech: string, file: File) => {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
 
     try {
       const response = await fetch(
         `/api/athlete/${athleteId}/upload/${tech
           .toLowerCase()
-          .replace(/\s+/g, "-")}`,
+          .replace(/\s+/g, '-')}`,
         {
-          method: "POST",
+          method: 'POST',
           body: formData,
         }
       );
 
       if (!response.ok) {
-        throw new Error("File upload failed");
+        throw new Error('File upload failed');
       }
 
       setUploadStatus(`File successfully uploaded for ${tech}`);
     } catch (error: any) {
-      setUploadStatus("Error uploading file: " + error.message);
+      setUploadStatus('Error uploading file: ' + error.message);
     } finally {
       setTimeout(() => setUploadStatus(null), 3000);
     }
@@ -190,10 +205,10 @@ const AthleteDetails = () => {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content Area */}
@@ -207,7 +222,7 @@ const AthleteDetails = () => {
                 router.push(
                   `/athlete/${athleteId}/reports/${tech
                     .toLowerCase()
-                    .replace(/\s+/g, "-")}`
+                    .replace(/\s+/g, '-')}`
                 )
               }
               className="text-gray-700 font-semibold hover:text-gray-900 transition"
@@ -243,13 +258,13 @@ const AthleteDetails = () => {
                 </p>
                 <p className="text-sm text-gray-500">Email: {athlete?.email}</p>
                 <p className="text-sm text-gray-500">
-                  Age: {athlete?.age || "N/A"}
+                  Age: {athlete?.age || 'N/A'}
                 </p>
                 <p className="text-sm text-gray-500">
-                  Height: {athlete?.height || "N/A"}
+                  Height: {athlete?.height || 'N/A'}
                 </p>
                 <p className="text-sm text-gray-500">
-                  Weight: {athlete?.weight || "N/A"}
+                  Weight: {athlete?.weight || 'N/A'}
                 </p>
               </div>
             </div>
@@ -266,10 +281,10 @@ const AthleteDetails = () => {
                 <select
                   id="level"
                   value={updatedFields.level}
-                  onChange={(e) => handleFieldUpdate("level", e.target.value)}
+                  onChange={(e) => handleFieldUpdate('level', e.target.value)}
                   className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  {["Youth", "High School", "College", "Pro"].map((option) => (
+                  {['Youth', 'High School', 'College', 'Pro'].map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
@@ -287,11 +302,11 @@ const AthleteDetails = () => {
                   id="programType"
                   value={updatedFields.programType}
                   onChange={(e) =>
-                    handleFieldUpdate("programType", e.target.value)
+                    handleFieldUpdate('programType', e.target.value)
                   }
                   className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  {["Pitching", "Hitting", "Pitching + Hitting", "S + C"].map(
+                  {['Pitching', 'Hitting', 'Pitching + Hitting', 'S + C'].map(
                     (option) => (
                       <option key={option} value={option}>
                         {option}
@@ -309,11 +324,11 @@ const AthleteDetails = () => {
                 </label>
                 <select
                   id="season"
-                  value={updatedFields.season || ""}
-                  onChange={(e) => handleFieldUpdate("season", e.target.value)}
+                  value={updatedFields.season || ''}
+                  onChange={(e) => handleFieldUpdate('season', e.target.value)}
                   className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  {["In Season", "Off Season"].map((season) => (
+                  {['In Season', 'Off Season'].map((season) => (
                     <option key={season} value={season}>
                       {season}
                     </option>
@@ -329,13 +344,13 @@ const AthleteDetails = () => {
                 </label>
                 <select
                   id="status"
-                  value={updatedFields.active ? "Active" : "Inactive"}
+                  value={updatedFields.active ? 'Active' : 'Inactive'}
                   onChange={(e) =>
-                    handleFieldUpdate("active", e.target.value === "Active")
+                    handleFieldUpdate('active', e.target.value === 'Active')
                   }
                   className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  {["Active", "Inactive"].map((status) => (
+                  {['Active', 'Inactive'].map((status) => (
                     <option key={status} value={status}>
                       {status}
                     </option>
@@ -375,8 +390,8 @@ const AthleteDetails = () => {
                 key={tech}
                 className={`border-2 rounded-lg p-6 text-center ${
                   hoveredTile === tech
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-300 bg-gray-100"
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-300 bg-gray-100'
                 }`}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, tech)}
@@ -397,7 +412,7 @@ const AthleteDetails = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg text-center">
               <p className="text-gray-700 mb-4">
-                Are you sure you want to upload this file for{" "}
+                Are you sure you want to upload this file for{' '}
                 <span className="font-semibold">{confirmationTech}</span>?
               </p>
               <div className="flex space-x-4 justify-center">

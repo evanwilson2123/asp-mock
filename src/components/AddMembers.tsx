@@ -1,37 +1,81 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import CoachSidebar from "@/components/Dash/CoachSidebar";
-import Sidebar from "@/components/Dash/Sidebar";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
+import CoachSidebar from '@/components/Dash/CoachSidebar';
+import Sidebar from '@/components/Dash/Sidebar';
+import { useRouter } from 'next/navigation';
+
+/**
+ * AddMembersPage Component
+ *
+ * This component allows administrators to add new members (Coaches or Athletes) to the system.
+ * It includes form handling, validation, and role-based access control to ensure only authorized
+ * users can perform member additions.
+ *
+ * Key Features:
+ * - **Role-Based Access Control:**
+ *   - Redirects non-admin users to the homepage.
+ *   - Redirects unauthenticated users to the sign-in page.
+ *
+ * - **Toggle Between Coach and Athlete Forms:**
+ *   - Users can switch between adding Coaches and Athletes with toggle buttons.
+ *   - Form fields dynamically change based on the selected member type.
+ *
+ * - **Form Handling & Validation:**
+ *   - Validates required fields such as first name, last name, email, and password.
+ *   - Athlete-specific fields include level, age group, age, height, and weight.
+ *   - Sends form data to the appropriate API endpoint (`/api/add-Coach` or `/api/add-Athlete`).
+ *
+ * - **Responsive Design:**
+ *   - Optimized for both mobile and desktop views with conditional sidebars.
+ *   - Tailwind CSS for consistent UI styling and responsiveness.
+ *
+ * - **Feedback Messages:**
+ *   - Displays success or error messages based on API responses.
+ *
+ * Technologies Used:
+ * - **React** for component structure and state management.
+ * - **Next.js** for routing and API interactions.
+ * - **Clerk** for user authentication and role management.
+ * - **Tailwind CSS** for responsive design and styling.
+ *
+ * Use Cases:
+ * - **For Admins:**
+ *   - Easily add new coaches and athletes to the system.
+ *   - Quickly switch between forms without leaving the page.
+ *
+ * - **For Developers:**
+ *   - Modular and clean code structure for easy maintenance and extension.
+ *   - Ready-to-use form handling and API integration patterns.
+ */
 
 const AddMembersPage: React.FC = () => {
   const { isSignedIn, user } = useUser();
   const role = user?.publicMetadata?.role;
-  const [activeForm, setActiveForm] = useState<"Coach" | "Athlete">("Coach");
+  const [activeForm, setActiveForm] = useState<'Coach' | 'Athlete'>('Coach');
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    level: "Youth",
-    u: "",
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    level: 'Youth',
+    u: '',
     age: 0,
-    height: "",
-    weight: "",
+    height: '',
+    weight: '',
   });
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const router = useRouter();
 
   useEffect(() => {
     if (isSignedIn === false) {
-      router.push("/sign-in");
+      router.push('/sign-in');
       return;
     }
 
-    if (role !== "ADMIN") {
-      router.push("/");
+    if (role !== 'ADMIN') {
+      router.push('/');
     }
   }, [isSignedIn, user, router, role]);
 
@@ -46,13 +90,13 @@ const AddMembersPage: React.FC = () => {
     e.preventDefault();
 
     const endpoint =
-      activeForm === "Coach" ? "/api/add-Coach" : "/api/add-Athlete";
+      activeForm === 'Coach' ? '/api/add-Coach' : '/api/add-Athlete';
 
     try {
       const response = await fetch(endpoint, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
       });
@@ -60,15 +104,15 @@ const AddMembersPage: React.FC = () => {
       if (response.ok) {
         setMessage(`${activeForm} added successfully!`);
         setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          password: "",
-          level: "Youth",
-          u: "",
+          firstName: '',
+          lastName: '',
+          email: '',
+          password: '',
+          level: 'Youth',
+          u: '',
           age: 0,
-          height: "",
-          weight: "",
+          height: '',
+          weight: '',
         });
       } else {
         const errorData = await response.json();
@@ -76,7 +120,7 @@ const AddMembersPage: React.FC = () => {
       }
     } catch (error) {
       console.error(`Error adding ${activeForm.toLowerCase()}:`, error);
-      setMessage("An error occurred. Please try again.");
+      setMessage('An error occurred. Please try again.');
     }
   };
 
@@ -86,10 +130,10 @@ const AddMembersPage: React.FC = () => {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content Area */}
@@ -104,21 +148,21 @@ const AddMembersPage: React.FC = () => {
           <div className="flex justify-center mb-6">
             <button
               className={`px-4 py-2 rounded-l-lg ${
-                activeForm === "Coach"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                activeForm === 'Coach'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700'
               } hover:bg-blue-700 transition`}
-              onClick={() => setActiveForm("Coach")}
+              onClick={() => setActiveForm('Coach')}
             >
               Add Coach
             </button>
             <button
               className={`px-4 py-2 rounded-r-lg ${
-                activeForm === "Athlete"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                activeForm === 'Athlete'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700'
               } hover:bg-blue-700 transition`}
-              onClick={() => setActiveForm("Athlete")}
+              onClick={() => setActiveForm('Athlete')}
             >
               Add Athlete
             </button>
@@ -202,7 +246,7 @@ const AddMembersPage: React.FC = () => {
               />
             </div>
 
-            {activeForm === "Athlete" && (
+            {activeForm === 'Athlete' && (
               <>
                 <div>
                   <label

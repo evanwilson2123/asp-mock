@@ -34,6 +34,45 @@ interface Swing {
   handSpeed: number | null;
 }
 
+/**
+ * BlastMotionSessionDetails Component
+ *
+ * This component displays detailed statistics for a specific Blast Motion session,
+ * including individual swing data, maximum bat speed, and hand speed metrics,
+ * with an interactive line chart to visualize performance trends.
+ *
+ * Key Features:
+ * - **Dynamic Data Fetching:**
+ *   - Retrieves session data (bat speed, hand speed, and max values) using the session ID from the URL parameters.
+ *   - Displays performance metrics in a visually appealing layout with real-time updates.
+ *
+ * - **Interactive Line Chart:**
+ *   - Visualizes bat speed and hand speed trends across all swings within the session.
+ *   - Uses Chart.js for smooth, responsive charts with distinct color-coding for easy comparison.
+ *
+ * - **Performance Metrics Display:**
+ *   - Highlights the maximum bat speed and hand speed achieved during the session.
+ *   - Offers quick insights into an athlete's peak performance.
+ *
+ * - **Role-Based Sidebar Navigation:**
+ *   - Dynamically renders different sidebars based on the user's role (Coach/Admin).
+ *
+ * - **Authentication & Error Handling:**
+ *   - Integrates with Clerk for user authentication.
+ *   - Displays user-friendly error messages when session data is unavailable or fetching fails.
+ *
+ * Technologies Used:
+ * - React (with hooks for state and lifecycle management)
+ * - Next.js (for routing and API integration)
+ * - Clerk (for authentication)
+ * - Chart.js (for data visualization)
+ * - Tailwind CSS (for styling)
+ *
+ * Usage:
+ * - Typically accessed from an athlete's profile or dashboard when viewing detailed Blast Motion reports.
+ * - Enables coaches and athletes to analyze swing performance and track improvement over time.
+ */
+
 const BlastMotionSessionDetails: React.FC = () => {
   const [swings, setSwings] = useState<Swing[]>([]);
   const [maxBatSpeed, setMaxBatSpeed] = useState<number>(0);

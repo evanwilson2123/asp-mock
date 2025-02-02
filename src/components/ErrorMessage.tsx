@@ -1,23 +1,68 @@
-"use client";
+'use client';
 
-import React from "react";
-import CoachSidebar from "@/components/Dash/CoachSidebar";
-import Sidebar from "@/components/Dash/Sidebar";
+import React from 'react';
+import CoachSidebar from '@/components/Dash/CoachSidebar';
+import Sidebar from '@/components/Dash/Sidebar';
 
 interface ErrorMessageProps {
   message: string; // Error message to display
   role: string | undefined; // Role to determine which sidebar to show
 }
 
+/**
+ * ErrorMessage Component
+ *
+ * A reusable error display component designed to handle unexpected errors gracefully.
+ * It provides users with a clear message, role-based sidebars, and an option to reload the page.
+ *
+ * Key Features:
+ * - **Role-Based Sidebar Rendering:**
+ *   - Displays the `CoachSidebar` if the user's role is 'COACH'.
+ *   - Displays the default `Sidebar` for all other roles.
+ *
+ * - **Dynamic Error Messaging:**
+ *   - Accepts a `message` prop to display custom error messages, enhancing debugging and UX.
+ *
+ * - **User-Friendly Design:**
+ *   - Clean, modern UI with a gradient background and card-style error box.
+ *   - Clear call-to-action button to reload the page, helping users recover quickly.
+ *
+ * - **Responsive Design:**
+ *   - Optimized for both desktop and mobile views using Tailwind CSS.
+ *   - Ensures accessibility with readable fonts and contrast-friendly colors.
+ *
+ * Technologies Used:
+ * - **React** for component structure and interactivity.
+ * - **Next.js** with Clerk for role-based authentication.
+ * - **Tailwind CSS** for styling, layout, and responsive design.
+ *
+ * Props:
+ * - `message` (string): The error message displayed to the user.
+ * - `role` (string | undefined): Determines which sidebar to display based on the user's role.
+ *
+ * Usage Example:
+ * ```tsx
+ * <ErrorMessage
+ *   message="We encountered an unexpected error while fetching the data."
+ *   role={user?.publicMetadata?.role}
+ * />
+ * ```
+ *
+ * Use Cases:
+ * - **API Errors:** Display when data fetching fails or an unexpected server error occurs.
+ * - **Permission Issues:** Notify users if they try to access restricted content.
+ * - **General Errors:** Catch-all for unknown application issues, providing a fallback UI.
+ */
+
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, role }) => {
   return (
     <div className="flex min-h-screen">
       {/* Conditional Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content Area */}

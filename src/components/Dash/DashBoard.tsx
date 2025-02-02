@@ -83,6 +83,33 @@ interface AthleteNums {
   armCount: number;
 }
 
+/**
+ * Dashboard Component
+ *
+ * This component serves as the central dashboard for coaches and admins, providing
+ * aggregated performance data from various technologies like Blast Motion, HitTrax, and Trackman.
+ * It visualizes athlete statistics through interactive charts, displays key performance metrics,
+ * and allows filtering by athlete levels (High School, College, Pro).
+ *
+ * Features:
+ * - **Authentication:** Ensures only signed-in users with appropriate roles can access the dashboard.
+ * - **Role-Based Sidebar:** Dynamically renders either the CoachSidebar or AdminSidebar based on user role.
+ * - **Real-Time Data Fetching:** Retrieves data from multiple API endpoints using `Promise.all` for efficiency.
+ * - **Charts & Visualization:** Uses `react-chartjs-2` with `Chart.js` for rendering line charts to display trends.
+ * - **Responsive Design:** Optimized for both desktop and mobile views with a flexible grid layout.
+ * - **Dynamic Filters:** Users can filter data based on athlete levels (High School, College, Pro).
+ * - **Error Handling:** Displays user-friendly error messages if data fetching fails.
+ *
+ * Technologies:
+ * - **Chart.js (via react-chartjs-2):** For rendering interactive data visualizations.
+ * - **Next.js (Client Component):** Supports dynamic routing and API calls.
+ * - **Clerk:** Handles user authentication and role-based access control.
+ *
+ * Usage:
+ * - This dashboard is ideal for coaches or admins to monitor athlete performance,
+ *   track progress over time, and identify key metrics like max bat speed, exit velocity, etc.
+ */
+
 const Dashboard: React.FC = () => {
   const { isSignedIn, user } = useUser();
   const role = user?.publicMetadata?.role;

@@ -1,17 +1,78 @@
-import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prismaDb";
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prismaDb';
+/**
+ * GET /api/trackman
+ *
+ * This API endpoint retrieves Trackman data filtered by the specified play level (e.g., "High School", "College").
+ * It calculates the **peak speed** for each pitch type and provides a list of **average pitch speeds** along with their corresponding dates.
+ *
+ * ---
+ *
+ * @param {NextRequest} req - The incoming request containing the query parameter `level` (optional).
+ *
+ * @queryParam {string} [level="High School"] - The play level to filter the data (e.g., "High School", "College").
+ *
+ * ---
+ *
+ * @returns {Promise<NextResponse>} JSON response containing:
+ *
+ * - **Success (200):**
+ *   Returns the peak pitch speed for each pitch type and average pitch speeds per record with timestamps.
+ *   ```json
+ *   {
+ *     "pitchStats": [
+ *       { "pitchType": "Fastball", "peakSpeed": 95 },
+ *       { "pitchType": "Slider", "peakSpeed": 88 }
+ *     ],
+ *     "avgPitchSpeeds": [
+ *       {
+ *         "pitchType": "Fastball",
+ *         "avgSpeed": 92,
+ *         "date": "2024-05-01T12:34:56.789Z"
+ *       },
+ *       {
+ *         "pitchType": "Slider",
+ *         "avgSpeed": 85,
+ *         "date": "2024-05-02T14:12:34.567Z"
+ *       }
+ *     ]
+ *   }
+ *   ```
+ *
+ * - **Error (404):**
+ *   Occurs when no data is found for the specified level.
+ *   ```json
+ *   { "error": "No Trackman data found for level: High School" }
+ *   ```
+ *
+ * - **Error (500):**
+ *   Occurs due to server/database errors during data fetching.
+ *   ```json
+ *   { "error": "Failed to fetch Trackman data." }
+ *   ```
+ *
+ * ---
+ *
+ * @example
+ * // Example request to fetch data for College level
+ * GET /api/trackman?level=College
+ *
+ * @errorHandling
+ * - Returns **404** if no Trackman data exists for the specified level.
+ * - Returns **500** for any internal server/database issues.
+ */
 
 export async function GET(req: NextRequest) {
   // 1) Parse the query param (?level=)
   const { searchParams } = new URL(req.url);
-  const level = searchParams.get("level") || "High School";
+  const level = searchParams.get('level') || 'High School';
 
   try {
     // 2) Fetch all Trackman rows matching that level
     //    sorted from newest to oldest
     const data = await prisma.trackman.findMany({
       where: { playLevel: level },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!data || data.length === 0) {
@@ -37,7 +98,7 @@ export async function GET(req: NextRequest) {
 
     // 5) Iterate each row
     data.forEach((record) => {
-      const pitchType = record.pitchType || "Unknown";
+      const pitchType = record.pitchType || 'Unknown';
       const pitchSpeed = record.pitchReleaseSpeed || 0;
 
       // Calculate peak speed
@@ -68,9 +129,9 @@ export async function GET(req: NextRequest) {
       avgPitchSpeeds: allDataPoints,
     });
   } catch (error: any) {
-    console.error("Error fetching Trackman data:", error);
+    console.error('Error fetching Trackman data:', error);
     return NextResponse.json(
-      { error: "Failed to fetch Trackman data." },
+      { error: 'Failed to fetch Trackman data.' },
       { status: 500 }
     );
   }

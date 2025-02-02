@@ -1,18 +1,46 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+/**
+ * AddTeamForm Component
+ *
+ * A form component that allows users to create a new team or group
+ * by filling out key information such as team name, age group, coaches,
+ * assistant coaches, and player selection.
+ *
+ * Features:
+ * - **Dynamic Data Fetching:**
+ *   - Fetches coaches and athletes from the API for selection.
+ *   - Dynamically updates the list of athletes based on the selected age group (`u`).
+ * - **Flexible Team Management:**
+ *   - Supports selecting a head coach, multiple assistant coaches, and players.
+ *   - Ensures proper form validation before submission.
+ * - **Optimistic UI Updates:**
+ *   - Displays success or error messages based on the server response.
+ *   - Redirects to the Teams/Groups page after successful submission.
+ *
+ * Hooks:
+ * - `useEffect` to fetch initial data for coaches and athletes.
+ * - `useState` for managing form inputs, messages, and dynamic selections.
+ * - `useRouter` from Next.js for client-side navigation after form submission.
+ *
+ * Usage:
+ * - This form can be embedded in team management pages for administrators or coaches
+ *   to easily add new teams/groups.
+ */
 
 const AddTeamForm: React.FC = () => {
   const [formData, setFormData] = useState({
-    name: "",
-    u: "",
-    coach: "",
+    name: '',
+    u: '',
+    coach: '',
     assistants: [] as string[],
     players: [] as string[],
   });
 
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const [coaches, setCoaches] = useState<any[]>([]);
   const [athletes, setAthletes] = useState<any[]>([]);
   const router = useRouter();
@@ -21,16 +49,16 @@ const AddTeamForm: React.FC = () => {
   useEffect(() => {
     const fetchCoaches = async () => {
       try {
-        const response = await fetch("/api/coaches");
+        const response = await fetch('/api/coaches');
         if (response.ok) {
           const data = await response.json();
           setCoaches(data.coaches);
         } else {
-          setMessage("Failed to fetch coaches");
+          setMessage('Failed to fetch coaches');
         }
       } catch (error) {
-        console.error("Error fetching coaches:", error);
-        setMessage("An error occurred while fetching coaches");
+        console.error('Error fetching coaches:', error);
+        setMessage('An error occurred while fetching coaches');
       }
     };
     fetchCoaches();
@@ -44,11 +72,11 @@ const AddTeamForm: React.FC = () => {
         const data = await response.json();
         setAthletes(data.athletes);
       } else {
-        setMessage("Failed to fetch athletes");
+        setMessage('Failed to fetch athletes');
       }
     } catch (error) {
-      console.error("Error fetching athletes:", error);
-      setMessage("An error occurred while fetching athletes");
+      console.error('Error fetching athletes:', error);
+      setMessage('An error occurred while fetching athletes');
     }
   };
 
@@ -58,13 +86,13 @@ const AddTeamForm: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    if (name === "u" && value) {
+    if (name === 'u' && value) {
       // Fetch athletes dynamically when `u` is entered/changed
       fetchAthletes(value);
     }
   };
 
-  const toggleSelection = (id: string, field: "assistants" | "players") => {
+  const toggleSelection = (id: string, field: 'assistants' | 'players') => {
     setFormData((prev) => {
       const selected = prev[field];
       return {
@@ -80,31 +108,31 @@ const AddTeamForm: React.FC = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("/api/create-team", {
-        method: "POST",
+      const response = await fetch('/api/create-team', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        setMessage("Team added successfully!");
+        setMessage('Team added successfully!');
         setFormData({
-          name: "",
-          u: "",
-          coach: "",
+          name: '',
+          u: '',
+          coach: '',
           assistants: [],
           players: [],
         });
-        setTimeout(() => router.push("/teams-groups"), 2000);
+        setTimeout(() => router.push('/teams-groups'), 2000);
       } else {
         const errorData = await response.json();
         setMessage(`Error: ${errorData.error}`);
       }
     } catch (error) {
-      console.error("Error adding team:", error);
-      setMessage("An error occurred. Please try again.");
+      console.error('Error adding team:', error);
+      setMessage('An error occurred. Please try again.');
     }
   };
 
@@ -169,14 +197,14 @@ const AddTeamForm: React.FC = () => {
                     type="checkbox"
                     value={coach._id}
                     checked={formData.assistants.includes(coach._id)}
-                    onChange={() => toggleSelection(coach._id, "assistants")}
+                    onChange={() => toggleSelection(coach._id, 'assistants')}
                     className="text-blue-500 focus:ring-2 focus:ring-blue-500"
                   />
                   <span
                     className={`${
                       formData.assistants.includes(coach._id)
-                        ? "text-blue-600 font-bold"
-                        : "text-gray-700"
+                        ? 'text-blue-600 font-bold'
+                        : 'text-gray-700'
                     }`}
                   >
                     {coach.firstName} {coach.lastName}
@@ -199,14 +227,14 @@ const AddTeamForm: React.FC = () => {
                     type="checkbox"
                     value={athlete._id}
                     checked={formData.players.includes(athlete._id)}
-                    onChange={() => toggleSelection(athlete._id, "players")}
+                    onChange={() => toggleSelection(athlete._id, 'players')}
                     className="text-blue-500 focus:ring-2 focus:ring-blue-500"
                   />
                   <span
                     className={`${
                       formData.players.includes(athlete._id)
-                        ? "text-blue-600 font-bold"
-                        : "text-gray-700"
+                        ? 'text-blue-600 font-bold'
+                        : 'text-gray-700'
                     }`}
                   >
                     {athlete.firstName} {athlete.lastName}

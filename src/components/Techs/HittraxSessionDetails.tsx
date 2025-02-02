@@ -35,6 +35,55 @@ interface Hit {
   LA: number | null;
 }
 
+/**
+ * HitTraxSessionDetails Component
+ *
+ * This component displays detailed HitTrax session data for a specific athlete,
+ * including metrics such as Exit Velocity, Distance, and Launch Angle for each swing.
+ * The data is fetched dynamically from the server and visualized using interactive
+ * line charts with performance metrics highlighted for quick analysis.
+ *
+ * Key Features:
+ * - **Dynamic Data Fetching:**
+ *   - Retrieves HitTrax session data from the API, including hits, max metrics,
+ *     and average launch angle.
+ *   - Displays error messages for failed API requests with descriptive feedback.
+ *
+ * - **Performance Metrics:**
+ *   - Displays key statistics for the session:
+ *     - **Max Exit Velocity (mph)**
+ *     - **Max Distance (ft)**
+ *     - **Average Launch Angle (°)**
+ *   - Statistics are showcased in visually distinct cards with bold typography.
+ *
+ * - **Interactive Data Visualization:**
+ *   - **Line Chart** to track trends for:
+ *     - Exit Velocity over time
+ *     - Distance traveled per hit
+ *     - Launch Angle variations
+ *   - Charts are styled with clear color differentiation and tooltips for better insights.
+ *
+ * - **Role-Based UI:**
+ *   - Dynamically renders **CoachSidebar** or **Sidebar** based on the user's role
+ *     (Coach/Admin) for personalized navigation.
+ *
+ * - **Error Handling & Loading States:**
+ *   - Displays a loading spinner during data fetch operations.
+ *   - Provides user-friendly error messages if data retrieval fails.
+ *
+ * Technologies Used:
+ * - **React** with hooks (`useState`, `useEffect`) for state management and lifecycle control
+ * - **Next.js** for routing and API calls
+ * - **Clerk** for authentication and user role management
+ * - **Chart.js** with `react-chartjs-2` for data visualization
+ * - **Tailwind CSS** for responsive, modern UI styling
+ *
+ * Usage:
+ * - Accessed from an athlete’s performance dashboard to analyze detailed HitTrax session metrics.
+ * - Ideal for coaches and athletes aiming to monitor hitting performance, track improvements,
+ *   and identify areas needing focus.
+ */
+
 const HitTraxSessionDetails: React.FC = () => {
   const [hits, setHits] = useState<Hit[]>([]);
   const [maxExitVelo, setMaxExitVelo] = useState<number>(0);

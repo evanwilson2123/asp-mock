@@ -49,6 +49,55 @@ interface Session {
   date: string;
 }
 
+/**
+ * BlastMotionStats Component
+ *
+ * This component displays comprehensive Blast Motion data for an athlete,
+ * including session history, maximum performance metrics, and detailed trend
+ * visualizations for various swing statistics such as bat speed, hand speed,
+ * rotational acceleration, power, and connection metrics.
+ *
+ * Key Features:
+ * - **Dynamic Data Fetching:**
+ *   - Retrieves Blast Motion data from the API, including session details,
+ *     maximum metrics, and session averages.
+ *   - Displays a list of all sessions with clickable links for detailed views.
+ *
+ * - **Performance Metrics:**
+ *   - Showcases maximum recorded values for:
+ *     - Bat Speed
+ *     - Hand Speed
+ *     - Rotational Acceleration
+ *     - Power
+ *   - Metrics are visually highlighted in circular progress cards for quick reference.
+ *
+ * - **Interactive Charts:**
+ *   - **Averages Over Time:**
+ *     - Displays line charts for bat speed, hand speed, rotational acceleration, and power.
+ *   - **Connections Over Time:**
+ *     - Compares early connection angles and connection at impact with dynamic annotations.
+ *     - Uses the Chart.js annotation plugin to highlight thresholds (e.g., 90° reference line).
+ *
+ * - **Role-Based Navigation:**
+ *   - Dynamically renders CoachSidebar or Sidebar based on the user's role (Coach/Admin).
+ *
+ * - **Error Handling & User Feedback:**
+ *   - Displays loading indicators during data fetches.
+ *   - Provides clear error messages when data is unavailable or API requests fail.
+ *
+ * Technologies Used:
+ * - React (with hooks for state management and side effects)
+ * - Next.js (for routing and API integration)
+ * - Clerk (for authentication and role management)
+ * - Chart.js with `chartjs-plugin-annotation` for data visualization
+ * - Tailwind CSS for modern, responsive styling
+ *
+ * Usage:
+ * - Typically accessed from an athlete's profile to analyze swing performance data.
+ * - Ideal for coaches and athletes to monitor performance trends, identify areas for improvement,
+ *   and track development over time.
+ */
+
 const BlastMotionStats: React.FC = () => {
   const [maxBatSpeed, setMaxBatSpeed] = useState<number>(0);
   const [maxHandSpeed, setMaxHandSpeed] = useState<number>(0);
@@ -289,14 +338,14 @@ const BlastMotionStats: React.FC = () => {
           {/* Rotational Acceleration Card */}
           <div className="bg-white p-6 rounded shadow flex flex-col items-center w-full md:w-1/4">
             <span className="text-xl font-bold text-gray-600">
-              Max Rotational Acceleration
+              Max Rot. Acceleration
             </span>
             <div className="mt-4 relative rounded-full w-32 h-32 border-8 border-yellow-200 flex items-center justify-center">
               <span className="text-2xl font-semibold text-yellow-600">
                 {maxRotationalAccel}
               </span>
             </div>
-            <p className="mt-2 text-yellow-600 font-medium">units</p>
+            <p className="mt-2 text-yellow-600 font-medium">G's</p>
           </div>
 
           {/* Power Card */}
@@ -307,7 +356,7 @@ const BlastMotionStats: React.FC = () => {
                 {maxPower}
               </span>
             </div>
-            <p className="mt-2 text-purple-600 font-medium">units</p>
+            <p className="mt-2 text-purple-600 font-medium">KWs</p>
           </div>
         </div>
 

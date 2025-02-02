@@ -91,6 +91,48 @@ function getShoulderBalanceColor(ratio: number) {
   return WARNING_CLASS;
 }
 
+/**
+ * ArmCareStats Component
+ *
+ * This component displays detailed arm care statistics for a specific athlete.
+ * It includes strength metrics, range of motion (ROM) data, and arm score trends over time,
+ * with color-coded indicators for performance assessment based on thresholds.
+ *
+ * Key Features:
+ * - **Dynamic Data Fetching:**
+ *   - Retrieves arm care data for the athlete using their ID from the URL parameters.
+ *   - Displays all-time maximums, latest strength metrics, and session-wise data.
+ *
+ * - **Color-Coded Performance Indicators:**
+ *   - Strength metrics (IR, ER, Scaption) are color-coded based on % of body weight:
+ *     - **Blue:** Normal range
+ *     - **Yellow:** Watch range
+ *     - **Pink:** Warning range
+ *   - Shoulder balance ratio (ER:IR) is similarly color-coded for quick assessment.
+ *
+ * - **Interactive Line Chart:**
+ *   - Displays the trend of arm scores over time using Chart.js.
+ *   - Allows coaches and athletes to monitor progress visually.
+ *
+ * - **Session Management:**
+ *   - Lists all sessions with quick navigation links to detailed reports for each session.
+ *
+ * - **Authentication & Error Handling:**
+ *   - Uses Clerk for user authentication and role management (Coach/Admin).
+ *   - Displays error messages when data fetching fails or if the user is not authenticated.
+ *
+ * Technologies Used:
+ * - React (with hooks for state and lifecycle management)
+ * - Next.js (for routing and API integration)
+ * - Clerk (for authentication)
+ * - Chart.js (for data visualization)
+ * - Tailwind CSS (for styling)
+ *
+ * Usage:
+ * - Typically embedded in an athlete's dashboard or report section.
+ * - Accessible to coaches and administrators for performance monitoring and data analysis.
+ */
+
 const ArmCareStats: React.FC = () => {
   // ===== STATE  =====
   // Body weight

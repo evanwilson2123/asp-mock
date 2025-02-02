@@ -16,6 +16,71 @@ interface Response {
   armCount: number;
 }
 
+/**
+ * GET /api/dashboard
+ *
+ * This API endpoint retrieves aggregated statistics related to athletes and performance data.
+ * It provides counts for different athlete program types and various performance metrics collected from **Trackman**, **BlastMotion**, **HitTrax**, and **ArmCare** systems.
+ *
+ * ---
+ *
+ * @auth
+ * - **Authentication Required:** This endpoint requires the user to be authenticated via Clerk.
+ * - Returns **401 Unauthorized** if the user is not authenticated.
+ *
+ * ---
+ *
+ * @returns {Promise<NextResponse>} JSON response containing:
+ *
+ * - **Success (200):**
+ *   Returns the counts of athletes and performance data across different categories.
+ *   ```json
+ *   {
+ *     "athleteCount": 150,
+ *     "athletePCount": 60,
+ *     "athleteHCount": 50,
+ *     "athletePHCount": 30,
+ *     "athleteSCCount": 10,
+ *     "pitchCount": 500,
+ *     "blastCount": 300,
+ *     "hitCount": 200,
+ *     "armCount": 100
+ *   }
+ *   ```
+ *
+ *   - **athleteCount:** Total number of athletes.
+ *   - **athletePCount:** Number of athletes in the **Pitching** program.
+ *   - **athleteHCount:** Number of athletes in the **Hitting** program.
+ *   - **athletePHCount:** Number of athletes in **Pitching + Hitting** programs.
+ *   - **athleteSCCount:** Number of athletes in **Strength & Conditioning (S + C)** programs.
+ *   - **pitchCount:** Total number of pitches tracked via **Trackman**.
+ *   - **blastCount:** Total number of swings tracked via **BlastMotion**.
+ *   - **hitCount:** Total number of hits tracked via **HitTrax**.
+ *   - **armCount:** Total number of **ArmCare** exams conducted.
+ *
+ * - **Error (401):**
+ *   Occurs when the request is unauthorized.
+ *   ```json
+ *   { "error": "Unauthorized" }
+ *   ```
+ *
+ * - **Error (500):**
+ *   Occurs due to server/database errors while fetching data.
+ *   ```json
+ *   { "error": "Internal Server Error" }
+ *   ```
+ *
+ * ---
+ *
+ * @example
+ * // Example request to fetch dashboard stats
+ * GET /api/dashboard
+ *
+ * @errorHandling
+ * - Returns **401** if the user is not authenticated.
+ * - Returns **500** for any internal server/database issues.
+ */
+
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {

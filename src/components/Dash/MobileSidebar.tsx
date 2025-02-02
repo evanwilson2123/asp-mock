@@ -1,18 +1,44 @@
-"use client";
+'use client';
 
-import React from "react";
-import Link from "next/link";
+import React from 'react';
+import Link from 'next/link';
 
 interface MobileSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+/**
+ * MobileSidebar Component
+ *
+ * A responsive sidebar designed for mobile devices, providing navigation links
+ * to key sections of the app. It slides in and out smoothly and allows users
+ * to easily close the sidebar with a button click.
+ *
+ * Features:
+ * - **Sliding Animation:** The sidebar slides in from the left when opened and
+ *   slides out when closed, providing a smooth user experience.
+ * - **Responsive Design:** Optimized for mobile views while remaining hidden on
+ *   larger screens (as it's primarily for mobile navigation).
+ * - **Navigation Links:** Includes quick access to various app sections like
+ *   Dashboard, Manage Athletes, Blast Motion, Hittrax, Trackman, etc.
+ * - **Auto-Close Behavior:** Automatically closes the sidebar when a link is clicked.
+ * - **Z-Index Management:** Ensures the sidebar appears above other content.
+ *
+ * Props:
+ * - `isOpen` (boolean): Determines whether the sidebar is visible.
+ * - `onClose` (function): A callback function to handle closing the sidebar.
+ *
+ * Usage:
+ * - This component is ideal for mobile-first navigation in applications with
+ *   multiple pages or dashboards, providing quick access to key sections.
+ */
+
 const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
   return (
     <div
       className={`absolute top-16 left-0 w-64 bg-gray-900 text-white transform ${
-        isOpen ? "translate-x-0" : "-translate-x-full"
+        isOpen ? 'translate-x-0' : '-translate-x-full'
       } transition-transform duration-300 z-50`}
     >
       {/* Sidebar Header */}
@@ -28,7 +54,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Navigation */}
       <nav className="p-4 overflow-y-auto h-[calc(100vh-4rem)]">
-        {" "}
+        {' '}
         {/* Enable scrolling */}
         <ul className="space-y-4">
           <li>

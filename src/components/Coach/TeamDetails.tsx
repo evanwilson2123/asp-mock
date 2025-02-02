@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import CoachSidebar from "@/components/Dash/CoachSidebar";
-import Sidebar from "@/components/Dash/Sidebar";
+import React, { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import CoachSidebar from '@/components/Dash/CoachSidebar';
+import Sidebar from '@/components/Dash/Sidebar';
 
 interface Athlete {
   _id: string;
@@ -14,6 +14,22 @@ interface Athlete {
   level: string;
   u?: string;
 }
+
+/**
+ * TeamDetails Component
+ *
+ * This component displays the details of a specific team, including a list of athletes.
+ * It supports role-based navigation for both coaches and admins.
+ *
+ * Features:
+ * - Fetches athletes for the selected team from the backend API (`/api/my-teams/:teamId`).
+ * - Displays athlete information in a table format with clickable rows for athlete details.
+ * - Handles loading and error states gracefully.
+ * - Provides a "Back to Teams" button for role-based navigation (Coach, Admin, or default).
+ *
+ * Roles:
+ * - Coaches see the `CoachSidebar`, while admins/users see the standard `Sidebar`.
+ */
 
 const TeamDetails = () => {
   const [athletes, setAthletes] = useState<Athlete[]>([]);
@@ -30,13 +46,13 @@ const TeamDetails = () => {
       try {
         const response = await fetch(`/api/my-teams/${teamId}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch athletes");
+          throw new Error('Failed to fetch athletes');
         }
 
         const data = await response.json();
         setAthletes(data.athletes || []);
       } catch (err: any) {
-        setError(err.message || "An unexpected error occurred");
+        setError(err.message || 'An unexpected error occurred');
       } finally {
         setLoading(false);
       }
@@ -46,12 +62,12 @@ const TeamDetails = () => {
   }, [teamId]);
 
   const handleBackClick = () => {
-    if (role === "COACH") {
-      router.push("/my-team");
-    } else if (role === "ADMIN") {
-      router.push("/teams-groups");
+    if (role === 'COACH') {
+      router.push('/my-team');
+    } else if (role === 'ADMIN') {
+      router.push('/teams-groups');
     } else {
-      router.push("/"); // Default behavior
+      router.push('/'); // Default behavior
     }
   };
 
@@ -62,10 +78,10 @@ const TeamDetails = () => {
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content Area */}

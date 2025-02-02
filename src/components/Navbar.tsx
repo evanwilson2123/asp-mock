@@ -1,7 +1,47 @@
-import React from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { SignOutButton } from "@clerk/nextjs";
+import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { SignOutButton } from '@clerk/nextjs';
+
+/**
+ * Navbar Component
+ *
+ * The `Navbar` component renders a responsive navigation bar for the ASP-ANALYTICS application.
+ * It includes the app logo, name, navigation links, and a sign-out button.
+ *
+ * Features:
+ * - **Responsive Layout:** Adjusts content alignment based on screen size.
+ * - **Logo & Branding:** Displays the ASP-ANALYTICS logo and name with a link to the homepage.
+ * - **Navigation Links:** Provides links to core sections: Home, About, and Contact.
+ * - **Sign-Out Button:** Uses Clerk's `SignOutButton` for secure sign-out functionality.
+ *
+ * Technologies Used:
+ * - **React:** Built as a functional component.
+ * - **Next.js:** Utilizes `Image` for optimized image rendering and `Link` for client-side navigation.
+ * - **Clerk:** Handles authentication with the `SignOutButton` component.
+ * - **Tailwind CSS:** Provides utility-first styling for layout, spacing, and hover effects.
+ *
+ * Props:
+ * - None (static navbar with no dynamic props).
+ *
+ * Folder Structure:
+ * \`\`\`
+ * components/
+ * └── Navbar.tsx
+ * public/
+ * └── logo.PNG  (Logo image used in the navbar)
+ * \`\`\`
+ *
+ * Usage Example:
+ * \`\`\`tsx
+ * import Navbar from "@/components/Navbar";
+ *
+ * export default function HomePage() {
+ *   return (
+ *     <div>
+ *       <Navbar />
+ *       <main>
+ *         {/* Page content here */
 
 const Navbar: React.FC = () => {
   return (

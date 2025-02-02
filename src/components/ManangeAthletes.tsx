@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import CoachSidebar from "@/components/Dash/CoachSidebar";
-import Sidebar from "@/components/Dash/Sidebar";
-import Loader from "./Loader";
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import CoachSidebar from '@/components/Dash/CoachSidebar';
+import Sidebar from '@/components/Dash/Sidebar';
+import Loader from './Loader';
 
 interface Athlete {
   _id: string;
@@ -16,6 +16,75 @@ interface Athlete {
   u?: string;
 }
 
+/**
+ * ManageAthletes Component
+ *
+ * The `ManageAthletes` component provides an interface to view, filter, and manage athletes.
+ * It features a responsive layout with a sidebar, search functionality, level-based filtering,
+ * pagination, and navigation to individual athlete profiles.
+ *
+ * Features:
+ * - **Dynamic Sidebar:** Displays `CoachSidebar` for coaches and `Sidebar` for other roles.
+ * - **Data Fetching:** Retrieves athlete data from the `/api/manage-athletes` endpoint.
+ * - **Search and Filter:** Allows filtering athletes by name (case-insensitive) and level.
+ * - **Pagination:** Displays athletes in pages with controls to navigate between them.
+ * - **Navigation:** Clicking an athlete row redirects to their detailed page (`/athlete/:id`).
+ *
+ * Technologies Used:
+ * - **React:** Uses functional components and hooks (`useState`, `useEffect`).
+ * - **Next.js:** Utilizes `useRouter` for navigation and `useParams` for dynamic routing.
+ * - **Clerk:** Handles user roles for conditional rendering.
+ * - **Tailwind CSS:** Provides responsive design, layout, and utility-based styling.
+ *
+ * Props:
+ * - None (all data is fetched internally).
+ *
+ * State Management:
+ * - **athletes:** Stores the fetched list of athletes.
+ * - **loading:** Indicates data fetching status.
+ * - **error:** Holds error messages if data fetching fails.
+ * - **searchTerm:** Stores the user's search input for name filtering.
+ * - **selectedLevel:** Tracks the selected level for filtering.
+ * - **currentPage:** Manages the current page for pagination.
+ *
+ * API Calls:
+ * - **GET `/api/manage-athletes`:** Fetches the list of athletes.
+ *   - Expected response: `{ athletes: Athlete[] }`
+ *   - Error handling displays messages for failed requests.
+ *
+ * Key Components:
+ * - `CoachSidebar` and `Sidebar`: Rendered based on the user's role.
+ * - `Loader`: Shown during data loading.
+ * - **Pagination Controls:** "Previous", "Next", and numeric page buttons.
+ *
+ * Usage Example:
+ * ```tsx
+ * <ManageAthletes />
+ * ```
+ *
+ * UI Components:
+ * - **Filter Section:** Includes search input and level dropdown.
+ * - **Athletes Table:** Displays first name, last name, email, and level.
+ * - **Pagination:** Provides navigation for large datasets.
+ *
+ * Customization:
+ * - **Page Size:** Change `pageSize` to adjust items per page (default is 5).
+ * - **Filters:** Add more filters as needed (e.g., age, performance metrics).
+ * - **Role Logic:** Adapt `role` handling to new user roles if introduced.
+ *
+ * Accessibility:
+ * - Keyboard-accessible buttons and focus styles.
+ * - Clear visual feedback for hover, focus, and disabled states.
+ *
+ * Error Handling:
+ * - Displays a user-friendly message when data fetching fails.
+ * - Handles both client-side (network) and server-side errors.
+ *
+ * Edge Cases:
+ * - Shows a message if no athletes match the search/filter criteria.
+ * - Disables pagination buttons when on the first or last page.
+ */
+
 const ManageAthletes: React.FC = () => {
   // -- State for athlete data & request states
   const [athletes, setAthletes] = useState<Athlete[]>([]);
@@ -23,8 +92,8 @@ const ManageAthletes: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // -- State for filters
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState("All");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('All');
 
   // -- State for pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,14 +109,14 @@ const ManageAthletes: React.FC = () => {
   useEffect(() => {
     const fetchAthletes = async () => {
       try {
-        const res = await fetch("/api/manage-athletes");
+        const res = await fetch('/api/manage-athletes');
         if (!res.ok) {
-          throw new Error("Failed to fetch athletes");
+          throw new Error('Failed to fetch athletes');
         }
         const data = await res.json();
         setAthletes(data.athletes || []);
       } catch (err: any) {
-        setError(err.message || "An unexpected error occurred");
+        setError(err.message || 'An unexpected error occurred');
       } finally {
         setLoading(false);
       }
@@ -59,12 +128,12 @@ const ManageAthletes: React.FC = () => {
   // -- Filter logic
   const filteredAthletes = athletes.filter((athlete) => {
     // Name search (case-insensitive)
-    const fullName = (athlete.firstName + " " + athlete.lastName).toLowerCase();
+    const fullName = (athlete.firstName + ' ' + athlete.lastName).toLowerCase();
     const matchesSearch = fullName.includes(searchTerm.toLowerCase());
 
     // Level filter (if "All", skip)
     const matchesLevel =
-      selectedLevel === "All" || athlete.level === selectedLevel;
+      selectedLevel === 'All' || athlete.level === selectedLevel;
 
     return matchesSearch && matchesLevel;
   });
@@ -114,16 +183,16 @@ const ManageAthletes: React.FC = () => {
 
   // -- Unique levels for the dropdown
   const levels = Array.from(new Set(athletes.map((a) => a.level))).sort();
-  const levelOptions = ["All", ...levels];
+  const levelOptions = ['All', ...levels];
 
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === "COACH" ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content */}
@@ -231,8 +300,8 @@ const ManageAthletes: React.FC = () => {
                     onClick={() => setCurrentPage(page)}
                     className={`px-3 py-1 rounded ${
                       page === currentPage
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 hover:bg-gray-300 text-black"
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-black'
                     }`}
                   >
                     {page}

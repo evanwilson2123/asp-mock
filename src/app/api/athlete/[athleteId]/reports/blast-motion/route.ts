@@ -3,13 +3,84 @@ import prisma from '@/lib/prismaDb';
 import { auth } from '@clerk/nextjs/server';
 
 /**
- * GET handler:
- * - Finds all `BlastMotion` records for the given athlete.
- * - Groups data by `sessionId`.
- * - Calculates average speeds for each session and sorts by session date (latest to earliest).
- * - Computes global max batSpeed and peakHandSpeed across all sessions.
- * - Returns a list of sessions for navigation.
+ * GET /api/blastmotion/:athleteId
+ *
+ * This API endpoint retrieves **BlastMotion** data for a specific athlete. It provides:
+ * - **Global max metrics** for bat speed, hand speed, rotational acceleration, and power
+ * - **Session averages** for key metrics (bat speed, hand speed, rotational acceleration, power, early connection, connection at impact)
+ * - **Session metadata** (IDs and dates) for navigation and charting
+ *
+ * ---
+ *
+ * @auth
+ * - **Authentication Required:** This endpoint requires the user to be authenticated via Clerk.
+ * - Returns **400 AUTH FAILED** if authentication is unsuccessful.
+ *
+ * ---
+ *
+ * @pathParam {string} athleteId - The unique ID of the athlete whose BlastMotion data is being requested.
+ *
+ * ---
+ *
+ * @returns {Promise<NextResponse>} JSON response containing:
+ *
+ * - **Success (200):**
+ *   Returns the global max values and session averages for the athlete.
+ *   ```json
+ *   {
+ *     "maxBatSpeed": 95,
+ *     "maxHandSpeed": 30,
+ *     "maxRotationalAcceleration": 50,
+ *     "maxPower": 1200,
+ *     "sessionAverages": [
+ *       {
+ *         "sessionId": "sess_001",
+ *         "date": "2024-05-01",
+ *         "avgBatSpeed": 85,
+ *         "avgHandSpeed": 28,
+ *         "avgRotaionalAcceleration": 45,
+ *         "avgPower": 1100,
+ *         "avgEarlyConnection": 90,
+ *         "avgConnectionAtImpacts": 85
+ *       }
+ *     ],
+ *     "sessions": [
+ *       { "sessionId": "sess_001", "date": "2024-05-01" },
+ *       { "sessionId": "sess_002", "date": "2024-06-01" }
+ *     ]
+ *   }
+ *   ```
+ *
+ * - **Error (400):**
+ *   Occurs when authentication fails.
+ *   ```json
+ *   { "error": "AUTH FAILED" }
+ *   ```
+ *
+ * - **Error (404):**
+ *   Occurs when no BlastMotion data is found for the specified athlete.
+ *   ```json
+ *   { "error": "No data found for this athlete" }
+ *   ```
+ *
+ * - **Error (500):**
+ *   Occurs due to server/database errors during data fetching.
+ *   ```json
+ *   { "error": "Failed to fetch BlastMotion data", "details": "Internal server error details" }
+ *   ```
+ *
+ * ---
+ *
+ * @example
+ * // Example request to fetch BlastMotion data for an athlete
+ * GET /api/blastmotion/athlete_12345
+ *
+ * @errorHandling
+ * - Returns **400** if authentication fails.
+ * - Returns **404** if no BlastMotion data exists for the athlete.
+ * - Returns **500** for internal server/database errors.
  */
+
 export async function GET(req: NextRequest, context: any) {
   const { userId } = await auth();
   if (!userId) {

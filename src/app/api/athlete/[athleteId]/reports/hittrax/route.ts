@@ -1,17 +1,90 @@
-import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prismaDb";
-import { auth } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prismaDb';
+import { auth } from '@clerk/nextjs/server';
 
 /**
- * GET handler:
- * - Fetches `HitTrax` records for the given athlete.
- * - Groups data by `sessionId` and calculates stats (Max Exit Velo, Max Distance, etc.).
- * - Returns a list of clickable sessions along with aggregated stats.
+ * GET /api/hittrax/:athleteId
+ *
+ * This API endpoint retrieves **HitTrax** data for a specific athlete. It provides:
+ * - **Global max metrics** for exit velocity and distance
+ * - **Hard Hit Average** (percentage of hits with exit velocity ≥ 95 mph)
+ * - **Session averages** for exit velocity
+ * - **Session metadata** (IDs and dates) for navigation and charting
+ *
+ * ---
+ *
+ * @auth
+ * - **Authentication Required:** This endpoint requires the user to be authenticated via Clerk.
+ * - Returns **400 AUTH FAILED** if authentication is unsuccessful.
+ *
+ * ---
+ *
+ * @pathParam {string} athleteId - The unique ID of the athlete whose HitTrax data is being requested.
+ *
+ * ---
+ *
+ * @returns {Promise<NextResponse>} JSON response containing:
+ *
+ * - **Success (200):**
+ *   Returns the global max values, hard hit average, and session averages for the athlete.
+ *   ```json
+ *   {
+ *     "maxExitVelo": 102,
+ *     "maxDistance": 420,
+ *     "hardHitAverage": 0.35,
+ *     "sessionAverages": [
+ *       {
+ *         "sessionId": "sess_001",
+ *         "date": "2024-05-01",
+ *         "avgExitVelo": 90
+ *       },
+ *       {
+ *         "sessionId": "sess_002",
+ *         "date": "2024-06-01",
+ *         "avgExitVelo": 88
+ *       }
+ *     ],
+ *     "sessions": [
+ *       { "sessionId": "sess_001", "date": "2024-05-01" },
+ *       { "sessionId": "sess_002", "date": "2024-06-01" }
+ *     ]
+ *   }
+ *   ```
+ *
+ * - **Error (400):**
+ *   Occurs when authentication fails.
+ *   ```json
+ *   { "error": "AUTH FAILED" }
+ *   ```
+ *
+ * - **Error (404):**
+ *   Occurs when no HitTrax data is found for the specified athlete.
+ *   ```json
+ *   { "error": "No HitTrax data found for this athlete" }
+ *   ```
+ *
+ * - **Error (500):**
+ *   Occurs due to server/database errors during data fetching.
+ *   ```json
+ *   { "error": "Failed to fetch HitTrax data", "details": "Internal server error details" }
+ *   ```
+ *
+ * ---
+ *
+ * @example
+ * // Example request to fetch HitTrax data for an athlete
+ * GET /api/hittrax/athlete_12345
+ *
+ * @errorHandling
+ * - Returns **400** if authentication fails.
+ * - Returns **404** if no HitTrax data exists for the athlete.
+ * - Returns **500** for internal server/database errors.
  */
+
 export async function GET(req: NextRequest, context: any) {
   const { userId } = await auth();
   if (!userId) {
-    return NextResponse.json({ error: "AUTH FAILED" }, { status: 400 });
+    return NextResponse.json({ error: 'AUTH FAILED' }, { status: 400 });
   }
 
   const athleteId = context.params.athleteId;
@@ -19,12 +92,12 @@ export async function GET(req: NextRequest, context: any) {
   try {
     const records = await prisma.hitTrax.findMany({
       where: { athlete: athleteId },
-      orderBy: { date: "desc" }, // Sort by session date (latest first)
+      orderBy: { date: 'desc' }, // Sort by session date (latest first)
     });
 
     if (!records || records.length === 0) {
       return NextResponse.json(
-        { error: "No HitTrax data found for this athlete" },
+        { error: 'No HitTrax data found for this athlete' },
         { status: 404 }
       );
     }
@@ -42,7 +115,7 @@ export async function GET(req: NextRequest, context: any) {
         sessions[sessionId] = {
           velocities: [],
           distances: [],
-          date: date ? new Date(date).toISOString().split("T")[0] : "No Date",
+          date: date ? new Date(date).toISOString().split('T')[0] : 'No Date',
         };
       }
 
@@ -90,9 +163,9 @@ export async function GET(req: NextRequest, context: any) {
       })),
     });
   } catch (error: any) {
-    console.error("Error fetching HitTrax data:", error);
+    console.error('Error fetching HitTrax data:', error);
     return NextResponse.json(
-      { error: "Failed to fetch HitTrax data", details: error.message },
+      { error: 'Failed to fetch HitTrax data', details: error.message },
       { status: 500 }
     );
   }

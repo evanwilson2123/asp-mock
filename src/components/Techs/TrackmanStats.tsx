@@ -31,6 +31,56 @@ ChartJS.register(
   Legend
 );
 
+/**
+ * TrackmanStats Component
+ *
+ * This component provides comprehensive data visualization and insights for pitching sessions
+ * using Trackman data. It displays both peak and average velocities for different pitch types,
+ * along with session history that users can click to view session-specific details.
+ *
+ * Key Features:
+ * - **Dynamic Data Fetching:**
+ *   - Retrieves aggregated data for an athlete's pitching sessions.
+ *   - Displays peak velocities per pitch type and average velocities over time.
+ *   - Handles loading states and API errors gracefully.
+ *
+ * - **Visual Analytics:**
+ *   1. **Peak Velocities Display:**
+ *      - Shows peak velocities for different pitch types in circular indicators.
+ *      - Color-coded for easy differentiation between pitch types.
+ *
+ *   2. **Averages Over Time (Line Chart):**
+ *      - Line chart to visualize average pitch velocities across sessions.
+ *      - Multiple pitch types plotted for comparative analysis.
+ *
+ *   3. **Session Navigation:**
+ *      - List of past sessions with clickable links to detailed session views.
+ *
+ * - **Responsive Design:**
+ *   - Optimized layout for both mobile and desktop devices using Tailwind CSS.
+ *   - Charts adapt dynamically to screen sizes for better readability.
+ *
+ * - **Role-Based Navigation:**
+ *   - Displays either the **CoachSidebar** or **Sidebar** based on the user's role.
+ *   - Enhances user experience with relevant navigation options.
+ *
+ * Technologies Used:
+ * - **React** with hooks (`useState`, `useEffect`) for state management and lifecycle control.
+ * - **Next.js** for routing and API integration.
+ * - **Clerk** for authentication and role-based access control.
+ * - **Chart.js** with `react-chartjs-2` for data visualization.
+ * - **Tailwind CSS** for responsive UI design.
+ *
+ * Use Cases:
+ * - **For Coaches:**
+ *   - Analyze an athlete's pitch velocity trends over time.
+ *   - Identify peak performance metrics for different pitch types.
+ *
+ * - **For Athletes:**
+ *   - Gain insights into pitching consistency and progress.
+ *   - Monitor performance trends and adjust training routines accordingly.
+ */
+
 const TrackmanStats: React.FC = () => {
   const [peakVelocities, setPeakVelocities] = useState<
     { pitchType: string; peakSpeed: number }[]

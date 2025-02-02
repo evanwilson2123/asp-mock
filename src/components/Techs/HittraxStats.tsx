@@ -41,6 +41,56 @@ interface Session {
   date: string;
 }
 
+/**
+ * HitTraxStats Component
+ *
+ * This component provides an in-depth view of an athlete's hitting performance
+ * using data from HitTrax sessions. It visualizes metrics like Exit Velocity,
+ * Distance, and Hard Hit Average to help coaches and athletes analyze trends
+ * and identify areas for improvement.
+ *
+ * Key Features:
+ * - **Dynamic Data Fetching:**
+ *   - Retrieves HitTrax data including maximum exit velocity, distance,
+ *     hard-hit average, and session averages.
+ *   - Handles errors gracefully with descriptive feedback messages.
+ *
+ * - **Performance Metrics Visualization:**
+ *   - Displays key statistics:
+ *     - **Max Exit Velocity (mph)**
+ *     - **Max Distance (ft)**
+ *     - **Hard Hit Average (%)**
+ *   - Circular stat cards highlight each metric for clear, quick insights.
+ *
+ * - **Session Tracking:**
+ *   - Lists past sessions with clickable links for deeper analysis of each session.
+ *   - Sessions are sorted from the latest to the earliest for easy access.
+ *
+ * - **Interactive Line Chart:**
+ *   - Tracks the trend of **Average Exit Velocity** over time.
+ *   - Provides responsive, interactive visualization with hover tooltips.
+ *
+ * - **Role-Based Navigation:**
+ *   - Dynamically renders the **CoachSidebar** or **Sidebar** based on the user's role.
+ *   - Ensures a personalized experience for coaches and athletes.
+ *
+ * - **Mobile-Responsive Design:**
+ *   - Optimized layout for both mobile and desktop views using Tailwind CSS.
+ *   - Sidebar toggles for mobile and persistent display on larger screens.
+ *
+ * Technologies Used:
+ * - **React** with hooks (`useState`, `useEffect`) for state management and lifecycle control
+ * - **Next.js** for routing and API integration
+ * - **Clerk** for authentication and user role management
+ * - **Chart.js** with `react-chartjs-2` for data visualization
+ * - **Tailwind CSS** for clean, responsive UI styling
+ *
+ * Usage:
+ * - Ideal for coaches and athletes reviewing performance trends over time.
+ * - Provides insights into hitting power, consistency, and hard-hit rates.
+ * - Allows easy navigation to individual sessions for granular performance breakdowns.
+ */
+
 const HitTraxStats: React.FC = () => {
   const [maxExitVelo, setMaxExitVelo] = useState<number>(0);
   const [maxDistance, setMaxDistance] = useState<number>(0);
