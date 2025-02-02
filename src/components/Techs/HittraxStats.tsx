@@ -53,14 +53,15 @@ interface ZoneAverage {
  * HitTraxStats Component
  *
  * This component provides an in-depth view of an athlete's hitting performance
- * using data from HitTrax sessions. It renders two separate sections for
- * all-time metrics (global and distance metrics) and two charts:
+ * using data from HitTrax sessions. It renders:
  *
- * 1. Overall session averages for exit velocity and launch angle.
- * 2. Zone-specific averages (pull, center, oppo) for exit velocity and launch angle.
+ * - A clickable session list (Latest to Earliest) for navigation.
+ * - Two metric sections: Global Metrics and Distance Metrics.
+ * - Two charts:
+ *    1. Overall session averages for exit velocity and launch angle.
+ *    2. Zone-specific averages (pull, center, oppo) for exit velocity and launch angle.
  *
- * It also includes a clickable session list at the top so users can navigate
- * to individual session details.
+ * The charts are wrapped in containers with fixed heights so that they are readable on mobile.
  */
 const HitTraxStats: React.FC = () => {
   // Global metric states
@@ -138,6 +139,17 @@ const HitTraxStats: React.FC = () => {
         <ErrorMessage role={role as string} message={errorMessage} />
       </div>
     );
+
+  // Chart options with maintainAspectRatio set to false for responsiveness.
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+    },
+  };
 
   // Prepare chart data for overall session trends
   const labels = sessionData.map((s) => s.date);
@@ -230,15 +242,6 @@ const HitTraxStats: React.FC = () => {
         tension: 0.2,
       },
     ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-    },
   };
 
   // Define arrays for the two metric sections
@@ -359,24 +362,34 @@ const HitTraxStats: React.FC = () => {
         </div>
 
         {/* Overall Chart Section */}
-        <div className="bg-white p-6 rounded shadow mb-8">
+        <div
+          className="bg-white p-6 rounded shadow mb-8"
+          style={{ minHeight: '300px' }}
+        >
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Average Exit Velocity & Launch Angle Over Time
           </h2>
           {sessionData.length > 0 ? (
-            <Line data={chartData} options={chartOptions} />
+            <div className="w-full h-72 md:h-96">
+              <Line data={chartData} options={chartOptions} />
+            </div>
           ) : (
             <p className="text-gray-500">No session data available.</p>
           )}
         </div>
 
         {/* Zone Averages Chart Section */}
-        <div className="bg-white p-6 rounded shadow">
+        <div
+          className="bg-white p-6 rounded shadow"
+          style={{ minHeight: '300px' }}
+        >
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Zone Averages (Pull, Center & Oppo)
           </h2>
           {zoneData.length > 0 ? (
-            <Line data={zoneChartData} options={chartOptions} />
+            <div className="w-full h-72 md:h-96">
+              <Line data={zoneChartData} options={chartOptions} />
+            </div>
           ) : (
             <p className="text-gray-500">No zone data available.</p>
           )}

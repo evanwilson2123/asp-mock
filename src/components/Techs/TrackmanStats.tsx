@@ -8,7 +8,6 @@ import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '@/components/Loader';
 import SignInPrompt from '../SignInPrompt';
 import { Line } from 'react-chartjs-2';
-
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,63 +30,38 @@ ChartJS.register(
   Legend
 );
 
+interface Session {
+  sessionId: string;
+  date: string;
+}
+
+interface AvgPitchSpeed {
+  date: string;
+  pitchType: string;
+  avgSpeed: number;
+}
+
 /**
  * TrackmanStats Component
  *
- * This component provides comprehensive data visualization and insights for pitching sessions
- * using Trackman data. It displays both peak and average velocities for different pitch types,
- * along with session history that users can click to view session-specific details.
+ * This component provides comprehensive data visualization for pitching sessions
+ * using Trackman data. It displays:
  *
- * Key Features:
- * - **Dynamic Data Fetching:**
- *   - Retrieves aggregated data for an athlete's pitching sessions.
- *   - Displays peak velocities per pitch type and average velocities over time.
- *   - Handles loading states and API errors gracefully.
+ * - Peak velocities for each pitch type (in circular metric cards).
+ * - A clickable session list for navigation.
+ * - A line chart for average pitch velocities over time (grouped by pitch type).
+ * - A connections chart is not included here (but can be added similarly).
  *
- * - **Visual Analytics:**
- *   1. **Peak Velocities Display:**
- *      - Shows peak velocities for different pitch types in circular indicators.
- *      - Color-coded for easy differentiation between pitch types.
- *
- *   2. **Averages Over Time (Line Chart):**
- *      - Line chart to visualize average pitch velocities across sessions.
- *      - Multiple pitch types plotted for comparative analysis.
- *
- *   3. **Session Navigation:**
- *      - List of past sessions with clickable links to detailed session views.
- *
- * - **Responsive Design:**
- *   - Optimized layout for both mobile and desktop devices using Tailwind CSS.
- *   - Charts adapt dynamically to screen sizes for better readability.
- *
- * - **Role-Based Navigation:**
- *   - Displays either the **CoachSidebar** or **Sidebar** based on the user's role.
- *   - Enhances user experience with relevant navigation options.
- *
- * Technologies Used:
- * - **React** with hooks (`useState`, `useEffect`) for state management and lifecycle control.
- * - **Next.js** for routing and API integration.
- * - **Clerk** for authentication and role-based access control.
- * - **Chart.js** with `react-chartjs-2` for data visualization.
- * - **Tailwind CSS** for responsive UI design.
- *
- * Use Cases:
- * - **For Coaches:**
- *   - Analyze an athlete's pitch velocity trends over time.
- *   - Identify peak performance metrics for different pitch types.
- *
- * - **For Athletes:**
- *   - Gain insights into pitching consistency and progress.
- *   - Monitor performance trends and adjust training routines accordingly.
+ * The charts are wrapped in containers with fixed heights and use the
+ * maintainAspectRatio option so they remain legible on mobile.
  */
-
 const TrackmanStats: React.FC = () => {
   const [peakVelocities, setPeakVelocities] = useState<
     { pitchType: string; peakSpeed: number }[]
   >([]);
-  const [averageVelocities, setAverageVelocities] = useState<
-    { date: string; pitchType: string; avgSpeed: number }[]
-  >([]);
+  const [averageVelocities, setAverageVelocities] = useState<AvgPitchSpeed[]>(
+    []
+  );
   const [sessions, setSessions] = useState<
     { sessionId: string; date: string }[]
   >([]); // Clickable sessions
@@ -106,9 +80,9 @@ const TrackmanStats: React.FC = () => {
           const errorMessage =
             res.status === 404
               ? 'Trackman data could not be found.'
-              : res.status == 500
+              : res.status === 500
                 ? 'We encountered an issue on our end. Please try again later.'
-                : 'An unexpected issue occured. Please try again.';
+                : 'An unexpected issue occurred. Please try again.';
           setErrorMessage(errorMessage);
           return;
         }
@@ -157,6 +131,44 @@ const TrackmanStats: React.FC = () => {
     '#9966FF', // Purple
     '#FF9F40', // Orange
   ];
+
+  // Prepare chart data for the Averages Over Time chart.
+  // Group by pitch type using the unique dates from the data.
+  const uniqueDates = [...new Set(averageVelocities.map((d) => d.date))];
+  const datasets = Object.entries(
+    averageVelocities.reduce(
+      (acc, curr) => {
+        if (!acc[curr.pitchType]) {
+          acc[curr.pitchType] = [];
+        }
+        acc[curr.pitchType].push(curr.avgSpeed);
+        return acc;
+      },
+      {} as { [key: string]: number[] }
+    )
+  ).map(([pitchType, avgSpeeds], index) => ({
+    label: pitchType,
+    data: avgSpeeds,
+    borderColor: colors[index % colors.length],
+    backgroundColor: colors[index % colors.length] + '33', // Add transparency
+    fill: true,
+    tension: 0.3,
+  }));
+
+  const mainChartData = {
+    labels: uniqueDates,
+    datasets,
+  };
+
+  const mainChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+    },
+  };
 
   return (
     <div className="flex min-h-screen overflow-x-hidden">
@@ -234,40 +246,9 @@ const TrackmanStats: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Averages Over Time
           </h2>
-          <div className="w-full overflow-x-auto">
+          <div className="w-full h-72 md:h-96">
             {averageVelocities.length > 0 ? (
-              <Line
-                data={{
-                  labels: [...new Set(averageVelocities.map((d) => d.date))],
-                  datasets: Object.entries(
-                    averageVelocities.reduce(
-                      (acc, curr) => {
-                        if (!acc[curr.pitchType]) {
-                          acc[curr.pitchType] = [];
-                        }
-                        acc[curr.pitchType].push(curr.avgSpeed);
-                        return acc;
-                      },
-                      {} as { [key: string]: number[] }
-                    )
-                  ).map(([pitchType, avgSpeeds], index) => ({
-                    label: pitchType,
-                    data: avgSpeeds,
-                    borderColor: colors[index % colors.length],
-                    backgroundColor: colors[index % colors.length] + '33', // Add transparency
-                    fill: true,
-                    tension: 0.3,
-                  })),
-                }}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: {
-                      position: 'top' as const,
-                    },
-                  },
-                }}
-              />
+              <Line data={mainChartData} options={mainChartOptions} />
             ) : (
               <p className="text-gray-500">No session data available.</p>
             )}

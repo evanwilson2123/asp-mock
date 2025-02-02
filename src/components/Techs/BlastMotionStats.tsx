@@ -57,47 +57,12 @@ interface Session {
  * visualizations for various swing statistics such as bat speed, hand speed,
  * rotational acceleration, power, and connection metrics.
  *
- * Key Features:
- * - **Dynamic Data Fetching:**
- *   - Retrieves Blast Motion data from the API, including session details,
- *     maximum metrics, and session averages.
- *   - Displays a list of all sessions with clickable links for detailed views.
+ * It includes a clickable session list, circular metric cards, and two charts:
+ * - The main chart shows averages over time for bat speed, hand speed, rotational acceleration, and power.
+ * - The connections chart compares early connection angles and connection at impact, with an annotation.
  *
- * - **Performance Metrics:**
- *   - Showcases maximum recorded values for:
- *     - Bat Speed
- *     - Hand Speed
- *     - Rotational Acceleration
- *     - Power
- *   - Metrics are visually highlighted in circular progress cards for quick reference.
- *
- * - **Interactive Charts:**
- *   - **Averages Over Time:**
- *     - Displays line charts for bat speed, hand speed, rotational acceleration, and power.
- *   - **Connections Over Time:**
- *     - Compares early connection angles and connection at impact with dynamic annotations.
- *     - Uses the Chart.js annotation plugin to highlight thresholds (e.g., 90° reference line).
- *
- * - **Role-Based Navigation:**
- *   - Dynamically renders CoachSidebar or Sidebar based on the user's role (Coach/Admin).
- *
- * - **Error Handling & User Feedback:**
- *   - Displays loading indicators during data fetches.
- *   - Provides clear error messages when data is unavailable or API requests fail.
- *
- * Technologies Used:
- * - React (with hooks for state management and side effects)
- * - Next.js (for routing and API integration)
- * - Clerk (for authentication and role management)
- * - Chart.js with `chartjs-plugin-annotation` for data visualization
- * - Tailwind CSS for modern, responsive styling
- *
- * Usage:
- * - Typically accessed from an athlete's profile to analyze swing performance data.
- * - Ideal for coaches and athletes to monitor performance trends, identify areas for improvement,
- *   and track development over time.
+ * The charts are wrapped in containers with fixed heights so they remain legible on mobile.
  */
-
 const BlastMotionStats: React.FC = () => {
   const [maxBatSpeed, setMaxBatSpeed] = useState<number>(0);
   const [maxHandSpeed, setMaxHandSpeed] = useState<number>(0);
@@ -211,6 +176,7 @@ const BlastMotionStats: React.FC = () => {
 
   const mainChartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top' as const,
@@ -245,10 +211,10 @@ const BlastMotionStats: React.FC = () => {
     ],
   };
 
-  // Define the options for the connections chart.
-  // Cast the options as any to bypass the type incompatibility with the annotation plugin.
+  // Define the options for the connections chart (with annotation)
   const connectionsChartOptions: any = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top' as const,
@@ -288,7 +254,7 @@ const BlastMotionStats: React.FC = () => {
           Blast Motion Report
         </h1>
 
-        {/* Session List */}
+        {/* Clickable Session List */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Sessions (Latest to Earliest)
@@ -361,27 +327,37 @@ const BlastMotionStats: React.FC = () => {
         </div>
 
         {/* Main Chart: Averages Over Time */}
-        <div className="bg-white p-6 rounded shadow mb-8">
+        <div
+          className="bg-white p-6 rounded shadow mb-8"
+          style={{ minHeight: '300px' }}
+        >
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Averages Over Time
           </h2>
           {sessionData.length > 0 ? (
-            <Line data={mainChartData} options={mainChartOptions} />
+            <div className="w-full h-72 md:h-96">
+              <Line data={mainChartData} options={mainChartOptions} />
+            </div>
           ) : (
             <p className="text-gray-500">No session data available.</p>
           )}
         </div>
 
         {/* Connections Chart: Early Connections & Connection at Impacts */}
-        <div className="bg-white p-6 rounded shadow">
+        <div
+          className="bg-white p-6 rounded shadow"
+          style={{ minHeight: '300px' }}
+        >
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Connections Over Time
           </h2>
           {sessionData.length > 0 ? (
-            <Line
-              data={connectionsChartData}
-              options={connectionsChartOptions}
-            />
+            <div className="w-full h-72 md:h-96">
+              <Line
+                data={connectionsChartData}
+                options={connectionsChartOptions}
+              />
+            </div>
           ) : (
             <p className="text-gray-500">No connection data available.</p>
           )}
