@@ -18,6 +18,9 @@ const ComingSoon: React.FC<ComingSoonProps> = ({ description }) => {
       <div className="hidden md:block w-64 bg-gray-900 text-white min-h-screen">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
+      <div className="md:hidden bg-gray-100">
+        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 p-6 flex flex-col items-center justify-center overflow-y-auto">
