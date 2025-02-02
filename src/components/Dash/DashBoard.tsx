@@ -313,24 +313,6 @@ const Dashboard: React.FC = () => {
       <div className="flex-1 p-4 text-gray-800">
         <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
 
-        {/* Level Selector */}
-        <div className="mb-6">
-          <label className="block mb-2 text-lg font-semibold">
-            Select Level
-          </label>
-          <select
-            value={level}
-            onChange={(e) => setLevel(e.target.value)}
-            className="p-2 border rounded"
-          >
-            {levels.map((lvl) => (
-              <option key={lvl} value={lvl}>
-                {lvl}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* Athlete Numbers Card - Centered & Organized */}
         {athleteNums && (
           <div className="mb-8">
@@ -410,6 +392,23 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         )}
+        {/* Level Selector */}
+        <div className="mb-6">
+          <label className="block mb-2 text-lg font-semibold">
+            Select Level
+          </label>
+          <select
+            value={level}
+            onChange={(e) => setLevel(e.target.value)}
+            className="p-2 border rounded"
+          >
+            {levels.map((lvl) => (
+              <option key={lvl} value={lvl}>
+                {lvl}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Grid of cards for each "tech" */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
