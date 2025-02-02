@@ -15,7 +15,7 @@ const ComingSoon: React.FC<ComingSoonProps> = ({ description }) => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="hidden md:block w-64 bg-gray-900 text-white fixed top-0 left-0 h-full">
+      <div className="hidden md:block w-64 bg-gray-900 text-white fixed left-0 h-full">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
