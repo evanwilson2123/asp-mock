@@ -30,10 +30,10 @@ ChartJS.register(
   Legend
 );
 
-interface Session {
-  sessionId: string;
-  date: string;
-}
+// interface Session {
+//   sessionId: string;
+//   date: string;
+// }
 
 interface AvgPitchSpeed {
   date: string;

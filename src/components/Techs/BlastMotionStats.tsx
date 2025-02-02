@@ -311,7 +311,7 @@ const BlastMotionStats: React.FC = () => {
                 {maxRotationalAccel}
               </span>
             </div>
-            <p className="mt-2 text-yellow-600 font-medium">G's</p>
+            <p className="mt-2 text-yellow-600 font-medium">G&apos;s</p>
           </div>
 
           {/* Power Card */}
