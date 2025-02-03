@@ -97,28 +97,27 @@ const IntendedZone: React.FC = () => {
   // Store the scaled glove image as a canvas.
   const [gloveImage, setGloveImage] = useState<HTMLCanvasElement | null>(null);
 
-  // Disable scrolling when this component mounts and restore on unmount.
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, []);
+  // (Removed the scrolling disabling effect.)
+  // useEffect(() => {
+  //   const originalOverflow = document.body.style.overflow;
+  //   document.body.style.overflow = 'hidden';
+  //   return () => {
+  //     document.body.style.overflow = originalOverflow;
+  //   };
+  // }, []);
 
   // Load and scale the glove image on mount.
   useEffect(() => {
     const img = new Image();
     img.src = 'mitt.webp'; // Ensure this path is correct and the image exists.
     img.onload = () => {
-      // Adjust the scale factor (0.2 makes the image smaller).
+      // Adjust the scale factor as needed.
       const scaled = createScaledImage(img, 0.275);
       setGloveImage(scaled);
     };
   }, []);
 
   // If the window dimensions are not large enough, return an alternative UI.
-  // Adjust the threshold values as needed.
   if (width && height && (width < 1024 || height < 768)) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900">
@@ -156,7 +155,6 @@ const IntendedZone: React.FC = () => {
 
   const handleAddPitch = () => {
     if (intended && actual) {
-      // Use the raw difference in feet.
       const deltaXFeet = actual.x - intended.x;
       const deltaYFeet = actual.y - intended.y;
       const distanceFeet = Math.sqrt(deltaXFeet ** 2 + deltaYFeet ** 2);
@@ -185,7 +183,6 @@ const IntendedZone: React.FC = () => {
   // Construct the data object for the scatter chart.
   const data = {
     datasets: [
-      // One dataset per pitch type for actual pitch locations.
       ...pitchTypes.map((type, index) => ({
         label: type,
         data: pitches
@@ -196,7 +193,6 @@ const IntendedZone: React.FC = () => {
         order: 0,
         z: 0,
       })),
-      // Dataset for the intended point.
       {
         label: 'Intended',
         data: intended ? [intended] : [],
@@ -205,7 +201,6 @@ const IntendedZone: React.FC = () => {
         order: 1,
         z: 1,
       },
-      // Dataset for the actual point.
       {
         label: 'Actual',
         data: actual ? [actual] : [],
@@ -217,16 +212,11 @@ const IntendedZone: React.FC = () => {
     ],
   };
 
-  // Chart configuration options.
   const options: ChartOptions<'scatter'> = {
-    animation: {
-      duration: 0,
-    },
     responsive: true,
     maintainAspectRatio: true,
-    layout: {
-      padding: { top: 20 },
-    },
+    animation: { duration: 0 },
+    layout: { padding: { top: 20 } },
     scales: {
       x: {
         title: {
@@ -234,9 +224,9 @@ const IntendedZone: React.FC = () => {
           text: 'Horizontal Location (ft)',
           color: 'white',
         },
-        min: -3,
-        max: 3,
-        ticks: { stepSize: 1, color: 'white' },
+        min: -2.5,
+        max: 2.5,
+        ticks: { stepSize: 0.5, color: 'white' },
         grid: { color: '#1a202c' },
       },
       y: {
@@ -245,16 +235,14 @@ const IntendedZone: React.FC = () => {
           text: 'Vertical Location (ft)',
           color: 'white',
         },
-        min: 0,
-        max: 5,
-        ticks: { stepSize: 1, color: 'white' },
+        min: 0.0915,
+        max: 5.0915,
+        ticks: { stepSize: 0.5, color: 'white' },
         grid: { color: '#1a202c' },
       },
     },
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       tooltip: {
         bodyColor: 'white',
         titleColor: 'white',
@@ -268,7 +256,7 @@ const IntendedZone: React.FC = () => {
             xMax: outerXMax,
             yMin: outerYMin,
             yMax: outerYMax,
-            borderWidth: 4,
+            borderWidth: 3,
             borderColor: 'white',
             backgroundColor: 'transparent',
           } as AnnotationOptions,
@@ -278,7 +266,7 @@ const IntendedZone: React.FC = () => {
             xMax: 0.703,
             yMin: 1.64,
             yMax: 3.55,
-            borderWidth: 3,
+            borderWidth: 2,
             borderColor: 'white',
             backgroundColor: 'transparent',
           } as AnnotationOptions,
@@ -289,7 +277,7 @@ const IntendedZone: React.FC = () => {
             yMin: outerYMin,
             yMax: outerYMax,
             borderColor: 'white',
-            borderWidth: 3,
+            borderWidth: 2,
           } as AnnotationOptions,
           gridV2: {
             type: 'line',
@@ -298,7 +286,7 @@ const IntendedZone: React.FC = () => {
             yMin: outerYMin,
             yMax: outerYMax,
             borderColor: 'white',
-            borderWidth: 3,
+            borderWidth: 2,
           } as AnnotationOptions,
           gridH1: {
             type: 'line',
@@ -307,7 +295,7 @@ const IntendedZone: React.FC = () => {
             xMin: outerXMin,
             xMax: outerXMax,
             borderColor: 'white',
-            borderWidth: 3,
+            borderWidth: 2,
           } as AnnotationOptions,
           gridH2: {
             type: 'line',
@@ -316,7 +304,7 @@ const IntendedZone: React.FC = () => {
             xMin: outerXMin,
             xMax: outerXMax,
             borderColor: 'white',
-            borderWidth: 3,
+            borderWidth: 2,
           } as AnnotationOptions,
         },
       },
@@ -325,10 +313,8 @@ const IntendedZone: React.FC = () => {
   };
 
   return (
-    // Prevent scrolling by setting overflow-hidden on the outer container.
-    <div className="flex flex-col items-center bg-black min-h-screen  overflow-hidden">
+    <div className="flex flex-col items-center justify-center bg-black min-h-screen">
       <div className="flex flex-row items-center justify-center w-full gap-8">
-        {/* Left: Select Pitch Type */}
         <div className="flex flex-col items-center">
           <label
             htmlFor="pitch-type"
@@ -350,8 +336,7 @@ const IntendedZone: React.FC = () => {
           </select>
         </div>
 
-        {/* Center: Chart */}
-        <div style={{ width: '1200px', height: '1200px' }}>
+        <div className="mb-20" style={{ width: '1200px', height: '1200px' }}>
           <Scatter
             ref={chartRef}
             data={data}
@@ -365,7 +350,6 @@ const IntendedZone: React.FC = () => {
           />
         </div>
 
-        {/* Right: Add Pitch and Reset Buttons */}
         <div className="flex flex-col items-center">
           <button
             onClick={handleAddPitch}
