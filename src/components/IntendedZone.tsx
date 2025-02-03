@@ -210,7 +210,7 @@ const IntendedZone: React.FC = () => {
         label: 'Actual',
         data: actual ? [actual] : [],
         backgroundColor: 'red',
-        pointRadius: 12,
+        pointRadius: 14,
         order: 2,
         z: 2,
       },
@@ -219,6 +219,9 @@ const IntendedZone: React.FC = () => {
 
   // Chart configuration options.
   const options: ChartOptions<'scatter'> = {
+    animation: {
+      duration: 0,
+    },
     responsive: true,
     maintainAspectRatio: true,
     layout: {
@@ -266,7 +269,7 @@ const IntendedZone: React.FC = () => {
             xMax: outerXMax,
             yMin: outerYMin,
             yMax: outerYMax,
-            borderWidth: 2,
+            borderWidth: 3,
             borderColor: 'white',
             backgroundColor: 'transparent',
           } as AnnotationOptions,
@@ -276,7 +279,7 @@ const IntendedZone: React.FC = () => {
             xMax: 0.703,
             yMin: 1.64,
             yMax: 3.55,
-            borderWidth: 1,
+            borderWidth: 2,
             borderColor: 'white',
             backgroundColor: 'transparent',
           } as AnnotationOptions,
@@ -287,7 +290,7 @@ const IntendedZone: React.FC = () => {
             yMin: outerYMin,
             yMax: outerYMax,
             borderColor: 'white',
-            borderWidth: 1,
+            borderWidth: 2,
           } as AnnotationOptions,
           gridV2: {
             type: 'line',
@@ -296,7 +299,7 @@ const IntendedZone: React.FC = () => {
             yMin: outerYMin,
             yMax: outerYMax,
             borderColor: 'white',
-            borderWidth: 1,
+            borderWidth: 2,
           } as AnnotationOptions,
           gridH1: {
             type: 'line',
@@ -305,7 +308,7 @@ const IntendedZone: React.FC = () => {
             xMin: outerXMin,
             xMax: outerXMax,
             borderColor: 'white',
-            borderWidth: 1,
+            borderWidth: 2,
           } as AnnotationOptions,
           gridH2: {
             type: 'line',
@@ -314,7 +317,7 @@ const IntendedZone: React.FC = () => {
             xMin: outerXMin,
             xMax: outerXMax,
             borderColor: 'white',
-            borderWidth: 1,
+            borderWidth: 2,
           } as AnnotationOptions,
         },
       },
