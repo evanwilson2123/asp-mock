@@ -170,7 +170,7 @@ const IntendedZone: React.FC = () => {
         label: 'Actual',
         data: actual ? [actual] : [],
         backgroundColor: 'red',
-        pointRadius: 8,
+        pointRadius: 12,
         order: 2, // Draw actual points on top.
         z: 2,
       },
