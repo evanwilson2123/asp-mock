@@ -112,7 +112,7 @@ const IntendedZone: React.FC = () => {
     img.src = 'mitt.webp'; // Ensure this path is correct and the image exists.
     img.onload = () => {
       // Adjust the scale factor as needed.
-      const scaled = createScaledImage(img, 0.275);
+      const scaled = createScaledImage(img, 0.325);
       setGloveImage(scaled);
     };
   }, []);
