@@ -35,12 +35,12 @@ const outerWidth = outerXMax - outerXMin; // 1.66
 const outerHeight = outerYMax - outerYMin; // 2.157
 
 // Vertical grid lines (divide width into 3 equal parts)
-const verticalLine1 = outerXMin + outerWidth / 3; // ≈ -0.83 + 0.5533 = -0.2767
-const verticalLine2 = outerXMin + (2 * outerWidth) / 3; // ≈ -0.83 + 1.1067 = 0.2767
+const verticalLine1 = outerXMin + outerWidth / 3; // ≈ -0.2767
+const verticalLine2 = outerXMin + (2 * outerWidth) / 3; // ≈ 0.2767
 
 // Horizontal grid lines (divide height into 3 equal parts)
-const horizontalLine1 = outerYMin + outerHeight / 3; // ≈ 1.513 + 0.719 = 2.232
-const horizontalLine2 = outerYMin + (2 * outerHeight) / 3; // ≈ 1.513 + 1.438 = 2.951
+const horizontalLine1 = outerYMin + outerHeight / 3; // ≈ 2.232
+const horizontalLine2 = outerYMin + (2 * outerHeight) / 3; // ≈ 2.951
 
 // Helper function: Creates a canvas with the scaled-down image.
 const createScaledImage = (
@@ -68,6 +68,15 @@ const IntendedZone: React.FC = () => {
 
   // Store the scaled glove image as a canvas.
   const [gloveImage, setGloveImage] = useState<HTMLCanvasElement | null>(null);
+
+  // Disable scrolling when this component mounts and restore on unmount.
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
 
   // Load and scale the glove image on mount.
   useEffect(() => {
@@ -144,7 +153,8 @@ const IntendedZone: React.FC = () => {
           .map((pitch) => ({ x: pitch.actual.x, y: pitch.actual.y })),
         backgroundColor: softColors[index % softColors.length],
         pointRadius: 6,
-        order: 0, // Default order
+        order: 0, // Default order for pitch type datasets.
+        z: 0,
       })),
       // Dataset for the intended point.
       {
@@ -152,7 +162,8 @@ const IntendedZone: React.FC = () => {
         data: intended ? [intended] : [],
         pointStyle: gloveImage || 'circle',
         pointRadius: gloveImage ? 10 : 8,
-        order: 1, // Draw intended points before actual
+        order: 1, // Draw intended points below actual.
+        z: 1,
       },
       // Dataset for the actual point.
       {
@@ -160,7 +171,8 @@ const IntendedZone: React.FC = () => {
         data: actual ? [actual] : [],
         backgroundColor: 'red',
         pointRadius: 8,
-        order: 2, // Draw actual points on top
+        order: 2, // Draw actual points on top.
+        z: 2,
       },
     ],
   };
@@ -271,88 +283,66 @@ const IntendedZone: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center bg-gray-900 min-h-screen p-8">
-      {/* Dropdown for selecting pitch type */}
-      <div className="mb-6 w-full max-w-sm">
-        <label
-          htmlFor="pitch-type"
-          className="block text-lg font-medium text-white mb-2 text-center"
-        >
-          Select Pitch Type:
-        </label>
-        <select
-          id="pitch-type"
-          value={pitchType}
-          onChange={(e) => setPitchType(e.target.value)}
-          className="border border-gray-300 rounded-md p-3 bg-white text-gray-700 w-full shadow-md focus:outline-blue-400 focus:ring focus:ring-blue-300"
-        >
-          {pitchTypes.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Chart Section */}
-      <div className="flex justify-center items-center bg-gray-900 p-6 rounded shadow">
-        <div>
-          <h2 className="text-lg font-semibold text-white mb-4 text-center">
-            Pitch Location (Strike Zone)
-          </h2>
-          <div style={{ width: '800px', height: '800px' }}>
-            <Scatter
-              ref={chartRef}
-              data={data}
-              options={options}
-              onClick={(event) =>
-                handleChartClick(
-                  event as React.MouseEvent<HTMLCanvasElement>,
-                  intended === null ? 'intended' : 'actual'
-                )
-              }
-            />
-          </div>
+    // Prevent scrolling by setting overflow-hidden on the outer container.
+    <div className="flex flex-col items-center bg-gray-900 min-h-screen p-8 overflow-hidden">
+      {/* Horizontal flex container for the dropdown, chart, and buttons */}
+      <div className="flex flex-row items-center justify-center w-full gap-8">
+        {/* Left: Select Pitch Type */}
+        <div className="flex flex-col items-center">
+          <label
+            htmlFor="pitch-type"
+            className="block text-lg font-medium text-white mb-2"
+          >
+            Select Pitch Type:
+          </label>
+          <select
+            id="pitch-type"
+            value={pitchType}
+            onChange={(e) => setPitchType(e.target.value)}
+            className="border border-gray-300 rounded-md p-3 bg-white text-gray-700 w-48 shadow-md focus:outline-blue-400 focus:ring focus:ring-blue-300"
+          >
+            {pitchTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
 
-      {/* Buttons */}
-      <div className="mt-8 flex gap-4">
-        <button
-          onClick={handleAddPitch}
-          className="bg-blue-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-blue-600 transition"
-        >
-          Add Pitch
-        </button>
-        <button
-          onClick={() => {
-            setPitches([]);
-            setIntended(null);
-            setActual(null);
-          }}
-          className="bg-red-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-red-600 transition"
-        >
-          Reset
-        </button>
-      </div>
+        {/* Center: Chart */}
+        <div style={{ width: '800px', height: '800px' }}>
+          <Scatter
+            ref={chartRef}
+            data={data}
+            options={options}
+            onClick={(event) =>
+              handleChartClick(
+                event as React.MouseEvent<HTMLCanvasElement>,
+                intended === null ? 'intended' : 'actual'
+              )
+            }
+          />
+        </div>
 
-      {/* Display Pitch Data */}
-      <div className="mt-10 max-w-4xl w-full bg-white p-6 rounded-lg shadow-lg">
-        <h2 className="text-lg font-medium text-gray-800 mb-4">Pitch Data</h2>
-        <ul className="list-disc pl-6 space-y-3">
-          {pitches.map((pitch, index) => (
-            <li key={index} className="text-gray-700">
-              <span className="font-bold">Pitch Type:</span> {pitch.pitchType} |{' '}
-              <span className="font-bold">Intended:</span> (
-              {pitch.intended.x.toFixed(2)} ft, {pitch.intended.y.toFixed(2)}{' '}
-              ft) | <span className="font-bold">Actual:</span> (
-              {pitch.actual.x.toFixed(2)} ft, {pitch.actual.y.toFixed(2)} ft) |{' '}
-              <span className="font-bold">Distance:</span>{' '}
-              {(pitch.distance.feet * 12).toFixed(2)} inches (
-              {pitch.distance.percent.toFixed(2)}%)
-            </li>
-          ))}
-        </ul>
+        {/* Right: Add Pitch and Reset Buttons */}
+        <div className="flex flex-col items-center">
+          <button
+            onClick={handleAddPitch}
+            className="bg-blue-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-blue-600 transition mb-4"
+          >
+            Add Pitch
+          </button>
+          <button
+            onClick={() => {
+              setPitches([]);
+              setIntended(null);
+              setActual(null);
+            }}
+            className="bg-red-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-red-600 transition"
+          >
+            Reset
+          </button>
+        </div>
       </div>
     </div>
   );
