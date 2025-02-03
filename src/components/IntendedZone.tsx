@@ -12,7 +12,7 @@ interface Pitch {
   intended: { x: number; y: number };
   actual: { x: number; y: number };
   pitchType: string;
-  distance: { feet: number; percent: number };
+  distance: { feet: number; percent: number; inches: number };
 }
 
 const pitchTypes = ['4-seam', '2-seam', 'curveball', 'slider', 'changeup'];
@@ -112,7 +112,7 @@ const IntendedZone: React.FC = () => {
     img.src = 'mitt.webp'; // Ensure this path is correct and the image exists.
     img.onload = () => {
       // Adjust the scale factor as needed.
-      const scaled = createScaledImage(img, 0.325);
+      const scaled = createScaledImage(img, 0.4);
       setGloveImage(scaled);
     };
   }, []);
@@ -170,9 +170,14 @@ const IntendedZone: React.FC = () => {
           distance: {
             feet: parseFloat(distanceFeet.toFixed(2)),
             percent: parseFloat(distancePercent.toFixed(2)),
+            inches: parseFloat((distanceFeet * 12).toFixed(2)),
           },
         },
       ]);
+      console.log(
+        `distance inches: ${parseFloat((distanceFeet * 12).toFixed(2))}`
+      );
+      console.log(`distance: ${distanceFeet}`);
       setIntended(null);
       setActual(null);
     } else {
