@@ -230,7 +230,7 @@ const IntendedZone: React.FC = () => {
     scales: {
       x: {
         title: {
-          display: true,
+          display: false,
           text: 'Horizontal Location (ft)',
           color: 'white',
         },
@@ -241,7 +241,7 @@ const IntendedZone: React.FC = () => {
       },
       y: {
         title: {
-          display: true,
+          display: false,
           text: 'Vertical Location (ft)',
           color: 'white',
         },
@@ -326,7 +326,7 @@ const IntendedZone: React.FC = () => {
 
   return (
     // Prevent scrolling by setting overflow-hidden on the outer container.
-    <div className="flex flex-col items-center bg-black min-h-screen p-8 overflow-hidden">
+    <div className="flex flex-col items-center bg-black min-h-screen  overflow-hidden">
       <div className="flex flex-row items-center justify-center w-full gap-8">
         {/* Left: Select Pitch Type */}
         <div className="flex flex-col items-center">
@@ -351,7 +351,7 @@ const IntendedZone: React.FC = () => {
         </div>
 
         {/* Center: Chart */}
-        <div style={{ width: '1000px', height: '1000px' }}>
+        <div style={{ width: '1200px', height: '1200px' }}>
           <Scatter
             ref={chartRef}
             data={data}
