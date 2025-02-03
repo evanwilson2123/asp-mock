@@ -324,7 +324,7 @@ const IntendedZone: React.FC = () => {
 
   return (
     // Prevent scrolling by setting overflow-hidden on the outer container.
-    <div className="flex flex-col items-center bg-gray-900 min-h-screen p-8 overflow-hidden">
+    <div className="flex flex-col items-center bg-black min-h-screen p-8 overflow-hidden">
       <div className="flex flex-row items-center justify-center w-full gap-8">
         {/* Left: Select Pitch Type */}
         <div className="flex flex-col items-center">
@@ -349,7 +349,7 @@ const IntendedZone: React.FC = () => {
         </div>
 
         {/* Center: Chart */}
-        <div style={{ width: '800px', height: '800px' }}>
+        <div style={{ width: '900px', height: '900px' }}>
           <Scatter
             ref={chartRef}
             data={data}
