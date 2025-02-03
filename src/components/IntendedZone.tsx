@@ -24,6 +24,33 @@ const softColors = [
   'rgba(255, 159, 64, 0.5)',
 ];
 
+// Helper function: get window dimensions
+interface WindowSize {
+  width: number;
+  height: number;
+}
+
+const useWindowSize = (): WindowSize => {
+  const [windowSize, setWindowSize] = useState<WindowSize>({
+    width: 0,
+    height: 0,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  return windowSize;
+};
+
 // Outer strike zone boundaries.
 const outerXMin = -0.83;
 const outerXMax = 0.83;
@@ -31,16 +58,14 @@ const outerYMin = 1.513;
 const outerYMax = 3.67;
 
 // Calculate grid line positions for a 3x3 grid within the outer strike zone.
-const outerWidth = outerXMax - outerXMin; // 1.66
-const outerHeight = outerYMax - outerYMin; // 2.157
+const outerWidth = outerXMax - outerXMin;
+const outerHeight = outerYMax - outerYMin;
 
-// Vertical grid lines (divide width into 3 equal parts)
-const verticalLine1 = outerXMin + outerWidth / 3; // ≈ -0.2767
-const verticalLine2 = outerXMin + (2 * outerWidth) / 3; // ≈ 0.2767
+const verticalLine1 = outerXMin + outerWidth / 3;
+const verticalLine2 = outerXMin + (2 * outerWidth) / 3;
 
-// Horizontal grid lines (divide height into 3 equal parts)
-const horizontalLine1 = outerYMin + outerHeight / 3; // ≈ 2.232
-const horizontalLine2 = outerYMin + (2 * outerHeight) / 3; // ≈ 2.951
+const horizontalLine1 = outerYMin + outerHeight / 3;
+const horizontalLine2 = outerYMin + (2 * outerHeight) / 3;
 
 // Helper function: Creates a canvas with the scaled-down image.
 const createScaledImage = (
@@ -66,6 +91,9 @@ const IntendedZone: React.FC = () => {
   const [actual, setActual] = useState<{ x: number; y: number } | null>(null);
   const [pitchType, setPitchType] = useState<string>('4-seam');
 
+  // Window dimensions to ensure large screen
+  const { width, height } = useWindowSize();
+
   // Store the scaled glove image as a canvas.
   const [gloveImage, setGloveImage] = useState<HTMLCanvasElement | null>(null);
 
@@ -88,6 +116,18 @@ const IntendedZone: React.FC = () => {
       setGloveImage(scaled);
     };
   }, []);
+
+  // If the window dimensions are not large enough, return an alternative UI.
+  // Adjust the threshold values as needed.
+  if (width && height && (width < 1024 || height < 768)) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-900">
+        <h1 className="text-white text-2xl">
+          This page is only available for large screens.
+        </h1>
+      </div>
+    );
+  }
 
   const handleChartClick = (
     event: React.MouseEvent<HTMLCanvasElement>,
@@ -153,7 +193,7 @@ const IntendedZone: React.FC = () => {
           .map((pitch) => ({ x: pitch.actual.x, y: pitch.actual.y })),
         backgroundColor: softColors[index % softColors.length],
         pointRadius: 6,
-        order: 0, // Default order for pitch type datasets.
+        order: 0,
         z: 0,
       })),
       // Dataset for the intended point.
@@ -162,7 +202,7 @@ const IntendedZone: React.FC = () => {
         data: intended ? [intended] : [],
         pointStyle: gloveImage || 'circle',
         pointRadius: gloveImage ? 10 : 8,
-        order: 1, // Draw intended points below actual.
+        order: 1,
         z: 1,
       },
       // Dataset for the actual point.
@@ -171,7 +211,7 @@ const IntendedZone: React.FC = () => {
         data: actual ? [actual] : [],
         backgroundColor: 'red',
         pointRadius: 12,
-        order: 2, // Draw actual points on top.
+        order: 2,
         z: 2,
       },
     ],
@@ -285,7 +325,6 @@ const IntendedZone: React.FC = () => {
   return (
     // Prevent scrolling by setting overflow-hidden on the outer container.
     <div className="flex flex-col items-center bg-gray-900 min-h-screen p-8 overflow-hidden">
-      {/* Horizontal flex container for the dropdown, chart, and buttons */}
       <div className="flex flex-row items-center justify-center w-full gap-8">
         {/* Left: Select Pitch Type */}
         <div className="flex flex-col items-center">
