@@ -226,3 +226,19 @@ model Trackman {
   updatedAt               DateTime @updatedAt
   playLevel               String
 }
+
+model Intended {
+  id                      Int @id @default(autoincrement())
+  sessionId               String
+  athleteId               String
+  pitchType               String
+  intendedX               Float
+  intendedY               Float
+  actualX                 Float
+  actualY                 Float
+  distanceIn              Float
+  distancePer             Float
+  playLevel               String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}

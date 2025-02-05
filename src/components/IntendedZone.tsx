@@ -4,11 +4,13 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Scatter } from 'react-chartjs-2';
 import { Chart as ChartJS, registerables, ChartOptions } from 'chart.js';
 import annotationPlugin, { AnnotationOptions } from 'chartjs-plugin-annotation';
+import { useRouter } from 'next/navigation';
 
 // Register all necessary Chart.js modules and the annotation plugin
 ChartJS.register(...registerables, annotationPlugin);
 
 interface Pitch {
+  level: string;
   intended: { x: number; y: number };
   actual: { x: number; y: number };
   pitchType: string;
@@ -24,7 +26,17 @@ const softColors = [
   'rgba(255, 159, 64, 0.5)',
 ];
 
-// Helper function: get window dimensions
+// ----- Added Athlete Interfaces and Selection State ----- //
+interface Athlete {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  level: string;
+  u?: string;
+}
+
+// ----- Helper function: get window dimensions ----- //
 interface WindowSize {
   width: number;
   height: number;
@@ -83,6 +95,56 @@ const createScaledImage = (
 };
 
 const IntendedZone: React.FC = () => {
+  // ===== Athlete Selection State and Effect =====
+  const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null);
+  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [athletesLoading, setAthletesLoading] = useState<boolean>(true);
+  const [athletesError, setAthletesError] = useState<string | null>(null);
+
+  // Filter and pagination state for athlete selection (similar to ManageAthletes)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchAthletes = async () => {
+      try {
+        const res = await fetch('/api/manage-athletes');
+        if (!res.ok) {
+          throw new Error('Failed to fetch athletes');
+        }
+        const data = await res.json();
+        setAthletes(data.athletes || []);
+      } catch (err: any) {
+        setAthletesError(err.message || 'An unexpected error occurred');
+      } finally {
+        setAthletesLoading(false);
+      }
+    };
+
+    fetchAthletes();
+  }, []);
+
+  // Filter logic (similar to ManageAthletes)
+  const filteredAthletes = athletes.filter((athlete) => {
+    const fullName = (athlete.firstName + ' ' + athlete.lastName).toLowerCase();
+    const matchesSearch = fullName.includes(searchTerm.toLowerCase());
+    const matchesLevel =
+      selectedLevel === 'All' || athlete.level === selectedLevel;
+    return matchesSearch && matchesLevel;
+  });
+
+  const totalPages = Math.ceil(filteredAthletes.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedAthletes = filteredAthletes.slice(startIndex, endIndex);
+
+  // ----- End Athlete Selection State -----
+
+  // ----- Existing Pitching Session State -----
   const chartRef = useRef<ChartJS<'scatter'> | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [intended, setIntended] = useState<{ x: number; y: number } | null>(
@@ -97,21 +159,11 @@ const IntendedZone: React.FC = () => {
   // Store the scaled glove image as a canvas.
   const [gloveImage, setGloveImage] = useState<HTMLCanvasElement | null>(null);
 
-  // (Removed the scrolling disabling effect.)
-  // useEffect(() => {
-  //   const originalOverflow = document.body.style.overflow;
-  //   document.body.style.overflow = 'hidden';
-  //   return () => {
-  //     document.body.style.overflow = originalOverflow;
-  //   };
-  // }, []);
-
   // Load and scale the glove image on mount.
   useEffect(() => {
     const img = new Image();
     img.src = 'mitt.webp'; // Ensure this path is correct and the image exists.
     img.onload = () => {
-      // Adjust the scale factor as needed.
       const scaled = createScaledImage(img, 0.4);
       setGloveImage(scaled);
     };
@@ -128,6 +180,156 @@ const IntendedZone: React.FC = () => {
     );
   }
 
+  // ----- If no athlete is selected, show the athlete selection view -----
+  if (!selectedAthlete) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-6">
+        <h1 className="text-2xl font-bold text-gray-700 mb-6">
+          Select Athlete
+        </h1>
+        {athletesLoading ? (
+          <p>Loading athletes...</p>
+        ) : athletesError ? (
+          <p className="text-red-500">Error: {athletesError}</p>
+        ) : (
+          <>
+            {/* Filter Section */}
+            <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <label
+                  htmlFor="search"
+                  className="block text-gray-700 font-semibold mb-1"
+                >
+                  Search by Name:
+                </label>
+                <input
+                  id="search"
+                  type="text"
+                  placeholder="e.g. John"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full p-2 border rounded text-black"
+                />
+              </div>
+              <div className="flex-1">
+                <label
+                  htmlFor="level-filter"
+                  className="block text-gray-700 font-semibold mb-1"
+                >
+                  Filter by Level:
+                </label>
+                <select
+                  id="level-filter"
+                  value={selectedLevel}
+                  onChange={(e) => {
+                    setSelectedLevel(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full p-2 border rounded text-black"
+                >
+                  {[
+                    'All',
+                    ...Array.from(new Set(athletes.map((a) => a.level))).sort(),
+                  ].map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      {lvl}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Athletes Table */}
+            {paginatedAthletes.length > 0 ? (
+              <>
+                <table className="min-w-full bg-white rounded-lg shadow-md">
+                  <thead>
+                    <tr className="bg-gray-200 text-gray-700">
+                      <th className="py-2 px-4 text-left">First Name</th>
+                      <th className="py-2 px-4 text-left">Last Name</th>
+                      <th className="py-2 px-4 text-left">Email</th>
+                      <th className="py-2 px-4 text-left">Level</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedAthletes.map((athlete) => (
+                      <tr
+                        key={athlete._id}
+                        onClick={() => setSelectedAthlete(athlete)}
+                        className="hover:bg-blue-50 cursor-pointer"
+                      >
+                        <td className="text-black py-2 px-4">
+                          {athlete.firstName}
+                        </td>
+                        <td className="text-black py-2 px-4">
+                          {athlete.lastName}
+                        </td>
+                        <td className="text-black py-2 px-4">
+                          {athlete.email}
+                        </td>
+                        <td className="text-black py-2 px-4">
+                          {athlete.level}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Pagination Controls */}
+                <div className="mt-4 flex items-center justify-center space-x-4">
+                  <button
+                    onClick={() => {
+                      if (currentPage > 1) setCurrentPage((prev) => prev - 1);
+                    }}
+                    disabled={currentPage <= 1}
+                    className="text-black px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <div className="space-x-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-3 py-1 rounded ${
+                            page === currentPage
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-200 hover:bg-gray-300 text-black'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (currentPage < totalPages)
+                        setCurrentPage((prev) => prev + 1);
+                    }}
+                    disabled={currentPage >= totalPages}
+                    className="text-black px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="text-lg text-blue-900 text-center mt-4">
+                No athletes found matching your filters.
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ----- Existing IntendedZone (Pitching Session) UI below -----
   const handleChartClick = (
     event: React.MouseEvent<HTMLCanvasElement>,
     type: 'intended' | 'actual'
@@ -172,6 +374,7 @@ const IntendedZone: React.FC = () => {
             percent: parseFloat(distancePercent.toFixed(2)),
             inches: parseFloat((distanceFeet * 12).toFixed(2)),
           },
+          level: selectedAthlete.level,
         },
       ]);
       console.log(
@@ -182,6 +385,49 @@ const IntendedZone: React.FC = () => {
       setActual(null);
     } else {
       alert('Please select both intended and actual pitch locations.');
+    }
+  };
+
+  // Undo last pitch (with confirmation)
+  const handleUndoPitch = () => {
+    if (pitches.length === 0) {
+      alert('No pitches to undo.');
+      return;
+    }
+    const confirmUndo = window.confirm(
+      'Are you sure you want to undo the last pitch?'
+    );
+    if (confirmUndo) {
+      setPitches(pitches.slice(0, pitches.length - 1));
+    }
+  };
+
+  // Submit the pitching session to /api/intended-zone
+  const handleSubmitSession = async () => {
+    if (pitches.length === 0) {
+      alert('There are no pitches to submit.');
+      return;
+    }
+    try {
+      const payload = {
+        athleteId: selectedAthlete._id,
+        pitches,
+      };
+      const res = await fetch('/api/intended-zone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        throw new Error('Failed to submit session');
+      }
+      alert('Session submitted successfully!');
+      const { sessionId } = await res.json();
+      router.push(`/intended-zone/${sessionId}`);
+      // Optionally clear the session
+      setPitches([]);
+    } catch (err: any) {
+      alert(err.message || 'An error occurred while submitting the session');
     }
   };
 
@@ -363,14 +609,16 @@ const IntendedZone: React.FC = () => {
             Add Pitch
           </button>
           <button
-            onClick={() => {
-              setPitches([]);
-              setIntended(null);
-              setActual(null);
-            }}
-            className="bg-red-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-red-600 transition"
+            onClick={handleUndoPitch}
+            className="bg-yellow-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-yellow-600 transition mb-4"
           >
-            Reset
+            Undo Pitch
+          </button>
+          <button
+            onClick={handleSubmitSession}
+            className="bg-green-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-green-600 transition"
+          >
+            Submit Session
           </button>
         </div>
       </div>
