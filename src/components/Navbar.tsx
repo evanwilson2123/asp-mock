@@ -53,15 +53,18 @@ const Navbar: React.FC = () => {
       </Link>
       {/* Navigation Links */}
       <nav className="flex space-x-6">
-        <a href="#" className="hover:underline">
+        <Link href="/" className="hover:underline">
           Home
-        </a>
-        <a href="#" className="hover:underline">
+        </Link>
+        <Link href="/about" className="hover:underline">
           About
-        </a>
-        <a href="#" className="hover:underline">
+        </Link>
+        <Link href="/contact" className="hover:underline">
           Contact
-        </a>
+        </Link>
+        <Link href="/help" className="hover:underlien">
+          Help
+        </Link>
         {/* <button className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
           Sign Out
         </button> */}

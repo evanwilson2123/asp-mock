@@ -211,6 +211,13 @@ const Sidebar: React.FC = () => {
             >
               <Link href="/add-members">Add Players/Coaches</Link>
             </li>
+            <li
+              className={`hover:bg-gray-700 p-3 rounded ${
+                pathname === '/assesment' ? 'bg-gray-700' : ''
+              }`}
+            >
+              <Link href="/assesment">Assesments</Link>
+            </li>
           </ul>
         </nav>
       </aside>
