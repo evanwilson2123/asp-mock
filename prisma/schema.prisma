@@ -339,4 +339,6 @@ model Assessment {
   overallRhythm           Int?
   propTimedIntent         Int?
   cervPos                 Int?
+
+  blobUrl                 String?
 }

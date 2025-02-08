@@ -69,14 +69,6 @@ export async function POST(req: NextRequest, context: any) {
     const { firstName, lastName, ...assesmentData } = formData;
     console.log(firstName + ' ' + lastName);
 
-    // Save data to Prisma DB
-    await prisma.assessment.create({
-      data: {
-        athleteId,
-        ...assesmentData,
-      },
-    });
-
     // Step 1: Fetch PDF from FastAPI
     const res = await fetch('https://asp-py.vercel.app/gen-pdf', {
       method: 'POST',
@@ -107,6 +99,17 @@ export async function POST(req: NextRequest, context: any) {
         token: process.env.BLOB_READ_WRITE_TOKEN,
       }
     );
+
+    const url = blob.url;
+
+    // Save data to Prisma DB
+    await prisma.assessment.create({
+      data: {
+        athleteId,
+        blobUrl: url,
+        ...assesmentData,
+      },
+    });
 
     // Step 4: Return the Blob URL
     return NextResponse.json(
