@@ -243,12 +243,19 @@ const Assessment: React.FC<AssessmentProps> = ({
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({
+        firstName,
+        lastName,
+        ...formData,
+      }),
     });
     if (!response.ok) {
       return (
         <ErrorMessage role={role as string} message="Failed to upload data" />
       );
+    } else {
+      const data = await response.json();
+      console.log(data.pdfUrl);
     }
   };
 

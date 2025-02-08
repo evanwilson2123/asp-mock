@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prismaDb';
+import { put } from '@vercel/blob';
 
 interface FormData {
+  firstName: string;
+  lastName: string;
   height: string;
   weight: number;
   age: number;
@@ -38,61 +41,6 @@ interface FormData {
   shoulderConn: number;
   barrelExt: number;
   batShoulderAng: number;
-
-  // Pitching Mechanics Breakdown
-  startingPos: number;
-  legLiftInitWeightShift: number;
-  engageGlute: number;
-  pushBackLeg: number;
-  vertShinAngViR: number;
-  stayHeel: number;
-  driveDirection: number;
-  outDriveEarly: number;
-  latVertGround: number;
-  backKneeDrive: number;
-  hipClear: number;
-  rotDown: number;
-  movesIndependent: number;
-  excessiveRot: number;
-  earlyTorsoRot: number;
-  torsoNotSegment: number;
-  bowFlexBow: number;
-  scapularDig: number;
-  reflexivePecFire: number;
-  armSlotTorsoRot: number;
-  rotPerpSpine: number;
-  excessiveTilt: number;
-  throwUpHill: number;
-  armSwingCapMom: number;
-  overlyPronOrSup: number;
-  overlyFlexOrExtWrist: number;
-  elbowInLine: number;
-  lateEarlyFlipUp: number;
-  elbowFlexionHundred: number;
-  fullScapRetractAbduct: number;
-  armDrag: number;
-  limitedLayback: number;
-  elbowPushForward: number;
-  straightElbowNeutral: number;
-  armWorksInd: number;
-  earlySup: number;
-  workOppGlove: number;
-  retractAbductLanding: number;
-  rotatesIntoPlane: number;
-  leaks: number;
-  frontFootContact: number;
-  pawback: number;
-  kneeStabTran: number;
-  kneeStabFron: number;
-  forearmPron: number;
-  shoulderIntern: number;
-  scapRelease: number;
-  thoracicFlex: number;
-  noViolentRecoil: number;
-  overallTempo: number;
-  overallRhythm: number;
-  propTimedIntent: number;
-  cervPos: number;
 }
 
 export async function POST(req: NextRequest, context: any) {
@@ -103,6 +51,7 @@ export async function POST(req: NextRequest, context: any) {
       { status: 400 }
     );
   }
+
   const athleteId = context.params.athleteId;
   if (!athleteId) {
     return NextResponse.json(
@@ -110,20 +59,62 @@ export async function POST(req: NextRequest, context: any) {
       { status: 400 }
     );
   }
+
   try {
     const formData: FormData = await req.json();
     if (!formData) {
       return NextResponse.json({ error: 'Missing form data' }, { status: 400 });
     }
+
+    const { firstName, lastName, ...assesmentData } = formData;
+    console.log(firstName + ' ' + lastName);
+
+    // Save data to Prisma DB
     await prisma.assessment.create({
       data: {
         athleteId,
-        ...formData,
+        ...assesmentData,
       },
     });
-    return NextResponse.json({ message: 'Assesment Created' }, { status: 200 });
+
+    // Step 1: Fetch PDF from FastAPI
+    const res = await fetch('https://asp-py.vercel.app/gen-pdf', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+
+    if (!res.ok) {
+      console.log('Error generating PDF');
+      return NextResponse.json(
+        { error: 'Error generating PDF' },
+        { status: 500 }
+      );
+    }
+
+    // Step 2: Convert Response to Blob
+    const pdfBuffer = await res.arrayBuffer();
+
+    // Step 3: Upload the PDF to Vercel Blob Storage
+    const blob = await put(
+      `athlete-reports/${athleteId}.pdf`,
+      Buffer.from(pdfBuffer),
+      {
+        contentType: 'application/pdf',
+        access: 'public', // 👈 This fixes the error
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      }
+    );
+
+    // Step 4: Return the Blob URL
+    return NextResponse.json(
+      { message: 'Assessment Created', pdfUrl: blob.url },
+      { status: 200 }
+    );
   } catch (error: any) {
-    console.error(`Error creating assesment: ${error}`);
+    console.error(`Error creating assessment: ${error}`);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
