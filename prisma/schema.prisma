@@ -242,3 +242,101 @@ model Intended {
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 }
+
+
+model Assessment {
+  id                      Int @id @default(autoincrement())
+  athleteId               String
+  
+  // General Information
+  height                  String?
+  weight                  Int?
+  age                     Int?
+  primarySport            String?
+  currentTrainingReg      String?
+  goals                   String?
+  primaryPosition         String?
+  hopeToGain              String?
+  injuryHistory           String?
+  coachingStyle           String?
+  daysTraining            Int?
+  priorSC                 Boolean?
+  
+  // Mobility Assessment
+  overHeadSquat           Int?
+  trunkStability          Int?
+  sidePlank               Int?
+  spinalFlexion           Int?
+  activeLegRaise          Int?
+  goodMorning             Int?
+  lungeOverhead           Int?
+  lateralTrunkTilt        Int?
+
+  // Hitting Mechanics Breakdown
+  weighShift              Int?
+  torsoRot                Int?
+  pelvisLoad              Int?
+  forwardMove             Int?
+  hipShoulder             Int?
+  upperRot                Int?
+  lowerRot                Int?
+  frontArm                Int?
+  shoulderConn            Int?
+  barrelExt               Int?
+  batShoulderAng          Int?
+
+  // Pitching Mechanics Breakdown
+  startingPos             Int?
+  legLiftInitWeightShift  Int?
+  engageGlute             Int?
+  pushBackLeg             Int?
+  vertShinAngViR          Int?
+  stayHeel                Int?
+  driveDirection          Int?
+  outDriveEarly           Int?
+  latVertGround           Int?
+  backKneeDrive           Int?
+  hipClear                Int?
+  rotDown                 Int?
+  movesIndependent        Int?
+  excessiveRot            Int?
+  earlyTorsoRot           Int?
+  torsoNotSegment         Int?
+  bowFlexBow              Int?
+  scapularDig             Int?
+  reflexivePecFire        Int?
+  armSlotTorsoRot         Int?
+  rotPerpSpine            Int?
+  excessiveTilt           Int?
+  throwUpHill             Int?
+  armSwingCapMom          Int?
+  overlyPronOrSup         Int?
+  overlyFlexOrExtWrist    Int?
+  elbowInLine             Int?
+  lateEarlyFlipUp         Int?
+  elbowFlexionHundred     Int?
+  fullScapRetractAbduct   Int?
+  armDrag                 Int?
+  limitedLayback          Int?
+  elbowPushForward        Int?
+  straightElbowNeutral    Int?
+  armWorksInd             Int?
+  earlySup                Int?
+  workOppGlove            Int?
+  retractAbductLanding    Int?
+  rotatesIntoPlane        Int?
+  leaks                   Int?
+  frontFootContact        Int?
+  pawback                 Int?
+  kneeStabTran            Int?
+  kneeStabFron            Int?
+  forearmPron             Int?
+  shoulderIntern          Int?
+  scapRelease             Int?
+  thoracicFlex            Int?
+  noViolentRecoil         Int?
+  overallTempo            Int?
+  overallRhythm           Int?
+  propTimedIntent         Int?
+  cervPos                 Int?
+}

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import SignInPrompt from '../SignInPrompt';
 import Sidebar from '../Dash/Sidebar';
 import CoachSidebar from '../Dash/CoachSidebar';
+import ErrorMessage from '../ErrorMessage';
 
 interface AssessmentProps {
   _id: string;
@@ -234,9 +235,21 @@ const Assessment: React.FC<AssessmentProps> = ({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form Data:', formData);
+    const response = await fetch(`/api/assesment/${_id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+    if (!response.ok) {
+      return (
+        <ErrorMessage role={role as string} message="Failed to upload data" />
+      );
+    }
   };
 
   return (
