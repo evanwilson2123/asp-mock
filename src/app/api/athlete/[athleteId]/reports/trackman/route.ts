@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
+import { auth } from '@clerk/nextjs/server';
 
 /**
  * GET /api/trackman/:athleteId
@@ -65,6 +66,15 @@ import prisma from '@/lib/prismaDb';
  */
 export async function GET(req: NextRequest, context: any) {
   const athleteId = context.params.athleteId;
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'Unauthenticated Request' },
+      { status: 400 }
+    );
+  }
+
+  console.log(req);
 
   try {
     // Fetch all Trackman data for the athlete

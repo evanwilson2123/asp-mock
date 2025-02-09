@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
+import { auth } from '@clerk/nextjs/server';
 
 /**
  * GET /api/sessions/:sessionId/pitches
@@ -92,6 +93,14 @@ import prisma from '@/lib/prismaDb';
  */
 export async function GET(req: NextRequest, context: any) {
   const { sessionId } = context.params;
+
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'Unauthenticated Request' },
+      { status: 400 }
+    );
+  }
 
   try {
     const pitches = await prisma.trackman.findMany({
