@@ -1,9 +1,8 @@
 import { useUser } from '@clerk/nextjs';
 import React, { useEffect, useState } from 'react';
 import SignInPrompt from '../SignInPrompt';
-import Sidebar from '../Dash/Sidebar';
-import CoachSidebar from '../Dash/CoachSidebar';
 import ErrorMessage from '../ErrorMessage';
+import { useRouter } from 'next/navigation';
 
 interface AssessmentProps {
   _id: string;
@@ -212,6 +211,8 @@ const Assessment: React.FC<AssessmentProps> = ({
     cervPos: 0,
   });
 
+  const router = useRouter();
+
   useEffect(() => {
     console.log('url useEffect', url);
     console.log('url useEffect bool', urlResponse);
@@ -240,6 +241,11 @@ const Assessment: React.FC<AssessmentProps> = ({
       ...prevData,
       [name]: type === 'number' ? Number(value) : value,
     }));
+  };
+
+  const handleClose = async () => {
+    setUrlResponse(false);
+    router.push('/');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -377,7 +383,7 @@ const Assessment: React.FC<AssessmentProps> = ({
             </p>
             <div className="flex justify-end space-x-4">
               <button
-                onClick={() => setUrlResponse(false)}
+                onClick={handleClose}
                 className="px-4 py-2 bg-gray-300 text-gray-800 rounded"
               >
                 Close
@@ -395,13 +401,13 @@ const Assessment: React.FC<AssessmentProps> = ({
       )}
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-gray-900 text-white min-h-screen">
+      {/* <div className="hidden md:block w-64 bg-gray-900 text-white min-h-screen">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
-      </div>
+      </div> */}
       {/* Mobile Sidebar */}
-      <div className="md:hidden bg-gray-100">
+      {/* <div className="md:hidden bg-gray-100">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
-      </div>
+      </div> */}
       <form
         onSubmit={handleSubmit}
         className="flex-1 p-6 bg-white shadow rounded space-y-8"
