@@ -339,6 +339,7 @@ model Assessment {
   overallRhythm           Int?
   propTimedIntent         Int?
   cervPos                 Int?
+  createdAt               DateTime @default(now())
   // Save the Blob URL
   blobUrl                 String?
 }

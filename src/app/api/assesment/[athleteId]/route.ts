@@ -124,3 +124,46 @@ export async function POST(req: NextRequest, context: any) {
     );
   }
 }
+
+export async function GET(req: NextRequest, context: any) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'Unauthenticated Request' },
+      { status: 400 }
+    );
+  }
+  const athleteId = await context.params.athleteId;
+  if (!athleteId) {
+    return NextResponse.json({ error: 'Missing athleteId' }, { status: 400 });
+  }
+  try {
+    const assesments = await prisma.assessment.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      where: {
+        athleteId: athleteId,
+      },
+      select: {
+        id: true,
+        blobUrl: true,
+        createdAt: true,
+      },
+    });
+    if (!assesments) {
+      return NextResponse.json(
+        { error: 'No assesments found' },
+        { status: 404 }
+      );
+    }
+    console.log('Assesments:', assesments);
+    return NextResponse.json(assesments, { status: 200 });
+  } catch (error: any) {
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}

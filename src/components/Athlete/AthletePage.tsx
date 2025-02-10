@@ -65,7 +65,10 @@ const AthleteDetails = () => {
     'Trackman',
     'Armcare',
     'Intended-Zone',
+    'Assessments',
   ];
+
+  const csvTechnologies = ['Blast Motion', 'Hittrax', 'Trackman', 'Armcare'];
 
   // ========== Fetch Athlete Data ==========
   useEffect(() => {
@@ -391,7 +394,7 @@ const AthleteDetails = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-bold text-gray-700 mb-4">Upload CSV</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {technologies.map((tech) => (
+            {csvTechnologies.map((tech) => (
               <div
                 key={tech}
                 className={`border-2 rounded-lg p-6 text-center ${
