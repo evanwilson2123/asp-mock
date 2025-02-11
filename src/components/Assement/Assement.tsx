@@ -14,10 +14,10 @@ interface AssessmentProps {
 }
 
 interface FormData {
-  // General Information
+  // General Information (updated so numeric fields are strings)
   height: string;
-  weight: number;
-  age: number;
+  weight: string; // changed from number to string
+  age: string; // changed from number to string
   primarySport: string;
   currentTrainingReg: string;
   goals: string;
@@ -25,7 +25,7 @@ interface FormData {
   hopeToGain: string;
   injuryHistory: string;
   coachingStyle: string;
-  daysTraining: number;
+  daysTraining: string; // changed from number to string
   priorSC: boolean;
 
   // Mobility Assessment
@@ -118,10 +118,10 @@ const Assessment: React.FC<AssessmentProps> = ({
   const [urlResponse, setUrlResponse] = useState<boolean>(false);
   const [url, setUrl] = useState<string>('');
   const [formData, setFormData] = useState<FormData>({
-    // General Information
+    // General Information (updated initial values)
     height: '',
-    weight: 0,
-    age: 0,
+    weight: '',
+    age: '',
     primarySport: '',
     currentTrainingReg: '',
     goals: '',
@@ -129,7 +129,7 @@ const Assessment: React.FC<AssessmentProps> = ({
     hopeToGain: '',
     injuryHistory: '',
     coachingStyle: '',
-    daysTraining: 1,
+    daysTraining: '1',
     priorSC: false,
 
     // Mobility Assessment
@@ -236,10 +236,21 @@ const Assessment: React.FC<AssessmentProps> = ({
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
+    // For numeric general info fields, allow only digits
+    if (['weight', 'age', 'daysTraining'].includes(name)) {
+      if (value === '' || /^\d+$/.test(value)) {
+        setFormData((prevData) => ({
+          ...prevData,
+          [name]: value,
+        }));
+      }
+      return;
+    }
+    // For all other fields, update normally
     setFormData((prevData) => ({
       ...prevData,
-      [name]: type === 'number' ? Number(value) : value,
+      [name]: value,
     }));
   };
 
@@ -267,10 +278,11 @@ const Assessment: React.FC<AssessmentProps> = ({
         <ErrorMessage role={role as string} message="Failed to upload data" />
       );
     } else {
+      // Reset general info fields as strings
       setFormData({
         height: '',
-        weight: 0,
-        age: 0,
+        weight: '',
+        age: '',
         primarySport: '',
         currentTrainingReg: '',
         goals: '',
@@ -278,7 +290,7 @@ const Assessment: React.FC<AssessmentProps> = ({
         hopeToGain: '',
         injuryHistory: '',
         coachingStyle: '',
-        daysTraining: 1,
+        daysTraining: '1',
         priorSC: false,
 
         // Mobility Assessment
@@ -450,7 +462,9 @@ const Assessment: React.FC<AssessmentProps> = ({
               <input
                 id="weight"
                 name="weight"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.weight}
                 onChange={handleChange}
                 className="text-black mt-1 block w-full border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -466,7 +480,9 @@ const Assessment: React.FC<AssessmentProps> = ({
               <input
                 id="age"
                 name="age"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.age}
                 onChange={handleChange}
                 className="text-black mt-1 block w-full border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -589,7 +605,9 @@ const Assessment: React.FC<AssessmentProps> = ({
               <input
                 id="daysTraining"
                 name="daysTraining"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.daysTraining}
                 onChange={handleChange}
                 className="text-black mt-1 block w-full border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -648,6 +666,8 @@ const Assessment: React.FC<AssessmentProps> = ({
                   id={name}
                   name={name}
                   type="number"
+                  min="0"
+                  max="3"
                   value={(formData as any)[name]}
                   onChange={handleChange}
                   className="text-black mt-1 block w-full border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -686,6 +706,8 @@ const Assessment: React.FC<AssessmentProps> = ({
                 <input
                   id={name}
                   name={name}
+                  min="0"
+                  max="3"
                   type="number"
                   value={(formData as any)[name]}
                   onChange={handleChange}
@@ -788,6 +810,8 @@ const Assessment: React.FC<AssessmentProps> = ({
                 <input
                   id={name}
                   name={name}
+                  min="0"
+                  max="3"
                   type="number"
                   value={(formData as any)[name]}
                   onChange={handleChange}
