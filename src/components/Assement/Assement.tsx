@@ -14,10 +14,10 @@ interface AssessmentProps {
 }
 
 interface FormData {
-  // General Information (updated so numeric fields are strings)
+  // General Information
   height: string;
-  weight: string; // changed from number to string
-  age: string; // changed from number to string
+  weight: number;
+  age: number;
   primarySport: string;
   currentTrainingReg: string;
   goals: string;
@@ -25,7 +25,7 @@ interface FormData {
   hopeToGain: string;
   injuryHistory: string;
   coachingStyle: string;
-  daysTraining: string; // changed from number to string
+  daysTraining: number;
   priorSC: boolean;
 
   // Mobility Assessment
@@ -118,10 +118,10 @@ const Assessment: React.FC<AssessmentProps> = ({
   const [urlResponse, setUrlResponse] = useState<boolean>(false);
   const [url, setUrl] = useState<string>('');
   const [formData, setFormData] = useState<FormData>({
-    // General Information (updated initial values)
+    // General Information
     height: '',
-    weight: '',
-    age: '',
+    weight: 0,
+    age: 0,
     primarySport: '',
     currentTrainingReg: '',
     goals: '',
@@ -129,7 +129,7 @@ const Assessment: React.FC<AssessmentProps> = ({
     hopeToGain: '',
     injuryHistory: '',
     coachingStyle: '',
-    daysTraining: '1',
+    daysTraining: 1,
     priorSC: false,
 
     // Mobility Assessment
@@ -236,21 +236,10 @@ const Assessment: React.FC<AssessmentProps> = ({
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
-    const { name, value } = e.target;
-    // For numeric general info fields, allow only digits
-    if (['weight', 'age', 'daysTraining'].includes(name)) {
-      if (value === '' || /^\d+$/.test(value)) {
-        setFormData((prevData) => ({
-          ...prevData,
-          [name]: value,
-        }));
-      }
-      return;
-    }
-    // For all other fields, update normally
+    const { name, value, type } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value,
+      [name]: type === 'number' ? Number(value) : value,
     }));
   };
 
@@ -278,11 +267,10 @@ const Assessment: React.FC<AssessmentProps> = ({
         <ErrorMessage role={role as string} message="Failed to upload data" />
       );
     } else {
-      // Reset general info fields as strings
       setFormData({
         height: '',
-        weight: '',
-        age: '',
+        weight: 0,
+        age: 0,
         primarySport: '',
         currentTrainingReg: '',
         goals: '',
@@ -290,7 +278,7 @@ const Assessment: React.FC<AssessmentProps> = ({
         hopeToGain: '',
         injuryHistory: '',
         coachingStyle: '',
-        daysTraining: '1',
+        daysTraining: 1,
         priorSC: false,
 
         // Mobility Assessment
@@ -462,9 +450,7 @@ const Assessment: React.FC<AssessmentProps> = ({
               <input
                 id="weight"
                 name="weight"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                type="number"
                 value={formData.weight}
                 onChange={handleChange}
                 className="text-black mt-1 block w-full border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -480,9 +466,7 @@ const Assessment: React.FC<AssessmentProps> = ({
               <input
                 id="age"
                 name="age"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                type="number"
                 value={formData.age}
                 onChange={handleChange}
                 className="text-black mt-1 block w-full border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -605,9 +589,7 @@ const Assessment: React.FC<AssessmentProps> = ({
               <input
                 id="daysTraining"
                 name="daysTraining"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                type="number"
                 value={formData.daysTraining}
                 onChange={handleChange}
                 className="text-black mt-1 block w-full border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
