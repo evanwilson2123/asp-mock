@@ -106,14 +106,18 @@ export async function GET() {
     switch (role) {
       case 'ADMIN':
         // Fetch all athletes for ADMIN
-        athletes = await Athlete.find().exec();
+        athletes = await Athlete.find()
+          .select('_id firstName lastName level email')
+          .exec();
         break;
 
       case 'COACH':
         // Fetch teams where the coach's objectId matches
         const teams = await Team.find({
           coach: user.publicMetadata?.objectId,
-        }).exec();
+        })
+          .select('_id firstName lastName level email')
+          .exec();
 
         // Collect all athlete IDs (players) from the teams
         const athleteIds = teams.reduce((ids: string[], team) => {
