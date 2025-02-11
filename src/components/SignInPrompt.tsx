@@ -65,7 +65,7 @@ const SignInPrompt: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
       <div className="bg-gray-800 rounded-lg shadow-lg p-8 max-w-sm w-full">
         <h1 className="text-2xl font-bold text-center mb-6">
-          Welcome to CSV Central
+          Welcome to ASP Analytics
         </h1>
         <p className="text-gray-400 text-center mb-6">
           Please sign in to access your dashboard.
