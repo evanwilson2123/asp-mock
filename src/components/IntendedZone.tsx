@@ -26,7 +26,7 @@ const softColors = [
   'rgba(255, 159, 64, 0.5)',
 ];
 
-// ----- Added Athlete Interfaces and Selection State ----- //
+// ----- Athlete Interfaces and Selection State ----- //
 interface Athlete {
   _id: string;
   firstName: string;
@@ -36,7 +36,7 @@ interface Athlete {
   u?: string;
 }
 
-// ----- Helper function: get window dimensions ----- //
+// ----- Helper: Window Dimensions ----- //
 interface WindowSize {
   width: number;
   height: number;
@@ -79,7 +79,7 @@ const verticalLine2 = outerXMin + (2 * outerWidth) / 3;
 const horizontalLine1 = outerYMin + outerHeight / 3;
 const horizontalLine2 = outerYMin + (2 * outerHeight) / 3;
 
-// Helper function: Creates a canvas with the scaled-down image.
+// Helper: Create a scaled canvas image.
 const createScaledImage = (
   img: HTMLImageElement,
   scale: number
@@ -94,14 +94,24 @@ const createScaledImage = (
   return canvas;
 };
 
+// ----- History Action Types ----- //
+type HistoryAction =
+  | { type: 'setIntended'; previous: { x: number; y: number } | null }
+  | { type: 'setActual'; previous: { x: number; y: number } | null }
+  | {
+      type: 'addPitch';
+      pitch: Pitch;
+      previousIntended: { x: number; y: number } | null;
+      previousActual: { x: number; y: number } | null;
+    };
+
 const IntendedZone: React.FC = () => {
-  // ===== Athlete Selection State and Effect =====
+  // ----- Athlete Selection State -----
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [athletesLoading, setAthletesLoading] = useState<boolean>(true);
   const [athletesError, setAthletesError] = useState<string | null>(null);
 
-  // Filter and pagination state for athlete selection (similar to ManageAthletes)
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
@@ -128,7 +138,6 @@ const IntendedZone: React.FC = () => {
     fetchAthletes();
   }, []);
 
-  // Filter logic (similar to ManageAthletes)
   const filteredAthletes = athletes.filter((athlete) => {
     const fullName = (athlete.firstName + ' ' + athlete.lastName).toLowerCase();
     const matchesSearch = fullName.includes(searchTerm.toLowerCase());
@@ -142,9 +151,7 @@ const IntendedZone: React.FC = () => {
   const endIndex = startIndex + pageSize;
   const paginatedAthletes = filteredAthletes.slice(startIndex, endIndex);
 
-  // ----- End Athlete Selection State -----
-
-  // ----- Existing Pitching Session State -----
+  // ----- Pitching Session State -----
   const chartRef = useRef<ChartJS<'scatter'> | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [intended, setIntended] = useState<{ x: number; y: number } | null>(
@@ -152,6 +159,9 @@ const IntendedZone: React.FC = () => {
   );
   const [actual, setActual] = useState<{ x: number; y: number } | null>(null);
   const [pitchType, setPitchType] = useState<string>('4-seam');
+
+  // History state to record actions (for undo)
+  const [actionHistory, setActionHistory] = useState<HistoryAction[]>([]);
 
   // Window dimensions to ensure large screen
   const { width, height } = useWindowSize();
@@ -169,7 +179,7 @@ const IntendedZone: React.FC = () => {
     };
   }, []);
 
-  // If the window dimensions are not large enough, return an alternative UI.
+  // If the window dimensions are too small, show alternative UI.
   if (width && height && (width < 1024 || height < 768)) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900">
@@ -180,7 +190,7 @@ const IntendedZone: React.FC = () => {
     );
   }
 
-  // ----- If no athlete is selected, show the athlete selection view -----
+  // If no athlete is selected, show the athlete selection view.
   if (!selectedAthlete) {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
@@ -329,7 +339,7 @@ const IntendedZone: React.FC = () => {
     );
   }
 
-  // ----- Existing IntendedZone (Pitching Session) UI below -----
+  // ----- Chart Click Handler with History Recording -----
   const handleChartClick = (
     event: React.MouseEvent<HTMLCanvasElement>,
     type: 'intended' | 'actual'
@@ -349,38 +359,49 @@ const IntendedZone: React.FC = () => {
     const point = { x, y };
 
     if (type === 'intended') {
+      // Record current state before updating (usually null)
+      setActionHistory((prev) => [
+        ...prev,
+        { type: 'setIntended', previous: intended },
+      ]);
       setIntended(point);
     } else {
+      setActionHistory((prev) => [
+        ...prev,
+        { type: 'setActual', previous: actual },
+      ]);
       setActual(point);
     }
   };
 
+  // ----- Add Pitch Handler (records pitch addition in history) -----
   const handleAddPitch = () => {
     if (intended && actual) {
       const deltaXFeet = actual.x - intended.x;
       const deltaYFeet = actual.y - intended.y;
       const distanceFeet = Math.sqrt(deltaXFeet ** 2 + deltaYFeet ** 2);
-      const distancePercent = Math.sqrt(
-        (actual.x - intended.x) ** 2 + (actual.y - intended.y) ** 2
-      );
-      setPitches([
-        ...pitches,
+      const distancePercent = Math.sqrt(deltaXFeet ** 2 + deltaYFeet ** 2);
+      const newPitch: Pitch = {
+        intended,
+        actual,
+        pitchType,
+        distance: {
+          feet: parseFloat(distanceFeet.toFixed(2)),
+          percent: parseFloat(distancePercent.toFixed(2)),
+          inches: parseFloat((distanceFeet * 12).toFixed(2)),
+        },
+        level: selectedAthlete.level,
+      };
+      setActionHistory((prev) => [
+        ...prev,
         {
-          intended,
-          actual,
-          pitchType,
-          distance: {
-            feet: parseFloat(distanceFeet.toFixed(2)),
-            percent: parseFloat(distancePercent.toFixed(2)),
-            inches: parseFloat((distanceFeet * 12).toFixed(2)),
-          },
-          level: selectedAthlete.level,
+          type: 'addPitch',
+          pitch: newPitch,
+          previousIntended: intended,
+          previousActual: actual,
         },
       ]);
-      console.log(
-        `distance inches: ${parseFloat((distanceFeet * 12).toFixed(2))}`
-      );
-      console.log(`distance: ${distanceFeet}`);
+      setPitches((prev) => [...prev, newPitch]);
       setIntended(null);
       setActual(null);
     } else {
@@ -388,21 +409,34 @@ const IntendedZone: React.FC = () => {
     }
   };
 
-  // Undo last pitch (with confirmation)
-  const handleUndoPitch = () => {
-    if (pitches.length === 0) {
-      alert('No pitches to undo.');
+  // ----- Unified Undo Handler -----
+  const handleUndo = () => {
+    if (actionHistory.length === 0) {
+      alert('No actions to undo.');
       return;
     }
-    const confirmUndo = window.confirm(
-      'Are you sure you want to undo the last pitch?'
-    );
-    if (confirmUndo) {
-      setPitches(pitches.slice(0, pitches.length - 1));
+    const lastAction = actionHistory[actionHistory.length - 1];
+    setActionHistory((prev) => prev.slice(0, prev.length - 1));
+
+    switch (lastAction.type) {
+      case 'setActual':
+        setActual(lastAction.previous);
+        break;
+      case 'setIntended':
+        setIntended(lastAction.previous);
+        break;
+      case 'addPitch':
+        setPitches((prev) => prev.slice(0, prev.length - 1));
+        // Optionally restore the intended/actual state from before the pitch was added.
+        setIntended(lastAction.previousIntended);
+        setActual(lastAction.previousActual);
+        break;
+      default:
+        break;
     }
   };
 
-  // Submit the pitching session to /api/intended-zone
+  // Submit the pitching session.
   const handleSubmitSession = async () => {
     if (pitches.length === 0) {
       alert('There are no pitches to submit.');
@@ -424,14 +458,14 @@ const IntendedZone: React.FC = () => {
       alert('Session submitted successfully!');
       const { sessionId } = await res.json();
       router.push(`/intended-zone/${sessionId}`);
-      // Optionally clear the session
+      // Optionally clear the session.
       setPitches([]);
     } catch (err: any) {
       alert(err.message || 'An error occurred while submitting the session');
     }
   };
 
-  // Construct the data object for the scatter chart.
+  // Construct data for the scatter chart.
   const data = {
     datasets: [
       ...pitchTypes.map((type, index) => ({
@@ -609,10 +643,10 @@ const IntendedZone: React.FC = () => {
             Add Pitch
           </button>
           <button
-            onClick={handleUndoPitch}
+            onClick={handleUndo}
             className="bg-yellow-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-yellow-600 transition mb-4"
           >
-            Undo Pitch
+            Undo Last Action
           </button>
           <button
             onClick={handleSubmitSession}
