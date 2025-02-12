@@ -133,10 +133,16 @@ const Dashboard: React.FC = () => {
         // Call all aggregator endpoints for the chosen level
         const [blastRes, hitTraxRes, trackmanRes, athleteNumsRes] =
           await Promise.all([
-            fetch(`/api/admin/dashboard/blast-motion?level=${level}`),
-            fetch(`/api/admin/dashboard/hittrax?level=${level}`),
-            fetch(`/api/admin/dashboard/trackman?level=${level}`),
-            fetch('/api/admin/dashboard'),
+            fetch(`/api/admin/dashboard/blast-motion?level=${level}`, {
+              next: { revalidate: 60 },
+            }),
+            fetch(`/api/admin/dashboard/hittrax?level=${level}`, {
+              next: { revalidate: 60 },
+            }),
+            fetch(`/api/admin/dashboard/trackman?level=${level}`, {
+              next: { revalidate: 60 },
+            }),
+            fetch('/api/admin/dashboard', { next: { revalidate: 60 } }),
           ]);
 
         if (
