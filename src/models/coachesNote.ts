@@ -1,7 +1,8 @@
 // coachesNote.ts
-import { Schema, model, models } from 'mongoose';
+import { Schema, Types, model, models } from 'mongoose';
 
 export interface ICoachNote {
+  _id?: Types.ObjectId;
   coachName: string;
   coachNote: string;
   date: Date;

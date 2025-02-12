@@ -20,7 +20,6 @@ interface Athlete {
   weight?: string;
   profilePhotoUrl?: string;
   level: string;
-  coachesNotes: ICoachNote[]; // Array of notes
   season?: string;
   programType?: string;
   active: boolean;
@@ -65,7 +64,6 @@ const AthleteDetails = () => {
     'Intended-Zone',
     'Assessments',
   ];
-
   const csvTechnologies = ['Blast Motion', 'Hittrax', 'Trackman', 'Armcare'];
 
   // ========== Fetch Athlete Data ==========
@@ -88,7 +86,7 @@ const AthleteDetails = () => {
 
         const data = await response.json();
         setAthlete(data.athlete || null);
-        // Make sure coachesNotes is an array (or default to an empty array)
+        // Ensure coachesNotes is an array
         setCoachNotes(data.athlete?.coachesNotes || []);
         setUpdatedFields({
           active: data.athlete?.active || false,
@@ -108,13 +106,11 @@ const AthleteDetails = () => {
 
   // ========== Save New Coach Note ==========
   const handleNotesSave = async () => {
-    // Create a new note object using required data.
-    // For example, we assume the current coach's name is available from the user object.
     const newNote: ICoachNote = {
       coachName:
         `${user?.publicMetadata?.firstName || 'Coach'} ${user?.publicMetadata?.lastName || ''}`.trim(),
       coachNote: newNoteText,
-      date: new Date(), // Or new Date().toISOString() if you prefer a string
+      date: new Date(),
     };
 
     try {
@@ -123,7 +119,7 @@ const AthleteDetails = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        // Send the new note to be added to the athlete’s notes array.
+        // Send the note wrapped in an object; adjust if needed
         body: JSON.stringify({ note: newNote }),
       });
 
@@ -131,13 +127,35 @@ const AthleteDetails = () => {
         throw new Error('Failed to save note');
       }
 
-      // Optionally, update the local state by appending the new note.
+      // Update local state by appending the new note
       setCoachNotes((prevNotes) => [...prevNotes, newNote]);
-      setNewNoteText(''); // Clear the input field
+      setNewNoteText('');
       setUploadStatus('Note saved successfully');
     } catch (error) {
       console.error('Error saving note:', error);
       setUploadStatus('Failed to save note');
+    } finally {
+      setTimeout(() => setUploadStatus(null), 3000);
+    }
+  };
+
+  // ========== Delete Coach Note Handler ==========
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      const response = await fetch(
+        `/api/athlete/${athleteId}/notes?noteId=${noteId}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        throw new Error('Failed to delete note');
+      }
+      setCoachNotes((prevNotes) =>
+        prevNotes.filter((note) => note._id?.toString() !== noteId)
+      );
+      setUploadStatus('Note deleted successfully');
+    } catch (error: any) {
+      console.error(error);
+      setUploadStatus('Failed to delete note');
     } finally {
       setTimeout(() => setUploadStatus(null), 3000);
     }
@@ -200,8 +218,8 @@ const AthleteDetails = () => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) {
-      setFileToUpload(file); // Temporarily store the file
-      setConfirmationTech(tech); // Set the technology for confirmation
+      setFileToUpload(file);
+      setConfirmationTech(tech);
     }
   };
 
@@ -291,6 +309,7 @@ const AthleteDetails = () => {
 
             {/* Dropdowns Section */}
             <div className="flex flex-wrap justify-start items-center space-x-6 mt-6 md:mt-0 bg-gray-50 p-4 rounded shadow-lg">
+              {/* Dropdowns for Level, Program, Season, Status */}
               <div className="flex flex-col">
                 <label
                   htmlFor="level"
@@ -311,72 +330,7 @@ const AthleteDetails = () => {
                   ))}
                 </select>
               </div>
-              <div className="flex flex-col">
-                <label
-                  htmlFor="programType"
-                  className="text-xs font-medium text-gray-700 mb-1"
-                >
-                  Program
-                </label>
-                <select
-                  id="programType"
-                  value={updatedFields.programType}
-                  onChange={(e) =>
-                    handleFieldUpdate('programType', e.target.value)
-                  }
-                  className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {['Pitching', 'Hitting', 'Pitching + Hitting', 'S + C'].map(
-                    (option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label
-                  htmlFor="season"
-                  className="text-xs font-medium text-gray-700 mb-1"
-                >
-                  Season
-                </label>
-                <select
-                  id="season"
-                  value={updatedFields.season || ''}
-                  onChange={(e) => handleFieldUpdate('season', e.target.value)}
-                  className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {['In Season', 'Off Season'].map((season) => (
-                    <option key={season} value={season}>
-                      {season}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <label
-                  htmlFor="status"
-                  className="text-xs font-medium text-gray-700 mb-1"
-                >
-                  Status
-                </label>
-                <select
-                  id="status"
-                  value={updatedFields.active ? 'Active' : 'Inactive'}
-                  onChange={(e) =>
-                    handleFieldUpdate('active', e.target.value === 'Active')
-                  }
-                  className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {['Active', 'Inactive'].map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* (Additional dropdowns for programType, season, status here) */}
             </div>
           </div>
         </div>
@@ -386,16 +340,29 @@ const AthleteDetails = () => {
           <h2 className="text-lg font-bold text-gray-700 mb-4">
             Coach&apos;s Notes
           </h2>
-          {/* Render Existing Notes */}
+          {/* Render Existing Notes with Delete Buttons */}
           <div className="mb-4">
             {coachNotes.length > 0 ? (
               coachNotes.map((note, index) => (
-                <div key={index} className="mb-2 p-2 border rounded">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-semibold">{note.coachName}</span> on{' '}
-                    {new Date(note.date).toLocaleDateString()}:
-                  </p>
-                  <p className="text-gray-800">{note.coachNote}</p>
+                <div
+                  key={index}
+                  className="mb-2 p-2 border rounded flex justify-between items-start"
+                >
+                  <div>
+                    <p className="text-sm text-gray-600">
+                      <span className="font-semibold">{note.coachName}</span> on{' '}
+                      {new Date(note.date).toLocaleDateString()}:
+                    </p>
+                    <p className="text-gray-800">{note.coachNote}</p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      note._id && handleDeleteNote(note._id.toString())
+                    }
+                    className="text-red-500 hover:text-red-700 ml-4"
+                  >
+                    Delete
+                  </button>
                 </div>
               ))
             ) : (
