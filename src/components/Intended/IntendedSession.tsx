@@ -130,30 +130,49 @@ const IntendedSession: React.FC = () => {
     };
   });
 
-  // Prepare data for the scatter plot that shows intended vs. actual locations.
+  // Define base color values (RGB only) for each pitch type.
+  // Adjust or add more colors as needed.
+  const baseColorValues = [
+    '255, 99, 132', // Red
+    '54, 162, 235', // Blue
+    '75, 192, 192', // Green
+    '153, 102, 255', // Purple
+    '255, 159, 64', // Orange
+  ];
+
+  // Prepare scatter datasets: one dataset for intended (circle) and one for actual (triangle) per pitch type.
+  const scatterDatasets: any[] = [];
+  Object.keys(dataByPitchType).forEach((pitchType, index) => {
+    const records = dataByPitchType[pitchType];
+    const colorBase = baseColorValues[index % baseColorValues.length];
+    // Lighter shade for intended; darker for actual.
+    const intendedColor = `rgba(${colorBase}, 0.5)`;
+    const actualColor = `rgba(${colorBase}, 0.8)`;
+
+    scatterDatasets.push({
+      label: `${pitchType} - Intended`,
+      data: records.map((rec) => ({
+        x: rec.intendedX,
+        y: rec.intendedY,
+      })),
+      backgroundColor: intendedColor,
+      pointStyle: 'circle',
+      pointRadius: 6,
+    });
+    scatterDatasets.push({
+      label: `${pitchType} - Actual`,
+      data: records.map((rec) => ({
+        x: rec.actualX,
+        y: rec.actualY,
+      })),
+      backgroundColor: actualColor,
+      pointStyle: 'triangle',
+      pointRadius: 6,
+    });
+  });
+
   const scatterData = {
-    datasets: [
-      {
-        label: 'Intended Locations',
-        data: intendedData.map((rec) => ({
-          x: rec.intendedX,
-          y: rec.intendedY,
-        })),
-        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-        pointStyle: 'circle',
-        pointRadius: 6,
-      },
-      {
-        label: 'Actual Locations',
-        data: intendedData.map((rec) => ({
-          x: rec.actualX,
-          y: rec.actualY,
-        })),
-        backgroundColor: 'rgba(255, 99, 132, 0.5)',
-        pointStyle: 'triangle',
-        pointRadius: 6,
-      },
-    ],
+    datasets: scatterDatasets,
   };
 
   const scatterOptions: ChartOptions<'scatter'> = {
