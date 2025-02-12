@@ -81,9 +81,7 @@ const AthleteDetails = () => {
           setErrorMessage(errorMessage);
           return;
         }
-
         setErrorMessage(null);
-
         const data = await response.json();
         setAthlete(data.athlete || null);
         // Ensure coachesNotes is an array
@@ -100,7 +98,6 @@ const AthleteDetails = () => {
         setLoading(false);
       }
     };
-
     fetchAthlete();
   }, [athleteId]);
 
@@ -116,17 +113,13 @@ const AthleteDetails = () => {
     try {
       const response = await fetch(`/api/athlete/${athleteId}/notes`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         // Send the note wrapped in an object; adjust if needed
         body: JSON.stringify({ note: newNote }),
       });
-
       if (!response.ok) {
         throw new Error('Failed to save note');
       }
-
       // Update local state by appending the new note
       setCoachNotes((prevNotes) => [...prevNotes, newNote]);
       setNewNoteText('');
@@ -166,16 +159,12 @@ const AthleteDetails = () => {
     try {
       const response = await fetch(`/api/athlete/${athleteId}/update`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [field]: value }),
       });
-
       if (!response.ok) {
         throw new Error('Failed to update field');
       }
-
       setUpdatedFields((prev) => ({ ...prev, [field]: value }));
       setUploadStatus(`${field} updated successfully.`);
     } catch (error) {
@@ -190,22 +179,14 @@ const AthleteDetails = () => {
   const handleFileUpload = async (tech: string, file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-
     try {
       const response = await fetch(
-        `/api/athlete/${athleteId}/upload/${tech
-          .toLowerCase()
-          .replace(/\s+/g, '-')}`,
-        {
-          method: 'POST',
-          body: formData,
-        }
+        `/api/athlete/${athleteId}/upload/${tech.toLowerCase().replace(/\s+/g, '-')}`,
+        { method: 'POST', body: formData }
       );
-
       if (!response.ok) {
         throw new Error('File upload failed');
       }
-
       setUploadStatus(`File successfully uploaded for ${tech}`);
     } catch (error: any) {
       setUploadStatus('Error uploading file: ' + error.message);
@@ -258,9 +239,7 @@ const AthleteDetails = () => {
               key={tech}
               onClick={() =>
                 router.push(
-                  `/athlete/${athleteId}/reports/${tech
-                    .toLowerCase()
-                    .replace(/\s+/g, '-')}`
+                  `/athlete/${athleteId}/reports/${tech.toLowerCase().replace(/\s+/g, '-')}`
                 )
               }
               className="text-gray-700 font-semibold hover:text-gray-900 transition"
@@ -306,10 +285,9 @@ const AthleteDetails = () => {
                 </p>
               </div>
             </div>
-
             {/* Dropdowns Section */}
             <div className="flex flex-wrap justify-start items-center space-x-6 mt-6 md:mt-0 bg-gray-50 p-4 rounded shadow-lg">
-              {/* Dropdowns for Level, Program, Season, Status */}
+              {/* Level Dropdown */}
               <div className="flex flex-col">
                 <label
                   htmlFor="level"
@@ -330,7 +308,75 @@ const AthleteDetails = () => {
                   ))}
                 </select>
               </div>
-              {/* (Additional dropdowns for programType, season, status here) */}
+              {/* Program Dropdown */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="programType"
+                  className="text-xs font-medium text-gray-700 mb-1"
+                >
+                  Program
+                </label>
+                <select
+                  id="programType"
+                  value={updatedFields.programType}
+                  onChange={(e) =>
+                    handleFieldUpdate('programType', e.target.value)
+                  }
+                  className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  {['Pitching', 'Hitting', 'Pitching + Hitting', 'S + C'].map(
+                    (option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+              {/* Season Dropdown */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="season"
+                  className="text-xs font-medium text-gray-700 mb-1"
+                >
+                  Season
+                </label>
+                <select
+                  id="season"
+                  value={updatedFields.season || ''}
+                  onChange={(e) => handleFieldUpdate('season', e.target.value)}
+                  className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  {['In Season', 'Off Season'].map((season) => (
+                    <option key={season} value={season}>
+                      {season}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* Status Dropdown */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="status"
+                  className="text-xs font-medium text-gray-700 mb-1"
+                >
+                  Status
+                </label>
+                <select
+                  id="status"
+                  value={updatedFields.active ? 'Active' : 'Inactive'}
+                  onChange={(e) =>
+                    handleFieldUpdate('active', e.target.value === 'Active')
+                  }
+                  className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  {['Active', 'Inactive'].map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
