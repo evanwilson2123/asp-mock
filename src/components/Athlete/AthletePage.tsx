@@ -8,6 +8,7 @@ import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '../Loader';
 import Image from 'next/image';
 import ErrorMessage from '../ErrorMessage';
+import { ICoachNote } from '@/models/coachesNote';
 
 interface Athlete {
   _id: string;
@@ -19,6 +20,7 @@ interface Athlete {
   weight?: string;
   profilePhotoUrl?: string;
   level: string;
+  coachesNotes: ICoachNote[]; // Array of notes
   season?: string;
   programType?: string;
   active: boolean;
@@ -29,24 +31,20 @@ interface Athlete {
  *
  * This component displays detailed information about an athlete, including personal details,
  * program information, coach notes, and performance data upload options.
- *
- * Features:
- * - Displays athlete profile with editable fields (level, season, program type, status).
- * - Allows coaches to add/save notes for the athlete.
- * - Supports CSV uploads for performance technologies like Blast Motion, HitTrax, etc.
- * - Responsive design with sidebars for both coaches and admins.
  */
-
 const AthleteDetails = () => {
   // ========== State Management ==========
   const [athlete, setAthlete] = useState<Athlete | null>(null);
+  // Store the array of coach notes
+  const [coachNotes, setCoachNotes] = useState<ICoachNote[]>([]);
+  // Separate state for the new note text input
+  const [newNoteText, setNewNoteText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hoveredTile, setHoveredTile] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [confirmationTech, setConfirmationTech] = useState<string | null>(null);
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
-  const [coachNotes, setCoachNotes] = useState<string>('');
   const [updatedFields, setUpdatedFields] = useState({
     active: false,
     level: '',
@@ -79,9 +77,9 @@ const AthleteDetails = () => {
           const errorMessage =
             response.status === 404
               ? 'Athlete data could not be found.'
-              : response.status == 500
+              : response.status === 500
                 ? 'We encountered an issue on our end. Please try again later.'
-                : 'An unexpected issue occured. Please try again.';
+                : 'An unexpected issue occurred. Please try again.';
           setErrorMessage(errorMessage);
           return;
         }
@@ -90,7 +88,8 @@ const AthleteDetails = () => {
 
         const data = await response.json();
         setAthlete(data.athlete || null);
-        setCoachNotes(data.athlete?.coachNotes || '');
+        // Make sure coachesNotes is an array (or default to an empty array)
+        setCoachNotes(data.athlete?.coachesNotes || []);
         setUpdatedFields({
           active: data.athlete?.active || false,
           level: data.athlete?.level || '',
@@ -107,33 +106,44 @@ const AthleteDetails = () => {
     fetchAthlete();
   }, [athleteId]);
 
-  // const handleBackClick = () => {
-  //   router.push("/manage-athletes");
-  // };
-
+  // ========== Save New Coach Note ==========
   const handleNotesSave = async () => {
+    // Create a new note object using required data.
+    // For example, we assume the current coach's name is available from the user object.
+    const newNote: ICoachNote = {
+      coachName:
+        `${user?.publicMetadata?.firstName || 'Coach'} ${user?.publicMetadata?.lastName || ''}`.trim(),
+      coachNote: newNoteText,
+      date: new Date(), // Or new Date().toISOString() if you prefer a string
+    };
+
     try {
       const response = await fetch(`/api/athlete/${athleteId}/notes`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ notes: coachNotes }),
+        // Send the new note to be added to the athlete’s notes array.
+        body: JSON.stringify({ note: newNote }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save notes');
+        throw new Error('Failed to save note');
       }
 
-      setUploadStatus('Notes saved successfully');
+      // Optionally, update the local state by appending the new note.
+      setCoachNotes((prevNotes) => [...prevNotes, newNote]);
+      setNewNoteText(''); // Clear the input field
+      setUploadStatus('Note saved successfully');
     } catch (error) {
-      console.error('Error saving notes:', error);
-      setUploadStatus('Failed to save notes');
+      console.error('Error saving note:', error);
+      setUploadStatus('Failed to save note');
     } finally {
       setTimeout(() => setUploadStatus(null), 3000);
     }
   };
 
+  // ========== Field Update Handler ==========
   const handleFieldUpdate = async (field: keyof Athlete, value: any) => {
     try {
       const response = await fetch(`/api/athlete/${athleteId}/update`, {
@@ -158,6 +168,7 @@ const AthleteDetails = () => {
     }
   };
 
+  // ========== File Upload Handlers ==========
   const handleFileUpload = async (tech: string, file: File) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -370,23 +381,40 @@ const AthleteDetails = () => {
           </div>
         </div>
 
-        {/* Notes Section */}
+        {/* Coach Notes Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-lg font-bold text-gray-700 mb-4">
             Coach&apos;s Notes
           </h2>
+          {/* Render Existing Notes */}
+          <div className="mb-4">
+            {coachNotes.length > 0 ? (
+              coachNotes.map((note, index) => (
+                <div key={index} className="mb-2 p-2 border rounded">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold">{note.coachName}</span> on{' '}
+                    {new Date(note.date).toLocaleDateString()}:
+                  </p>
+                  <p className="text-gray-800">{note.coachNote}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No notes yet.</p>
+            )}
+          </div>
+          {/* New Note Input */}
           <textarea
-            value={coachNotes}
-            onChange={(e) => setCoachNotes(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={newNoteText}
+            onChange={(e) => setNewNoteText(e.target.value)}
+            className="text-black w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows={4}
-            placeholder="Add notes about this athlete..."
+            placeholder="Add a new note..."
           ></textarea>
           <button
             onClick={handleNotesSave}
             className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
           >
-            Save Notes
+            Save Note
           </button>
         </div>
 

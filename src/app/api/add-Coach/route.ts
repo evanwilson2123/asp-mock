@@ -111,6 +111,8 @@ export async function POST(req: NextRequest) {
       publicMetadata: {
         role: 'COACH',
         objectId: coach._id,
+        firstName: coach.firstName,
+        lastName: coach.lastName,
       },
     });
 

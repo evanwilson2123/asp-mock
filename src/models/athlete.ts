@@ -1,4 +1,5 @@
-import mongoose, { Schema, model, models, Types } from "mongoose";
+import mongoose, { Schema, model, models, Types } from 'mongoose';
+import { coachNoteSchema, ICoachNote } from './coachesNote';
 
 export interface IAthlete {
   _id: Types.ObjectId;
@@ -7,6 +8,7 @@ export interface IAthlete {
   email: string;
   u?: string;
   level: string;
+  coachesNotes: ICoachNote[];
   team?: Types.ObjectId;
   age?: number;
   height?: string;
@@ -27,7 +29,8 @@ const athleteSchema = new Schema<IAthlete>({
   email: { type: String, required: true },
   u: { type: String, required: false },
   level: { type: String, required: true },
-  team: { type: mongoose.Types.ObjectId, ref: "Team", required: false },
+  coachesNotes: { type: [coachNoteSchema], default: [] },
+  team: { type: mongoose.Types.ObjectId, ref: 'Team', required: false },
   age: { type: Number, required: false },
   height: { type: String, required: false },
   weight: { type: String, required: false },
@@ -41,6 +44,6 @@ const athleteSchema = new Schema<IAthlete>({
   forceplates: [{ type: String, required: false }],
 });
 
-const Athlete = models.Athlete || model<IAthlete>("Athlete", athleteSchema);
+const Athlete = models.Athlete || model<IAthlete>('Athlete', athleteSchema);
 
 export default Athlete;
