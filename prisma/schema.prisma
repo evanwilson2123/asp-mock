@@ -271,6 +271,7 @@ model Assessment {
   goodMorning             Int?
   lungeOverhead           Int?
   lateralTrunkTilt        Int?
+  mobilityNotes           String?
 
   // Hitting Mechanics Breakdown
   weighShift              Int?
@@ -284,6 +285,7 @@ model Assessment {
   shoulderConn            Int?
   barrelExt               Int?
   batShoulderAng          Int?
+  hittingNotes            String?
 
   // Pitching Mechanics Breakdown
   startingPos             Int?
@@ -339,6 +341,7 @@ model Assessment {
   overallRhythm           Int?
   propTimedIntent         Int?
   cervPos                 Int?
+  pitchingNotes           String?
   createdAt               DateTime @default(now())
   // Save the Blob URL
   blobUrl                 String?

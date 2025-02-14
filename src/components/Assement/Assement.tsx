@@ -37,6 +37,7 @@ interface FormData {
   goodMorning: number;
   lungeOverhead: number;
   lateralTrunkTilt: number;
+  mobilityNotes: string;
 
   // Hitting Mechanics Breakdown
   weighShift: number;
@@ -50,6 +51,7 @@ interface FormData {
   shoulderConn: number;
   barrelExt: number;
   batShoulderAng: number;
+  hittingNotes: string;
 
   // Pitching Mechanics Breakdown
   startingPos: number;
@@ -105,6 +107,7 @@ interface FormData {
   overallRhythm: number;
   propTimedIntent: number;
   cervPos: number;
+  pitchingNotes: string;
 }
 
 const Assessment: React.FC<AssessmentProps> = ({
@@ -141,6 +144,7 @@ const Assessment: React.FC<AssessmentProps> = ({
     goodMorning: 0,
     lungeOverhead: 0,
     lateralTrunkTilt: 0,
+    mobilityNotes: '',
 
     // Hitting Mechanics Breakdown
     weighShift: 0,
@@ -154,6 +158,7 @@ const Assessment: React.FC<AssessmentProps> = ({
     shoulderConn: 0,
     barrelExt: 0,
     batShoulderAng: 0,
+    hittingNotes: '',
 
     // Pitching Mechanics Breakdown
     startingPos: 0,
@@ -209,6 +214,7 @@ const Assessment: React.FC<AssessmentProps> = ({
     overallRhythm: 0,
     propTimedIntent: 0,
     cervPos: 0,
+    pitchingNotes: '',
   });
 
   const router = useRouter();
@@ -290,6 +296,7 @@ const Assessment: React.FC<AssessmentProps> = ({
         goodMorning: 0,
         lungeOverhead: 0,
         lateralTrunkTilt: 0,
+        mobilityNotes: '',
 
         // Hitting Mechanics Breakdown
         weighShift: 0,
@@ -303,6 +310,7 @@ const Assessment: React.FC<AssessmentProps> = ({
         shoulderConn: 0,
         barrelExt: 0,
         batShoulderAng: 0,
+        hittingNotes: '',
 
         // Pitching Mechanics Breakdown
         startingPos: 0,
@@ -358,6 +366,7 @@ const Assessment: React.FC<AssessmentProps> = ({
         overallRhythm: 0,
         propTimedIntent: 0,
         cervPos: 0,
+        pitchingNotes: '',
       });
       const data = await response.json();
       console.log(data.pdfUrl);
@@ -400,14 +409,6 @@ const Assessment: React.FC<AssessmentProps> = ({
         </div>
       )}
 
-      {/* Desktop Sidebar */}
-      {/* <div className="hidden md:block w-64 bg-gray-900 text-white min-h-screen">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
-      </div> */}
-      {/* Mobile Sidebar */}
-      {/* <div className="md:hidden bg-gray-100">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
-      </div> */}
       <form
         onSubmit={handleSubmit}
         className="flex-1 p-6 bg-white shadow rounded space-y-8"
@@ -657,6 +658,22 @@ const Assessment: React.FC<AssessmentProps> = ({
               </div>
             ))}
           </div>
+          <div className="mt-4">
+            <label
+              htmlFor="mobilityNotes"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Additional Mobility Notes
+            </label>
+            <textarea
+              id="mobilityNotes"
+              name="mobilityNotes"
+              value={formData.mobilityNotes}
+              onChange={handleChange}
+              className="text-black mt-1 block w-full border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+              rows={4}
+            />
+          </div>
         </fieldset>
 
         {/* Hitting Mechanics Breakdown Section */}
@@ -697,6 +714,22 @@ const Assessment: React.FC<AssessmentProps> = ({
                 />
               </div>
             ))}
+          </div>
+          <div className="mt-4">
+            <label
+              htmlFor="hittingNotes"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Additional Hitting Notes
+            </label>
+            <textarea
+              id="hittingNotes"
+              name="hittingNotes"
+              value={formData.hittingNotes}
+              onChange={handleChange}
+              className="text-black mt-1 block w-full border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+              rows={4}
+            />
           </div>
         </fieldset>
 
@@ -801,6 +834,22 @@ const Assessment: React.FC<AssessmentProps> = ({
                 />
               </div>
             ))}
+          </div>
+          <div className="mt-4">
+            <label
+              htmlFor="pitchingNotes"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Additional Pitching Notes
+            </label>
+            <textarea
+              id="pitchingNotes"
+              name="pitchingNotes"
+              value={formData.pitchingNotes}
+              onChange={handleChange}
+              className="text-black mt-1 block w-full border-gray-300 rounded shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+              rows={4}
+            />
           </div>
         </fieldset>
 
