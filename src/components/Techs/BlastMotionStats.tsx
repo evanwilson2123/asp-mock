@@ -54,14 +54,7 @@ interface Session {
  *
  * This component displays comprehensive Blast Motion data for an athlete,
  * including session history, maximum performance metrics, and detailed trend
- * visualizations for various swing statistics such as bat speed, hand speed,
- * rotational acceleration, power, and connection metrics.
- *
- * It includes a clickable session list, circular metric cards, and two charts:
- * - The main chart shows averages over time for bat speed, hand speed, rotational acceleration, and power.
- * - The connections chart compares early connection angles and connection at impact, with an annotation.
- *
- * The charts are wrapped in containers with fixed heights so they remain legible on mobile.
+ * visualizations for various swing statistics.
  */
 const BlastMotionStats: React.FC = () => {
   const [maxBatSpeed, setMaxBatSpeed] = useState<number>(0);
@@ -69,7 +62,7 @@ const BlastMotionStats: React.FC = () => {
   const [maxRotationalAccel, setMaxRotationalAccel] = useState<number>(0);
   const [maxPower, setMaxPower] = useState<number>(0);
   const [sessionData, setSessionData] = useState<SessionAvg[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]); // For clickable sessions
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -100,12 +93,28 @@ const BlastMotionStats: React.FC = () => {
           throw new Error(data.error);
         }
 
+        // Sort session averages in chronological order (oldest first)
+        const sortedSessionAverages = data.sessionAverages.sort(
+          (a: SessionAvg, b: SessionAvg) =>
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+
         setMaxBatSpeed(data.maxBatSpeed || 0);
         setMaxHandSpeed(data.maxHandSpeed || 0);
         setMaxRotationalAccel(data.maxRotationalAcceleration || 0);
         setMaxPower(data.maxPower || 0);
-        setSessionData(data.sessionAverages || []);
-        setSessions(data.sessions || []); // Set sessions for clickable list
+        setSessionData(sortedSessionAverages);
+        // For the clickable list, you might prefer descending order:
+        const sortedSessionsDesc = [...sortedSessionAverages]
+          .sort(
+            (a: SessionAvg, b: SessionAvg) =>
+              new Date(b.date).getTime() - new Date(a.date).getTime()
+          )
+          .map(({ sessionId, date }: { sessionId: string; date: string }) => ({
+            sessionId,
+            date,
+          }));
+        setSessions(sortedSessionsDesc);
       } catch (err: any) {
         setErrorMessage(err.message);
       } finally {
@@ -211,7 +220,7 @@ const BlastMotionStats: React.FC = () => {
     ],
   };
 
-  // Define the options for the connections chart (with annotation)
+  // Options for the connections chart with an annotation at 90°.
   const connectionsChartOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
