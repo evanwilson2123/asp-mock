@@ -196,13 +196,17 @@ const Dashboard: React.FC = () => {
   }
 
   // ====================== BLAST MOTION ======================
-  const blastLabels = blastData?.sessionAverages?.map((s) => s.date) ?? [];
+  const sortedBlastData = blastData?.sessionAverages?.sort(
+    (a: BlastSessionAvg, b: BlastSessionAvg) =>
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  const blastLabels = sortedBlastData?.map((s) => s.date) ?? [];
   const blastChartData = {
     labels: blastLabels,
     datasets: [
       {
         label: 'Avg Bat Speed',
-        data: blastData?.sessionAverages?.map((s) => s.avgBatSpeed) ?? [],
+        data: sortedBlastData?.map((s) => s.avgBatSpeed) ?? [],
         borderColor: 'rgba(54, 162, 235, 0.9)',
         backgroundColor: 'rgba(54, 162, 235, 0.1)',
         fill: true,
@@ -210,7 +214,7 @@ const Dashboard: React.FC = () => {
       },
       {
         label: 'Avg Hand Speed',
-        data: blastData?.sessionAverages?.map((s) => s.avgHandSpeed) ?? [],
+        data: sortedBlastData?.map((s) => s.avgHandSpeed) ?? [],
         borderColor: 'rgba(75, 192, 192, 0.9)',
         backgroundColor: 'rgba(75, 192, 192, 0.1)',
         fill: true,
