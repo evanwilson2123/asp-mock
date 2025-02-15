@@ -198,7 +198,6 @@ import prisma from '@/lib/prismaDb';
 import csvParser from 'csv-parser';
 import { Readable } from 'stream';
 import { auth } from '@clerk/nextjs/server';
-import { randomUUID } from 'crypto';
 import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
 
@@ -235,9 +234,10 @@ const CSV_HEADERS = [
  * which are skipped. The actual data is parsed using explicitly defined headers.
  *
  * Rows are grouped by the normalized Date (YYYY-MM-DD). For each distinct date,
- * a unique session UUID is generated; all rows sharing the same date are assigned that session.
+ * a session ID is created in the format: `YYYY-MM-DD_<athleteId>`. If that session ID
+ * already exists for the athlete, rows with that date are skipped.
  *
- * @returns {NextResponse} JSON response with a list of session IDs.
+ * @returns {NextResponse} JSON response with a list of new session IDs.
  */
 export async function POST(req: NextRequest, context: any) {
   const athleteId = context.params.athleteId;
@@ -263,6 +263,10 @@ export async function POST(req: NextRequest, context: any) {
       athlete.blastMotion = [];
     }
 
+    // We'll build a map of new session IDs (keyed by normalized date)
+    const sessionMap: { [normalizedDate: string]: string } = {};
+    const csvData: any[] = [];
+
     // Read the entire file as text.
     const arrayBuffer = await req.arrayBuffer();
     const fileText = Buffer.from(arrayBuffer).toString('utf-8');
@@ -275,10 +279,6 @@ export async function POST(req: NextRequest, context: any) {
     const parseStream = fileStream.pipe(
       csvParser({ headers: CSV_HEADERS, skipLines: 0, strict: false })
     );
-
-    const csvData: any[] = [];
-    // Group rows by normalized date ("YYYY-MM-DD")
-    const sessionMap: { [normalizedDate: string]: string } = {};
 
     console.log('Starting CSV Parsing...');
     for await (const row of parseStream) {
@@ -310,11 +310,22 @@ export async function POST(req: NextRequest, context: any) {
         continue;
       }
 
-      // Create a session ID for this normalized date if not already done.
-      if (!sessionMap[normalizedDate]) {
-        sessionMap[normalizedDate] = randomUUID();
+      // Build the candidate session ID for this date.
+      const candidateSessionId = `${normalizedDate}_${athlete._id.toString()}`;
+      // If this session already exists, skip all rows with this date.
+      if (athlete.blastMotion.includes(candidateSessionId)) {
         console.log(
-          `Generated session id ${sessionMap[normalizedDate]} for date ${normalizedDate}`
+          `Skipping row because session for date ${normalizedDate} already exists:`,
+          row
+        );
+        continue;
+      }
+
+      // If we haven't seen this new date during this upload, save it.
+      if (!sessionMap[normalizedDate]) {
+        sessionMap[normalizedDate] = candidateSessionId;
+        console.log(
+          `Generated new session id ${candidateSessionId} for date ${normalizedDate}`
         );
       }
       const sessionId = sessionMap[normalizedDate];
@@ -322,8 +333,8 @@ export async function POST(req: NextRequest, context: any) {
       csvData.push({
         sessionId,
         athlete: athleteId,
-        // Store the actual date from the CSV.
-        date: new Date(dateStr),
+        // Store the actual date from the CSV as an ISO string.
+        date: new Date(dateStr).toISOString(),
         playLevel: athlete.level,
         equipment: row['Equipment']?.trim() || null,
         handedness: row['Handedness']?.trim() || null,
@@ -358,7 +369,7 @@ export async function POST(req: NextRequest, context: any) {
     await prisma.blastMotion.createMany({ data: csvData });
     console.log('Data insertion successful.');
 
-    // Update athlete's blastMotion array with each unique session ID.
+    // Add the new session IDs to the athlete record.
     Object.values(sessionMap).forEach((sid) => {
       if (!athlete.blastMotion.includes(sid)) {
         athlete.blastMotion.push(sid);
