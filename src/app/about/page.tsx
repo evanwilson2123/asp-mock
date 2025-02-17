@@ -4,7 +4,7 @@ import React from 'react';
 const page = () => {
   return (
     <div>
-      <ComingSoon description="We are currently in the process of building our 'About' page where you can learn all about us and what we do! Stay tuned!" />
+      <ComingSoon description="We are in the process of building an 'About' page where you can learn all about us and our mission! Stay tuned!" />
     </div>
   );
 };
