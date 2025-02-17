@@ -37,6 +37,96 @@ interface HittraxBlast {
 }
 
 /**
+ * Helper function for checking if there are matching swings between blast and hittrax data.
+ * If a match is found, create a new hittraxBlast entry in the database with associated swingIds
+ * @param csvData
+ * @param athleteId
+ * @returns
+ */
+async function checkForComparisons(
+  csvData: any[],
+  athleteId: string
+): Promise<void> {
+  try {
+    // Initialize min and max dates to establish a date range for uploaded CSV (this helps minimize hittrax query weight)
+    let minDate: Date = new Date(csvData[0].date);
+    let maxDate: Date = new Date(csvData[0].date);
+
+    // Loop through and update min and max
+    for (const data of csvData) {
+      const currentDate = new Date(data.date);
+      if (currentDate < minDate) {
+        minDate = currentDate;
+      }
+      if (currentDate > maxDate) {
+        maxDate = currentDate;
+      }
+    }
+
+    console.log('Min date:', minDate);
+    console.log('Max date:', maxDate);
+    const oneDay = 24 * 60 * 60 * 1000;
+    const adjustedMinDate = new Date(minDate.getTime() - oneDay);
+    const adjustedMaxDate = new Date(maxDate.getTime() + oneDay);
+
+    // Find hittrax swings within established time range
+    const hittraxSwings = await prisma.hitTrax.findMany({
+      where: {
+        athlete: athleteId,
+        date: {
+          gte: adjustedMinDate,
+          lte: adjustedMaxDate,
+        },
+      },
+    });
+    if (hittraxSwings.length === 0) {
+      console.log('No overlapping timestamps');
+      return;
+    }
+    console.log('Looking for matches!');
+    // serach for a match
+    for (const hitSwing of hittraxSwings) {
+      for (const blastSwing of csvData) {
+        if (!hitSwing.date) {
+          break;
+        }
+        if (
+          Math.abs(blastSwing.date.getTime() - hitSwing.date.getTime()) < 2000
+        ) {
+          console.log(
+            `Found match!\nHittrax Swing: ${JSON.stringify(hitSwing)}\nBlast Swing: ${JSON.stringify(blastSwing)}`
+          );
+          const hittraxBlast: HittraxBlast = {
+            blastId: blastSwing.swingId,
+            hittraxId: hitSwing.swingId,
+            date: hitSwing.date,
+          };
+          const record = await prisma.hittraxBlast.findFirst({
+            where: {
+              OR: [
+                { blastId: blastSwing.swingId },
+                { hittraxId: hitSwing.swingId },
+              ],
+            },
+          });
+          if (record) {
+            console.log('Comparison already exists');
+            break;
+          }
+          await prisma.hittraxBlast.create({
+            data: hittraxBlast,
+          });
+          console.log('HIttrax Blast comparison created.');
+        }
+      }
+    }
+  } catch (error: any) {
+    console.error(error);
+    return;
+  }
+}
+
+/**
  * Helper function to parse a date/time string (e.g., "Dec 10, 2024 02:11:43 pm")
  * and treat it as a UTC time.
  */
@@ -244,69 +334,5 @@ export async function POST(req: NextRequest, context: any) {
       { error: 'Failed to upload data', details: error.message },
       { status: 500 }
     );
-  }
-}
-
-async function checkForComparisons(
-  csvData: any[],
-  athleteId: string
-): Promise<void> {
-  try {
-    let minDate: Date = new Date(csvData[0].date);
-    let maxDate: Date = new Date(csvData[0].date);
-
-    for (const data of csvData) {
-      const currentDate = new Date(data.date);
-      if (currentDate < minDate) {
-        minDate = currentDate;
-      }
-      if (currentDate > maxDate) {
-        maxDate = currentDate;
-      }
-    }
-
-    console.log('Min date:', minDate);
-    console.log('Max date:', maxDate);
-
-    const hittraxSwings = await prisma.hitTrax.findMany({
-      where: {
-        athlete: athleteId,
-        date: {
-          gte: minDate,
-          lte: maxDate,
-        },
-      },
-    });
-    if (hittraxSwings.length === 0) {
-      console.log('No overlapping timestamps');
-      return;
-    }
-    console.log('Looking for matches!');
-    for (const hitSwing of hittraxSwings) {
-      for (const blastSwing of csvData) {
-        if (!hitSwing.date) {
-          break;
-        }
-        if (
-          Math.abs(blastSwing.date.getTime() - hitSwing.date.getTime()) < 2000
-        ) {
-          console.log(
-            `Found match!\nHittrax Swing: ${JSON.stringify(hitSwing)}\nBlast Swing: ${JSON.stringify(blastSwing)}`
-          );
-          const hittraxBlast: HittraxBlast = {
-            blastId: blastSwing.swingId,
-            hittraxId: hitSwing.swingId,
-            date: hitSwing.date,
-          };
-          await prisma.hittraxBlast.create({
-            data: hittraxBlast,
-          });
-          console.log('HIttrax Blast comparison created.');
-        }
-      }
-    }
-  } catch (error: any) {
-    console.error(error);
-    return;
   }
 }

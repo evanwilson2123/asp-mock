@@ -7,6 +7,87 @@ import { randomUUID } from 'crypto';
 import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
 
+interface HittraxBlast {
+  blastId: string;
+  hittraxId: string;
+  date: Date;
+}
+
+async function checkForComparisons(
+  csvData: any[],
+  athleteId: string
+): Promise<void> {
+  try {
+    let minDate: Date = csvData[0].date;
+    let maxDate: Date = csvData[0].date;
+    for (const data of csvData) {
+      if (minDate > data.date) {
+        minDate = data.date;
+      }
+      if (maxDate < data.date) {
+        maxDate = data.date;
+      }
+    }
+    console.log(`Min Date: ${minDate}`);
+    console.log(`Max Date: ${maxDate}`);
+
+    const oneDay = 24 * 60 * 60 * 1000;
+    const adjustedMinDate = new Date(minDate.getTime() - oneDay);
+    const adjustedMaxDate = new Date(maxDate.getTime() + oneDay);
+
+    const blastSwings = await prisma.blastMotion.findMany({
+      where: {
+        athlete: athleteId,
+        date: {
+          gte: adjustedMinDate,
+          lte: adjustedMaxDate,
+        },
+      },
+    });
+    if (blastSwings.length === 0) {
+      console.log('No blast swings found in range');
+      return;
+    }
+    console.log(blastSwings);
+    // Look for a match
+    for (const blastSwing of blastSwings) {
+      for (const hitSwing of csvData) {
+        if (
+          Math.abs(blastSwing.date.getTime() - hitSwing.date.getTime()) < 2000
+        ) {
+          console.log(
+            `Found match!\nBlastSwing: ${JSON.stringify(blastSwing)}\nHittraxSwing: ${JSON.stringify(hitSwing)}`
+          );
+          const hittraxBlast: HittraxBlast = {
+            blastId: blastSwing.swingId,
+            hittraxId: blastSwing.swingId,
+            date: hitSwing.date,
+          };
+          const record = await prisma.hittraxBlast.findFirst({
+            where: {
+              OR: [
+                { blastId: blastSwing.swingId },
+                { hittraxId: hitSwing.swingId },
+              ],
+            },
+          });
+          if (record) {
+            console.log('Comparison already exists');
+            break;
+          }
+          await prisma.hittraxBlast.create({
+            data: hittraxBlast,
+          });
+          console.log('Comparison created!');
+        }
+      }
+    }
+  } catch (error: any) {
+    console.error(error);
+    return;
+  }
+}
+
 /**
  * Helper function to parse a date/time string (e.g., "1/6/2025 09:00:00.000")
  * and treat it as a UTC time rather than local time.
@@ -97,7 +178,7 @@ export async function POST(req: NextRequest, context: any) {
     );
 
     for await (const row of parseStream) {
-      console.log('Raw Row:', row); // Log the raw row for debugging
+      // console.log('Raw Row:', row); // Log the raw row for debugging
 
       if (!row['Date'] || !row['Time Stamp']) {
         console.log('Skipping invalid row:', row);
@@ -184,7 +265,7 @@ export async function POST(req: NextRequest, context: any) {
         tag: row['Tag']?.trim() || null,
       };
 
-      console.log('Parsed Row:', parsedRow); // Log each parsed row
+      // console.log('Parsed Row:', parsedRow); // Log each parsed row
       rows.push(parsedRow);
     }
 
@@ -195,6 +276,8 @@ export async function POST(req: NextRequest, context: any) {
         { status: 400 }
       );
     }
+
+    await checkForComparisons(rows, athleteId);
 
     console.log('Inserting data into database...');
     await prisma.hitTrax.createMany({
