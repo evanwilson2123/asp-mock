@@ -8,6 +8,7 @@ import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
 
 interface HittraxBlast {
+  athlete: string;
   blastId: string;
   hittraxId: string;
   date: Date;
@@ -59,6 +60,7 @@ async function checkForComparisons(
             `Found match!\nBlastSwing: ${JSON.stringify(blastSwing)}\nHittraxSwing: ${JSON.stringify(hitSwing)}`
           );
           const hittraxBlast: HittraxBlast = {
+            athlete: athleteId,
             blastId: blastSwing.swingId,
             hittraxId: blastSwing.swingId,
             date: hitSwing.date,

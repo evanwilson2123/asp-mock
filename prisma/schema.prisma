@@ -352,6 +352,7 @@ model Assessment {
 
 model HittraxBlast {
   id                      Int @id @default(autoincrement())
+  athlete                 String
   blastId                 String
   hittraxId               String
   date                    DateTime

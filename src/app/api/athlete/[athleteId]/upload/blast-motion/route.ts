@@ -31,6 +31,7 @@ const CSV_HEADERS = [
 ];
 
 interface HittraxBlast {
+  athlete: string;
   blastId: string;
   hittraxId: string;
   date: Date;
@@ -97,6 +98,7 @@ async function checkForComparisons(
             `Found match!\nHittrax Swing: ${JSON.stringify(hitSwing)}\nBlast Swing: ${JSON.stringify(blastSwing)}`
           );
           const hittraxBlast: HittraxBlast = {
+            athlete: athleteId,
             blastId: blastSwing.swingId,
             hittraxId: hitSwing.swingId,
             date: hitSwing.date,
