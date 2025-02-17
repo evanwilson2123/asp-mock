@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
 
     const sessions: Record<
       string,
-      { velocities: number[]; distances: number[]; date: string }
+      { velocities: number[]; distances: number[]; date: Date }
     > = {};
 
     data.forEach((record) => {
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
         sessions[sessionId] = {
           velocities: [],
           distances: [],
-          date: record.date || 'No Date',
+          date: record.date || new Date(),
         };
       }
       if (record.velo) sessions[sessionId].velocities.push(record.velo);

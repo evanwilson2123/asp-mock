@@ -7,6 +7,46 @@ import { randomUUID } from 'crypto';
 import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
 
+/**
+ * Helper function to parse a date/time string (e.g., "1/6/2025 09:00:00.000")
+ * and treat it as a UTC time rather than local time.
+ */
+function parseCsvDateAsUtc(dateTimeStr: string): Date {
+  // Split the string into date and time parts
+  const [datePart, timePart] = dateTimeStr.split(' ');
+  if (!datePart || !timePart) {
+    throw new Error('Invalid date/time format: ' + dateTimeStr);
+  }
+
+  // Expected datePart format: "M/D/YYYY"
+  const [month, day, year] = datePart.split('/').map(Number);
+
+  // Expected timePart format: "HH:mm:ss.mmm"
+  const [hour, minute, secMilli] = timePart.split(':');
+  let second = 0;
+  let millisecond = 0;
+  if (secMilli.includes('.')) {
+    const [sec, ms] = secMilli.split('.');
+    second = Number(sec);
+    millisecond = Number(ms);
+  } else {
+    second = Number(secMilli);
+  }
+
+  // Use Date.UTC to interpret the provided components as UTC time.
+  return new Date(
+    Date.UTC(
+      year,
+      month - 1,
+      day,
+      Number(hour),
+      Number(minute),
+      second,
+      millisecond
+    )
+  );
+}
+
 export async function POST(req: NextRequest, context: any) {
   const { userId } = await auth();
   if (!userId) {
@@ -64,10 +104,10 @@ export async function POST(req: NextRequest, context: any) {
         continue;
       }
 
-      // Parse the CSV date (e.g., "1/6/2025 17:45:43.941")
+      // Use our helper function to parse the CSV date as local time
       let parsedDate: Date;
       try {
-        parsedDate = new Date(row['Date'].trim());
+        parsedDate = parseCsvDateAsUtc(row['Date'].trim());
         if (isNaN(parsedDate.getTime())) {
           console.log('Skipping row due to invalid Date:', row);
           continue;
@@ -78,11 +118,16 @@ export async function POST(req: NextRequest, context: any) {
         continue;
       }
 
+      console.log('Parsed Date:', parsedDate);
+
+      const swingId = randomUUID();
+
       const parsedRow = {
         sessionId,
         athlete: athleteId,
-        // Convert the parsed date to an ISO string for storage
-        date: parsedDate.toISOString(),
+        // Save the parsed date (interpreted as local time)
+        date: parsedDate,
+        swingId: swingId,
         playLevel: athlete.level,
         AB: row['AB'] ? parseInt(row['AB'], 10) || null : null,
         timestamp: row['Time Stamp']?.trim() || null,

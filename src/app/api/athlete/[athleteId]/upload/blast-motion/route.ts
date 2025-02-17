@@ -5,6 +5,7 @@ import { Readable } from 'stream';
 import { auth } from '@clerk/nextjs/server';
 import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
+import { randomUUID } from 'crypto';
 
 const CSV_HEADERS = [
   'Date',
@@ -29,21 +30,66 @@ const CSV_HEADERS = [
   'Estimated Distance (feet)',
 ];
 
+interface HittraxBlast {
+  blastId: string;
+  hittraxId: string;
+  date: Date;
+}
+
 /**
- * POST /api/athlete/:athleteId/blastmotion/upload
- *
- * Blast Motion CSV Upload API
- *
- * This endpoint allows authenticated users to upload a Blast Motion CSV file
- * containing athlete swing data. The CSV file has several metadata lines at the top,
- * which are skipped. The actual data is parsed using explicitly defined headers.
- *
- * Rows are grouped by the normalized Date (YYYY-MM-DD). For each distinct date,
- * a session ID is created in the format: `YYYY-MM-DD_<athleteId>`. If that session ID
- * already exists for the athlete, rows with that date are skipped.
- *
- * @returns {NextResponse} JSON response with a list of new session IDs.
+ * Helper function to parse a date/time string (e.g., "Dec 10, 2024 02:11:43 pm")
+ * and treat it as a UTC time.
  */
+function parseCsvDateAsUtc(dateTimeStr: string): Date {
+  // Expected format: "Dec 10, 2024 02:11:43 pm"
+  const regex =
+    /^([A-Za-z]{3}) (\d{1,2}), (\d{4}) (\d{1,2}):(\d{2}):(\d{2}) (am|pm)$/i;
+  const match = dateTimeStr.trim().match(regex);
+  if (!match) {
+    throw new Error('Invalid date/time format: ' + dateTimeStr);
+  }
+  const [_, monthStr, dayStr, yearStr, hourStr, minuteStr, secondStr, ampm] =
+    match;
+  console.log(_);
+
+  const monthMap: { [key: string]: number } = {
+    Jan: 1,
+    Feb: 2,
+    Mar: 3,
+    Apr: 4,
+    May: 5,
+    Jun: 6,
+    Jul: 7,
+    Aug: 8,
+    Sep: 9,
+    Oct: 10,
+    Nov: 11,
+    Dec: 12,
+  };
+
+  const month = monthMap[monthStr];
+  if (!month) {
+    throw new Error('Invalid month in date: ' + dateTimeStr);
+  }
+
+  const day = Number(dayStr);
+  const year = Number(yearStr);
+  let hour = Number(hourStr);
+  const minute = Number(minuteStr);
+  const second = Number(secondStr);
+
+  // Convert 12-hour format to 24-hour format.
+  if (ampm.toLowerCase() === 'pm' && hour < 12) {
+    hour += 12;
+  }
+  if (ampm.toLowerCase() === 'am' && hour === 12) {
+    hour = 0;
+  }
+
+  // Create the date as UTC.
+  return new Date(Date.UTC(year, month - 1, day, hour, minute, second, 0));
+}
+
 export async function POST(req: NextRequest, context: any) {
   const athleteId = context.params.athleteId;
   const { userId } = await auth();
@@ -102,6 +148,7 @@ export async function POST(req: NextRequest, context: any) {
 
       // Ensure a valid Date value exists.
       const dateStr = row['Date'] ? row['Date'].trim() : '';
+      console.log(`\n\nDate String: ${dateStr}\n\n`);
       if (!dateStr) {
         console.log('Skipping row due to missing Date:', row);
         continue;
@@ -135,11 +182,14 @@ export async function POST(req: NextRequest, context: any) {
       }
       const sessionId = sessionMap[normalizedDate];
 
+      const swingId = randomUUID();
+
       csvData.push({
         sessionId,
         athlete: athleteId,
         // Store the actual date from the CSV as an ISO string.
-        date: new Date(dateStr).toISOString(),
+        date: parseCsvDateAsUtc(dateStr),
+        swingId: swingId,
         playLevel: athlete.level,
         equipment: row['Equipment']?.trim() || null,
         handedness: row['Handedness']?.trim() || null,
@@ -170,6 +220,8 @@ export async function POST(req: NextRequest, context: any) {
       );
     }
 
+    await checkForComparisons(csvData, athleteId);
+
     console.log('Inserting data into database...');
     await prisma.blastMotion.createMany({ data: csvData });
     console.log('Data insertion successful.');
@@ -192,5 +244,69 @@ export async function POST(req: NextRequest, context: any) {
       { error: 'Failed to upload data', details: error.message },
       { status: 500 }
     );
+  }
+}
+
+async function checkForComparisons(
+  csvData: any[],
+  athleteId: string
+): Promise<void> {
+  try {
+    let minDate: Date = new Date(csvData[0].date);
+    let maxDate: Date = new Date(csvData[0].date);
+
+    for (const data of csvData) {
+      const currentDate = new Date(data.date);
+      if (currentDate < minDate) {
+        minDate = currentDate;
+      }
+      if (currentDate > maxDate) {
+        maxDate = currentDate;
+      }
+    }
+
+    console.log('Min date:', minDate);
+    console.log('Max date:', maxDate);
+
+    const hittraxSwings = await prisma.hitTrax.findMany({
+      where: {
+        athlete: athleteId,
+        date: {
+          gte: minDate,
+          lte: maxDate,
+        },
+      },
+    });
+    if (hittraxSwings.length === 0) {
+      console.log('No overlapping timestamps');
+      return;
+    }
+    console.log('Looking for matches!');
+    for (const hitSwing of hittraxSwings) {
+      for (const blastSwing of csvData) {
+        if (!hitSwing.date) {
+          break;
+        }
+        if (
+          Math.abs(blastSwing.date.getTime() - hitSwing.date.getTime()) < 2000
+        ) {
+          console.log(
+            `Found match!\nHittrax Swing: ${JSON.stringify(hitSwing)}\nBlast Swing: ${JSON.stringify(blastSwing)}`
+          );
+          const hittraxBlast: HittraxBlast = {
+            blastId: blastSwing.swingId,
+            hittraxId: hitSwing.swingId,
+            date: hitSwing.date,
+          };
+          await prisma.hittraxBlast.create({
+            data: hittraxBlast,
+          });
+          console.log('HIttrax Blast comparison created.');
+        }
+      }
+    }
+  } catch (error: any) {
+    console.error(error);
+    return;
   }
 }

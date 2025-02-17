@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "HittraxBlast" ALTER COLUMN "blastId" SET DATA TYPE TEXT,
+ALTER COLUMN "hittraxId" SET DATA TYPE TEXT;

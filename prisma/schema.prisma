@@ -12,6 +12,7 @@ model BlastMotion {
   sessionId              String
   athlete                String
   date                   DateTime @default(now())
+  swingId                String
   equipment              String?
   handedness             String?
   swingDetails           String?
@@ -38,7 +39,8 @@ model HitTrax {
   sessionId          String
   athlete            String?
   AB                 Int?
-  date               String?
+  date               DateTime?
+  swingId            String
   timestamp          String?
   pitch              Float?
   strikeZone         String?
@@ -345,4 +347,12 @@ model Assessment {
   createdAt               DateTime @default(now())
   // Save the Blob URL
   blobUrl                 String?
+}
+
+
+model HittraxBlast {
+  id                      Int @id @default(autoincrement())
+  blastId                 String
+  hittraxId               String
+  date                    DateTime
 }
