@@ -63,6 +63,7 @@ const AthleteDetails = () => {
     'Armcare',
     'Intended-Zone',
     'Assessments',
+    'Hittrax-Blast',
   ];
   const csvTechnologies = ['Blast Motion', 'Hittrax', 'Trackman', 'Armcare'];
 

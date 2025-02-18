@@ -34,7 +34,38 @@ interface HittraxBlast {
   athlete: string;
   blastId: string;
   hittraxId: string;
+  squaredUpRate: number;
+  attackAngle: number;
+  launchAngle: number;
+  exitVelo: number;
+  result: string;
+  potentialVelo: number;
+  planeEfficiency: number;
+  vertBatAngle: number;
   date: Date;
+}
+
+interface SquaredUpResult {
+  squaredUpRate: number;
+  potentialVelo: number;
+}
+/**
+ * Helper function to calculate the squared up rate for the swing
+ */
+function calculateSquaredUpRate(
+  pitchVelo: number,
+  batSpeed: number,
+  exitVelo: number
+): SquaredUpResult | void {
+  if (pitchVelo === 0 || batSpeed === 0 || exitVelo === 0) {
+    return;
+  }
+  const potentialVelo = 1.23 * batSpeed + 0.23 * (0.92 * pitchVelo);
+  const squaredUpRate = (exitVelo / potentialVelo) * 100;
+  return {
+    squaredUpRate: squaredUpRate,
+    potentialVelo: potentialVelo,
+  };
 }
 
 /**
@@ -97,10 +128,28 @@ async function checkForComparisons(
           console.log(
             `Found match!\nHittrax Swing: ${JSON.stringify(hitSwing)}\nBlast Swing: ${JSON.stringify(blastSwing)}`
           );
+
+          const squaredUpResult: SquaredUpResult | void =
+            calculateSquaredUpRate(
+              hitSwing.pitch || 0,
+              blastSwing.batSpeed,
+              hitSwing.velo || 0
+            );
+          if (!squaredUpResult) {
+            break;
+          }
           const hittraxBlast: HittraxBlast = {
             athlete: athleteId,
             blastId: blastSwing.swingId,
             hittraxId: hitSwing.swingId,
+            squaredUpRate: squaredUpResult.squaredUpRate,
+            attackAngle: blastSwing.attackAngle,
+            launchAngle: hitSwing.LA || 0,
+            exitVelo: hitSwing.velo || 0,
+            result: hitSwing.res || '',
+            potentialVelo: squaredUpResult.potentialVelo,
+            planeEfficiency: blastSwing.planeScore || 0,
+            vertBatAngle: blastSwing.verticalBatAngle,
             date: hitSwing.date,
           };
           const record = await prisma.hittraxBlast.findFirst({

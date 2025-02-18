@@ -349,11 +349,18 @@ model Assessment {
   blobUrl                 String?
 }
 
-
 model HittraxBlast {
   id                      Int @id @default(autoincrement())
   athlete                 String
   blastId                 String
   hittraxId               String
+  squaredUpRate           Float
+  attackAngle             Float
+  launchAngle             Float
+  exitVelo                Float
+  result                  String
+  potentialVelo           Float
+  planeEfficiency         Float
+  vertBatAngle            Float
   date                    DateTime
 }

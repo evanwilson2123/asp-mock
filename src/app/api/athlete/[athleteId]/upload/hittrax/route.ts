@@ -11,7 +11,39 @@ interface HittraxBlast {
   athlete: string;
   blastId: string;
   hittraxId: string;
+  squaredUpRate: number;
+  attackAngle: number;
+  launchAngle: number;
+  exitVelo: number;
+  result: string;
+  potentialVelo: number;
+  planeEfficiency: number;
+  vertBatAngle: number;
   date: Date;
+}
+
+interface SquaredUpResult {
+  squaredUpRate: number;
+  potentialVelo: number;
+}
+
+/**
+ * Helper function to calculate the squared up rate for the swing
+ */
+function calculateSquaredUpRate(
+  pitchVelo: number,
+  batSpeed: number,
+  exitVelo: number
+): SquaredUpResult | void {
+  if (pitchVelo === 0 || batSpeed === 0 || exitVelo === 0) {
+    return;
+  }
+  const potentialVelo = 1.23 * batSpeed + 0.23 * (0.92 * pitchVelo);
+  const squaredUpRate = (exitVelo / potentialVelo) * 100;
+  return {
+    squaredUpRate: squaredUpRate,
+    potentialVelo: potentialVelo,
+  };
 }
 
 async function checkForComparisons(
@@ -59,10 +91,28 @@ async function checkForComparisons(
           console.log(
             `Found match!\nBlastSwing: ${JSON.stringify(blastSwing)}\nHittraxSwing: ${JSON.stringify(hitSwing)}`
           );
+          const squaredUpResult: SquaredUpResult | void =
+            calculateSquaredUpRate(
+              hitSwing.pitch || 0,
+              blastSwing.batSpeed || 0,
+              hitSwing.velo
+            );
+          if (!squaredUpResult) {
+            console.log('Squared up rate not calculated');
+            break;
+          }
           const hittraxBlast: HittraxBlast = {
             athlete: athleteId,
             blastId: blastSwing.swingId,
             hittraxId: blastSwing.swingId,
+            squaredUpRate: squaredUpResult.squaredUpRate,
+            attackAngle: blastSwing.attackAngle || 0,
+            launchAngle: hitSwing.LA || 0,
+            exitVelo: hitSwing.velo || 0,
+            result: hitSwing.res || '',
+            potentialVelo: squaredUpResult.potentialVelo,
+            planeEfficiency: blastSwing.planeScore || 0,
+            vertBatAngle: blastSwing.verticalBatAngle || 0,
             date: hitSwing.date,
           };
           const record = await prisma.hittraxBlast.findFirst({
