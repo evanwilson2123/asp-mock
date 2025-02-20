@@ -59,9 +59,6 @@ const AthleteDetails = () => {
   const technologies = [
     'Blast Motion',
     'Hittrax',
-    'Trackman',
-    'Armcare',
-    'Intended-Zone',
     'Assessments',
     'Hittrax-Blast',
   ];
@@ -241,6 +238,7 @@ const AthleteDetails = () => {
               onClick={() =>
                 router.push(
                   `/athlete/${athleteId}/reports/${tech.toLowerCase().replace(/\s+/g, '-')}`
+                  // `/athlete/${athleteId}/pitching`
                 )
               }
               className="text-gray-700 font-semibold hover:text-gray-900 transition"
@@ -248,6 +246,13 @@ const AthleteDetails = () => {
               {tech}
             </button>
           ))}
+          <button
+            key="pitching"
+            onClick={() => router.push(`/athlete/${athleteId}/pitching`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Pitching
+          </button>
         </nav>
 
         {/* Profile Section */}
