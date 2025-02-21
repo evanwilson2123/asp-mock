@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
 import { useRouter } from 'next/navigation';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/solid';
 
 /**
  * AddMembersPage Component
@@ -66,6 +67,7 @@ const AddMembersPage: React.FC = () => {
     weight: '',
   });
   const [message, setMessage] = useState('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -84,6 +86,10 @@ const AddMembersPage: React.FC = () => {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prevState) => !prevState);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,7 +144,7 @@ const AddMembersPage: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex items-center justify-center bg-gray-100">
-        <div className="w-full max-w-xl bg-white p-8 rounded-lg shadow-md">
+        <div className="border-2 border-gray-300 w-screen max-w-xl bg-white p-8 rounded-lg shadow-md">
           {/* Header */}
           <h1 className="text-2xl font-bold text-gray-700 text-center mb-6">
             Add New Member
@@ -149,9 +155,9 @@ const AddMembersPage: React.FC = () => {
             <button
               className={`px-4 py-2 rounded-l-lg ${
                 activeForm === 'Coach'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-blue-900 text-white'
                   : 'bg-gray-200 text-gray-700'
-              } hover:bg-blue-700 transition`}
+              } transition`}
               onClick={() => setActiveForm('Coach')}
             >
               Add Coach
@@ -159,9 +165,9 @@ const AddMembersPage: React.FC = () => {
             <button
               className={`px-4 py-2 rounded-r-lg ${
                 activeForm === 'Athlete'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-blue-900 text-white'
                   : 'bg-gray-200 text-gray-700'
-              } hover:bg-blue-700 transition`}
+              } transition`}
               onClick={() => setActiveForm('Athlete')}
             >
               Add Athlete
@@ -185,7 +191,7 @@ const AddMembersPage: React.FC = () => {
                 value={formData.firstName}
                 onChange={handleChange}
                 required
-                className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-900"
               />
             </div>
 
@@ -204,7 +210,7 @@ const AddMembersPage: React.FC = () => {
                 value={formData.lastName}
                 onChange={handleChange}
                 required
-                className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-900"
               />
             </div>
 
@@ -223,7 +229,7 @@ const AddMembersPage: React.FC = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-900"
               />
             </div>
 
@@ -234,18 +240,32 @@ const AddMembersPage: React.FC = () => {
               >
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                placeholder="Enter password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  placeholder="Enter password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  // Added extra right padding (pr-12) to make room for the icon.
+                  className="w-full border border-gray-300 rounded px-4 py-2 pr-12 text-black focus:outline-none focus:ring-2 focus:ring-blue-900"
+                />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  // Positioned absolutely within the relative container.
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-900 border-2 border-gray-300 bg-gray-100 rounded hover:bg-gray-200"
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
-
             {activeForm === 'Athlete' && (
               <>
                 <div>
@@ -261,7 +281,7 @@ const AddMembersPage: React.FC = () => {
                     value={formData.level}
                     onChange={handleChange}
                     required
-                    className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-900"
                   >
                     <option value="Youth">Youth</option>
                     <option value="High School">High School</option>
@@ -285,7 +305,7 @@ const AddMembersPage: React.FC = () => {
                     value={formData.u}
                     onChange={handleChange}
                     required
-                    className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-900"
                   />
                 </div>
 
@@ -303,7 +323,7 @@ const AddMembersPage: React.FC = () => {
                     value={formData.age}
                     onChange={handleChange}
                     required
-                    className="w-full border text-black border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border text-black border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900"
                   />
                 </div>
 
@@ -321,7 +341,7 @@ const AddMembersPage: React.FC = () => {
                     placeholder="e.g. 5'11"
                     value={formData.height}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-900"
                   />
                 </div>
 
@@ -339,7 +359,7 @@ const AddMembersPage: React.FC = () => {
                       name="weight"
                       value={formData.weight}
                       onChange={handleChange}
-                      className="w-full border text-black border-gray-300 rounded-l px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border text-black border-gray-300 rounded-l px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900"
                     />
                     <span className="inline-block bg-gray-100 border border-l-0 border-gray-300 rounded-r px-4 py-2 text-gray-500">
                       lbs
@@ -351,7 +371,7 @@ const AddMembersPage: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+              className="w-full bg-blue-900 text-white py-2 rounded hover:bg-blue-800 transition"
             >
               {`Add ${activeForm}`}
             </button>

@@ -43,6 +43,7 @@ export async function GET(req: NextRequest, context: any) {
     let armCareExists = true;
     let intendedExists = true;
     let noneExist = false;
+
     /**
      * TODO: asynchronously fetch this data in an await Promise.all()
      */
@@ -61,6 +62,7 @@ export async function GET(req: NextRequest, context: any) {
         athlete: athleteId,
       },
     });
+
     /* ====== RUN CHECKS ON DATA TO ESTABLISH EXISTENCE ===== */
     if (!trackman) {
       trackmanExists = false;
@@ -74,6 +76,7 @@ export async function GET(req: NextRequest, context: any) {
     if (!trackman && !intended && !armCare) {
       noneExist = true;
     }
+
     /* ===== CONSTRUCT THE RESPONSE OBJECT ===== */
     const resp: Response = {
       trackman: trackmanExists,
