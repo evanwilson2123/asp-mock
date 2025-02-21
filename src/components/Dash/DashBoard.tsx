@@ -348,12 +348,12 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="flex-1 p-4 text-gray-800">
-        <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
+        {/* <h1 className="text-3xl font-bold mb-4">Dashboard</h1> */}
 
         {/* Athlete Numbers Card - Centered & Organized */}
         {athleteNums && (
           <div className="mb-8">
-            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center border-2 border-gray-300">
               <h2 className="text-xl font-bold text-gray-800 mb-6">
                 Athlete Numbers
               </h2>
@@ -396,7 +396,7 @@ const Dashboard: React.FC = () => {
         )}
         {athleteNums && (
           <div className="mb-8">
-            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+            <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center border-2 border-gray-300">
               <h2 className="text-xl font-bold text-gray-800 mb-6">Totals</h2>
               <div className="flex flex-wrap justify-center gap-8">
                 <div className="flex flex-col items-center">
@@ -437,7 +437,7 @@ const Dashboard: React.FC = () => {
           <select
             value={level}
             onChange={(e) => setLevel(e.target.value)}
-            className="p-2 border rounded"
+            className="p-2 rounded border-2 border-gray-300"
           >
             {levels.map((lvl) => (
               <option key={lvl} value={lvl}>
@@ -450,11 +450,11 @@ const Dashboard: React.FC = () => {
         {/* Grid of cards for each "tech" */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {/* BLAST MOTION */}
-          <div className="bg-white rounded shadow p-4 flex flex-col">
+          <div className="bg-white rounded shadow p-4 flex flex-col border-2 border-gray-300">
             <h2 className="text-lg font-semibold mb-2">Blast Motion</h2>
             {/* Max Stats Row */}
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="flex flex-col items-center bg-gray-50 p-3 rounded shadow">
+              <div className="flex flex-col items-center bg-gray-50 p-3 rounded shadow border-2 border-gray-200">
                 <span className="text-sm text-gray-600 font-medium">
                   Max Bat Speed
                 </span>
@@ -465,7 +465,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <p className="mt-1 text-xs text-blue-600 font-medium">mph</p>
               </div>
-              <div className="flex flex-col items-center bg-gray-50 p-3 rounded shadow">
+              <div className="flex flex-col items-center bg-gray-50 p-3 rounded shadow border-2 border-gray-200">
                 <span className="text-sm text-gray-600 font-medium">
                   Max Hand Speed
                 </span>
@@ -489,11 +489,11 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* HITTRAX */}
-          <div className="bg-white rounded shadow p-4 flex flex-col">
+          <div className="bg-white rounded shadow p-4 flex flex-col border-2 border-gray-300">
             <h2 className="text-lg font-semibold mb-2">HitTrax</h2>
             {/* Max Stats Row */}
             <div className="grid grid-cols-3 gap-2 mb-2">
-              <div className="flex flex-col items-center bg-gray-50 p-2 rounded shadow">
+              <div className="flex flex-col items-center bg-gray-50 p-2 rounded shadow border-2 border-gray-200">
                 <span className="text-sm text-gray-600 font-medium">
                   Max Exit Velo
                 </span>
@@ -504,7 +504,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <p className="mt-1 text-xs text-blue-600 font-medium">mph</p>
               </div>
-              <div className="flex flex-col items-center bg-gray-50 p-2 rounded shadow">
+              <div className="flex flex-col items-center bg-gray-50 p-2 rounded shadow border-2 border-gray-200">
                 <span className="text-sm text-gray-600 font-medium">
                   Max Distance
                 </span>
@@ -515,7 +515,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <p className="mt-1 text-xs text-green-600 font-medium">ft</p>
               </div>
-              <div className="flex flex-col items-center bg-gray-50 p-2 rounded shadow">
+              <div className="flex flex-col items-center bg-gray-50 p-2 rounded shadow border-2 border-gray-200">
                 <span className="text-sm text-gray-600 font-medium">
                   Hard Hit Avg
                 </span>
@@ -541,14 +541,14 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* TRACKMAN */}
-          <div className="bg-white rounded shadow p-4 flex flex-col md:col-span-2 xl:col-span-1">
+          <div className="bg-white rounded shadow p-4 flex flex-col md:col-span-2 xl:col-span-1 border-2 border-gray-300 mb-10">
             <h2 className="text-lg font-semibold mb-2">Trackman</h2>
             {/* Peak Velocities */}
             <div className="grid grid-cols-2 gap-2 mb-2">
               {pitchStats.map((stat) => (
                 <div
                   key={stat.pitchType}
-                  className="flex flex-col items-center bg-gray-50 p-2 rounded shadow"
+                  className="flex flex-col items-center bg-gray-50 p-2 rounded shadow border-2 border-gray-200"
                 >
                   <span className="text-sm text-gray-600 font-medium">
                     {stat.pitchType} Peak
