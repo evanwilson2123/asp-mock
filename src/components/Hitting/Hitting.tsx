@@ -11,6 +11,12 @@ import Sidebar from '../Dash/Sidebar';
 import Link from 'next/link';
 import Image from 'next/image';
 
+/**
+ *
+ * This is a component for the 'Hitting' page, where the users are navigated to from their profile page.
+ * This page houses all of the hitting technologies, an overview of what they are and how they are used,
+ * along with links to the overview and session pages for each technology.
+ */
 const Hitting = () => {
   // Check if the user is signed in and get their role
   const { isSignedIn, user } = useUser();

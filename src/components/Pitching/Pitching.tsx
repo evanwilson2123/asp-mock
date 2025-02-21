@@ -11,6 +11,11 @@ import Sidebar from '../Dash/Sidebar';
 import Link from 'next/link';
 import Image from 'next/image';
 
+/**
+ * This is the 'Pitching' page, a page user's are directed to from their profile page after selecting 'Pitching' from their technology nav.
+ * This page houses all of the pitching technologies, overviews on how they are used, along with links to view overview and session data.
+ *
+ */
 const Pitching = () => {
   // Check if the user is signed in and get their role
   const { isSignedIn, user } = useUser();

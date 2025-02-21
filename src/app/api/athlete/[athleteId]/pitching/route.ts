@@ -9,7 +9,19 @@ interface Response {
   noneExist: boolean;
 }
 
+/**
+ *
+ * @param req
+ * @param context
+ *
+ * This endpoint is intended to provide the required information for the 'Pitching' page to dynamically render only the
+ * technologies that the user has data for. This ensures that the athlete does not go in search of data that does not
+ * exist and avoids all 404 errors.
+ *
+ * @returns { Response }
+ */
 export async function GET(req: NextRequest, context: any) {
+  /* ===== AUTHENTICATE THE USER AND OBTAIN THE ATHLETE ID ===== */
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json(
@@ -24,11 +36,16 @@ export async function GET(req: NextRequest, context: any) {
       { status: 400 }
     );
   }
+
   try {
+    /* ===== INITIALIZE THE FIELDS BELONGING TO RESPONSE ===== */
     let trackmanExists = true;
     let armCareExists = true;
     let intendedExists = true;
     let noneExist = false;
+    /**
+     * TODO: asynchronously fetch this data in an await Promise.all()
+     */
     const trackman = await prisma.trackman.findFirst({
       where: {
         athleteId: athleteId,
@@ -44,6 +61,7 @@ export async function GET(req: NextRequest, context: any) {
         athlete: athleteId,
       },
     });
+    /* ====== RUN CHECKS ON DATA TO ESTABLISH EXISTENCE ===== */
     if (!trackman) {
       trackmanExists = false;
     }
@@ -56,6 +74,7 @@ export async function GET(req: NextRequest, context: any) {
     if (!trackman && !intended && !armCare) {
       noneExist = true;
     }
+    /* ===== CONSTRUCT THE RESPONSE OBJECT ===== */
     const resp: Response = {
       trackman: trackmanExists,
       intended: intendedExists,
