@@ -8,7 +8,7 @@ import { auth } from '@clerk/nextjs/server';
  * This API endpoint retrieves **Trackman** data for a specific athlete. It provides:
  * - **Peak velocity** by pitch type (maximum speed recorded for each pitch type)
  * - **Average pitch speed** over time, grouped by date and pitch type
- * - **Clickable session metadata** (session IDs and dates) for navigation and charting
+ * - **Clickable session metadata** (session IDs, dates, and session names) for navigation and charting
  *
  * ---
  *
@@ -36,8 +36,8 @@ import { auth } from '@clerk/nextjs/server';
  *       { "date": "2024-05-01", "pitchType": "Slider", "avgSpeed": 82 }
  *     ],
  *     "sessions": [
- *       { "sessionId": "sess_001", "date": "2024-05-01" },
- *       { "sessionId": "sess_002", "date": "2024-06-01" }
+ *       { "sessionId": "sess_001", "date": "2024-05-01", "sessionName": "Session 1" },
+ *       { "sessionId": "sess_002", "date": "2024-06-01", "sessionName": "" }
  *     ]
  *   }
  *   ```
@@ -78,12 +78,12 @@ export async function GET(req: NextRequest, context: any) {
 
   try {
     // Fetch all Trackman data for the athlete
-    const sessions = await prisma.trackman.findMany({
+    const sessionsData = await prisma.trackman.findMany({
       where: { athleteId },
       orderBy: { createdAt: 'asc' },
     });
 
-    if (!sessions || sessions.length === 0) {
+    if (!sessionsData || sessionsData.length === 0) {
       return NextResponse.json(
         { error: 'No data found for this athlete.' },
         { status: 404 }
@@ -99,17 +99,30 @@ export async function GET(req: NextRequest, context: any) {
     } = {};
 
     // Collect sessions for navigation
-    const sessionMap: Record<string, { sessionId: string; date: string }> = {};
+    const sessionMap: Record<
+      string,
+      { sessionId: string; date: string; sessionName: string }
+    > = {};
 
-    sessions.forEach((session) => {
-      const { sessionId, pitchType, pitchReleaseSpeed, createdAt } = session;
+    sessionsData.forEach((session) => {
+      const {
+        sessionId,
+        pitchType,
+        pitchReleaseSpeed,
+        createdAt,
+        sessionName,
+      } = session;
 
-      // Add sessionId and date for clickable sessions
+      // Add sessionId, date, and sessionName for clickable sessions
       if (!sessionMap[sessionId]) {
         sessionMap[sessionId] = {
           sessionId,
           date: new Date(createdAt).toISOString().split('T')[0],
+          sessionName: sessionName || '',
         };
+      } else if (!sessionMap[sessionId].sessionName && sessionName) {
+        // If not yet set, update with sessionName from this record
+        sessionMap[sessionId].sessionName = sessionName;
       }
 
       if (pitchType && pitchReleaseSpeed) {
@@ -160,7 +173,7 @@ export async function GET(req: NextRequest, context: any) {
     return NextResponse.json({
       pitchStats: formattedPitchStats,
       avgPitchSpeeds,
-      sessions: clickableSessions, // List of clickable sessions
+      sessions: clickableSessions, // Now includes sessionName
     });
   } catch (error: any) {
     console.error('Error fetching Trackman data:', error);

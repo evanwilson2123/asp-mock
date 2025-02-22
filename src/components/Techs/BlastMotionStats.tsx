@@ -7,6 +7,7 @@ import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '../Dash/Sidebar';
 import Loader from '../Loader';
 import Link from 'next/link';
+import { PencilIcon } from '@heroicons/react/24/solid';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -46,6 +47,7 @@ interface SessionAvg {
 
 interface Session {
   sessionId: string;
+  sessionName: string;
   date: string;
 }
 
@@ -65,6 +67,10 @@ const BlastMotionStats: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // State for inline editing
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [newSessionName, setNewSessionName] = useState<string>('');
 
   const { athleteId } = useParams();
   const { user } = useUser();
@@ -104,17 +110,9 @@ const BlastMotionStats: React.FC = () => {
         setMaxRotationalAccel(data.maxRotationalAcceleration || 0);
         setMaxPower(data.maxPower || 0);
         setSessionData(sortedSessionAverages);
-        // For the clickable list, you might prefer descending order:
-        const sortedSessionsDesc = [...sortedSessionAverages]
-          .sort(
-            (a: SessionAvg, b: SessionAvg) =>
-              new Date(b.date).getTime() - new Date(a.date).getTime()
-          )
-          .map(({ sessionId, date }: { sessionId: string; date: string }) => ({
-            sessionId,
-            date,
-          }));
-        setSessions(sortedSessionsDesc);
+
+        // Use the sessions array directly from the API response
+        setSessions(data.sessions);
       } catch (err: any) {
         setErrorMessage(err.message);
       } finally {
@@ -135,6 +133,43 @@ const BlastMotionStats: React.FC = () => {
       </div>
     );
   }
+
+  // Handler to start editing a session name
+  const handleStartEditing = (session: Session) => {
+    setEditingSessionId(session.sessionId);
+    setNewSessionName(
+      session.sessionName && session.sessionName.trim() !== ''
+        ? session.sessionName
+        : ''
+    );
+  };
+
+  // Handler to save the new session name
+  const handleSaveSessionName = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionName: newSessionName,
+          techName: 'blast',
+        }),
+      });
+      if (!res.ok) {
+        console.error('Failed to update session name');
+        return;
+      }
+      // Update local state with the new session name
+      setSessions((prevSessions) =>
+        prevSessions.map((s) =>
+          s.sessionId === sessionId ? { ...s, sessionName: newSessionName } : s
+        )
+      );
+      setEditingSessionId(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Prepare chart data for the main chart (speeds, acceleration, power)
   const labels = sessionData.map((s) => s.date);
@@ -263,7 +298,7 @@ const BlastMotionStats: React.FC = () => {
           Blast Motion Report
         </h1>
 
-        {/* Clickable Session List */}
+        {/* Clickable Session List with inline editing */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Sessions (Latest to Earliest)
@@ -272,11 +307,48 @@ const BlastMotionStats: React.FC = () => {
             {sessions.map((session) => (
               <li
                 key={session.sessionId}
-                className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+                className="flex items-center justify-between py-2 px-4 hover:bg-gray-100"
               >
-                <Link href={`/blast-motion/${session.sessionId}`}>
-                  {session.date} (Session ID: {session.sessionId})
-                </Link>
+                {editingSessionId === session.sessionId ? (
+                  <>
+                    <input
+                      type="text"
+                      value={newSessionName}
+                      onChange={(e) => setNewSessionName(e.target.value)}
+                      className="flex-1 border p-1 mr-2"
+                    />
+                    <button
+                      onClick={() => handleSaveSessionName(session.sessionId)}
+                      className="px-3 py-1 text-green-600 border border-green-600 mr-2"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingSessionId(null)}
+                      className="px-3 py-1 text-red-600 border border-red-600"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href={`/blast-motion/${session.sessionId}`}
+                      className="flex-1"
+                    >
+                      {session.date + ' '}
+                      {session.sessionName && session.sessionName.trim() !== ''
+                        ? session.sessionName
+                        : session.sessionId}
+                    </Link>
+                    <button
+                      onClick={() => handleStartEditing(session)}
+                      className="ml-4 px-3 py-1 text-gray-900 border-2 border-gray-300 bg-gray-100 hover:bg-gray-200"
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                    </button>
+                  </>
+                )}
               </li>
             ))}
           </ul>

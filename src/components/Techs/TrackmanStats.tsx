@@ -8,6 +8,7 @@ import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '@/components/Loader';
 import SignInPrompt from '../SignInPrompt';
 import { Line } from 'react-chartjs-2';
+import { PencilIcon } from '@heroicons/react/24/solid';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -30,30 +31,29 @@ ChartJS.register(
   Legend
 );
 
-// interface Session {
-//   sessionId: string;
-//   date: string;
-// }
-
 interface AvgPitchSpeed {
   date: string;
   pitchType: string;
   avgSpeed: number;
 }
 
+interface Session {
+  sessionId: string;
+  date: string;
+  sessionName?: string; // Added optional sessionName
+}
+
+interface TrackmanData {
+  pitchStats: { pitchType: string; peakSpeed: number }[];
+  avgPitchSpeeds: AvgPitchSpeed[];
+  sessions: Session[];
+}
+
 /**
  * TrackmanStats Component
  *
- * This component provides comprehensive data visualization for pitching sessions
- * using Trackman data. It displays:
- *
- * - Peak velocities for each pitch type (in circular metric cards).
- * - A clickable session list for navigation.
- * - A line chart for average pitch velocities over time (grouped by pitch type).
- * - A connections chart is not included here (but can be added similarly).
- *
- * The charts are wrapped in containers with fixed heights and use the
- * maintainAspectRatio option so they remain legible on mobile.
+ * Provides data visualization for pitching sessions using Trackman data,
+ * now with inline editing for session names.
  */
 const TrackmanStats: React.FC = () => {
   const [peakVelocities, setPeakVelocities] = useState<
@@ -62,14 +62,16 @@ const TrackmanStats: React.FC = () => {
   const [averageVelocities, setAverageVelocities] = useState<AvgPitchSpeed[]>(
     []
   );
-  const [sessions, setSessions] = useState<
-    { sessionId: string; date: string }[]
-  >([]); // Clickable sessions
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Inline editing state
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [newSessionName, setNewSessionName] = useState<string>('');
+
   const { athleteId } = useParams();
-  const { user, isLoaded } = useUser(); // Use isLoaded to avoid premature rendering
+  const { user, isLoaded } = useUser();
   const role = user?.publicMetadata?.role;
 
   useEffect(() => {
@@ -77,24 +79,19 @@ const TrackmanStats: React.FC = () => {
       try {
         const res = await fetch(`/api/athlete/${athleteId}/reports/trackman`);
         if (!res.ok) {
-          const errorMessage =
+          const errMsg =
             res.status === 404
               ? 'Trackman data could not be found.'
               : res.status === 500
                 ? 'We encountered an issue on our end. Please try again later.'
                 : 'An unexpected issue occurred. Please try again.';
-          setErrorMessage(errorMessage);
+          setErrorMessage(errMsg);
           return;
         }
-
-        const data = await res.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-
+        const data: TrackmanData = await res.json();
         setPeakVelocities(data.pitchStats || []);
         setAverageVelocities(data.avgPitchSpeeds || []);
-        setSessions(data.sessions || []); // Add sessions for clickable list
+        setSessions(data.sessions || []);
       } catch (err: any) {
         setErrorMessage(err.message);
       } finally {
@@ -105,35 +102,60 @@ const TrackmanStats: React.FC = () => {
     fetchTrackmanData();
   }, [athleteId]);
 
-  if (!isLoaded || loading) {
-    // Ensure Clerk user data and API data are fully loaded
-    return <Loader />;
-  }
-
-  if (!role) {
-    // Display sign-in prompt only if the role is explicitly null or undefined
-    return <SignInPrompt />;
-  }
-
-  if (errorMessage) {
+  if (!isLoaded || loading) return <Loader />;
+  if (!role) return <SignInPrompt />;
+  if (errorMessage)
     return (
       <div className="text-red-500">
         <ErrorMessage role={role as string} message={errorMessage} />
       </div>
     );
-  }
 
+  // Handler to start editing a session name
+  const handleStartEditing = (session: Session) => {
+    setEditingSessionId(session.sessionId);
+    setNewSessionName(
+      session.sessionName && session.sessionName.trim() !== ''
+        ? session.sessionName
+        : ''
+    );
+  };
+
+  // Handler to save the new session name
+  const handleSaveSessionName = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionName: newSessionName,
+          techName: 'trackman',
+        }),
+      });
+      if (!res.ok) {
+        console.error('Failed to update session name');
+        return;
+      }
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.sessionId === sessionId ? { ...s, sessionName: newSessionName } : s
+        )
+      );
+      setEditingSessionId(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Prepare chart data for average pitch speeds
   const colors = [
-    '#FF6384', // Red
-    '#36A2EB', // Blue
-    '#FFCE56', // Yellow
-    '#4BC0C0', // Teal
-    '#9966FF', // Purple
-    '#FF9F40', // Orange
+    '#FF6384',
+    '#36A2EB',
+    '#FFCE56',
+    '#4BC0C0',
+    '#9966FF',
+    '#FF9F40',
   ];
-
-  // Prepare chart data for the Averages Over Time chart.
-  // Group by pitch type using the unique dates from the data.
   const uniqueDates = [...new Set(averageVelocities.map((d) => d.date))];
   const datasets = Object.entries(
     averageVelocities.reduce(
@@ -150,7 +172,7 @@ const TrackmanStats: React.FC = () => {
     label: pitchType,
     data: avgSpeeds,
     borderColor: colors[index % colors.length],
-    backgroundColor: colors[index % colors.length] + '33', // Add transparency
+    backgroundColor: colors[index % colors.length] + '33',
     fill: true,
     tension: 0.3,
   }));
@@ -164,9 +186,7 @@ const TrackmanStats: React.FC = () => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        position: 'top' as const,
-      },
+      legend: { position: 'top' as const },
     },
   };
 
@@ -186,7 +206,7 @@ const TrackmanStats: React.FC = () => {
           Trackman Stats
         </h1>
 
-        {/* Clickable Sessions */}
+        {/* Clickable Session List with inline editing */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Sessions (Clickable)
@@ -195,14 +215,48 @@ const TrackmanStats: React.FC = () => {
             {sessions.map((session) => (
               <li
                 key={session.sessionId}
-                className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+                className="flex items-center justify-between py-2 px-4 hover:bg-gray-100"
               >
-                <a
-                  href={`/trackman/${session.sessionId}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  {session.date} (Session ID: {session.sessionId})
-                </a>
+                {editingSessionId === session.sessionId ? (
+                  <>
+                    <input
+                      type="text"
+                      value={newSessionName}
+                      onChange={(e) => setNewSessionName(e.target.value)}
+                      className="flex-1 border p-1 mr-2"
+                    />
+                    <button
+                      onClick={() => handleSaveSessionName(session.sessionId)}
+                      className="px-3 py-1 text-green-600 border border-green-600 mr-2"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingSessionId(null)}
+                      className="px-3 py-1 text-red-600 border border-red-600"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <a
+                      href={`/trackman/${session.sessionId}`}
+                      className="flex-1 text-black"
+                    >
+                      {session.date + ' '}
+                      {session.sessionName && session.sessionName.trim() !== ''
+                        ? session.sessionName
+                        : '(' + session.sessionId + ')'}
+                    </a>
+                    <button
+                      onClick={() => handleStartEditing(session)}
+                      className="ml-4 px-3 py-1 text-gray-900 border-2 border-gray-300 bg-gray-100 hover:bg-gray-200"
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                    </button>
+                  </>
+                )}
               </li>
             ))}
           </ul>
@@ -220,9 +274,7 @@ const TrackmanStats: React.FC = () => {
               </span>
               <div
                 className="mt-4 relative rounded-full w-32 h-32 border-8 flex items-center justify-center"
-                style={{
-                  borderColor: colors[index % colors.length],
-                }}
+                style={{ borderColor: colors[index % colors.length] }}
               >
                 <span
                   className="text-2xl font-semibold"

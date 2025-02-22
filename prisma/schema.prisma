@@ -10,6 +10,7 @@ datasource db {
 model BlastMotion {
   id                     Int      @id @default(autoincrement())
   sessionId              String
+  sessionName            String   @default("")
   athlete                String
   date                   DateTime @default(now())
   swingId                String
@@ -37,6 +38,7 @@ model BlastMotion {
 model HitTrax {
   id                 Int      @id @default(autoincrement())
   sessionId          String
+  sessionName        String   @default("")
   athlete            String?
   AB                 Int?
   date               DateTime?
@@ -79,6 +81,7 @@ model HitTrax {
 model ArmCare {
   id                   Int       @id @default(autoincrement())
   sessionId            String
+  sessionName          String    @default("")
   examDate             DateTime?
   email                String?
   armCareId            String?
@@ -205,6 +208,7 @@ model ArmCare {
 model Trackman {
   id                      Int      @id @default(autoincrement())
   sessionId               String
+  sessionName             String   @default("")
   athleteId               String?
   pitchReleaseSpeed       Float?
   pitchType               String?
@@ -232,6 +236,7 @@ model Trackman {
 model Intended {
   id                      Int @id @default(autoincrement())
   sessionId               String
+  sessionName             String  @default("")
   athleteId               String
   pitchType               String
   intendedX               Float

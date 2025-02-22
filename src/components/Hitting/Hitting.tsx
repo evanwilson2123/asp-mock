@@ -130,7 +130,7 @@ const Hitting = () => {
           )}
           {hasHittrax && (
             <Link
-              href={`/athlete/${athleteId}/reports/blast-motion`}
+              href={`/athlete/${athleteId}/reports/hittrax`}
               className="block mb-6 p-4 border-8 border-gray-900 rounded hover:bg-gray-200"
             >
               <h1 className="flex justify-center text-2xl font-bold text-gray-900 mb-2">

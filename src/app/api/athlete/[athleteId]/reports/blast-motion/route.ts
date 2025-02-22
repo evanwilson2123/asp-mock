@@ -308,6 +308,7 @@ export async function GET(req: NextRequest, context: any) {
       string,
       {
         sessionId: string;
+        sessionName: string;
         date: string;
         batSpeeds: number[];
         handSpeeds: number[];
@@ -330,6 +331,7 @@ export async function GET(req: NextRequest, context: any) {
       if (!sessions[sessionId]) {
         sessions[sessionId] = {
           sessionId,
+          sessionName: record.sessionName,
           // Use the actual CSV date stored in record.date (formatted as "YYYY-MM-DD")
           date: new Date(record.date).toISOString().split('T')[0],
           batSpeeds: [],
@@ -404,6 +406,7 @@ export async function GET(req: NextRequest, context: any) {
 
       return {
         sessionId: session.sessionId,
+        sessionName: session.sessionName,
         date: session.date,
         avgBatSpeed,
         avgHandSpeed,
@@ -428,8 +431,9 @@ export async function GET(req: NextRequest, context: any) {
       maxRotationalAcceleration,
       maxPower,
       sessionAverages,
-      sessions: sessionAverages.map(({ sessionId, date }) => ({
+      sessions: sessionAverages.map(({ sessionId, sessionName, date }) => ({
         sessionId,
+        sessionName,
         date,
       })),
     });

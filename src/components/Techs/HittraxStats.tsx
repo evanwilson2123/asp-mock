@@ -7,6 +7,7 @@ import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '@/components/Loader';
 import Link from 'next/link';
+import { PencilIcon } from '@heroicons/react/24/solid';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -39,6 +40,7 @@ interface SessionAverage {
 interface Session {
   sessionId: string;
   date: string;
+  sessionName?: string; // Optional session name
 }
 
 interface ZoneAverage {
@@ -52,16 +54,9 @@ interface ZoneAverage {
 /**
  * HitTraxStats Component
  *
- * This component provides an in-depth view of an athlete's hitting performance
- * using data from HitTrax sessions. It renders:
- *
- * - A clickable session list (Latest to Earliest) for navigation.
- * - Two metric sections: Global Metrics and Distance Metrics.
- * - Two charts:
- *    1. Overall session averages for exit velocity and launch angle.
- *    2. Zone-specific averages (pull, center, oppo) for exit velocity and launch angle.
- *
- * The charts are wrapped in containers with fixed heights so that they are readable on mobile.
+ * Provides an in-depth view of an athlete's hitting performance using HitTrax data.
+ * Includes global metrics (max exit velo, hard hit average, distance metrics),
+ * overall session trends, and inline editing for session names.
  */
 const HitTraxStats: React.FC = () => {
   // Global metric states
@@ -73,12 +68,16 @@ const HitTraxStats: React.FC = () => {
   const [maxCenterDistance, setMaxCenterDistance] = useState<number>(0);
   const [maxOppoDistance, setMaxOppoDistance] = useState<number>(0);
 
-  // Session and loading states
+  // Data and session states
   const [sessionData, setSessionData] = useState<SessionAverage[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [zoneData, setZoneData] = useState<ZoneAverage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // State for inline editing
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [newSessionName, setNewSessionName] = useState<string>('');
 
   const { athleteId } = useParams();
   const { user } = useUser();
@@ -91,36 +90,25 @@ const HitTraxStats: React.FC = () => {
           `/api/athlete/${athleteId}/reports/hittrax`
         );
         if (!response.ok) {
-          const errorMessage =
+          const errMsg =
             response.status === 404
-              ? 'Hittrax data could not be found.'
+              ? 'HitTrax data could not be found.'
               : response.status === 500
                 ? 'We encountered an issue on our end. Please try again later.'
                 : 'An unexpected issue occurred. Please try again.';
-          setErrorMessage(errorMessage);
+          setErrorMessage(errMsg);
           return;
         }
-
         const data = await response.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-
-        // Set global metrics
+        if (data.error) throw new Error(data.error);
         setMaxExitVelo(data.maxExitVelo || 0);
         setHardHitAverage(data.hardHitAverage || 0);
-
-        // Set distance metrics
         setMaxDistance(data.maxDistance || 0);
         setMaxPullDistance(data.maxPullDistance || 0);
         setMaxCenterDistance(data.maxCenterDistance || 0);
         setMaxOppoDistance(data.maxOppoDistance || 0);
-
-        // Set session data and metadata
         setSessionData(data.sessionAverages || []);
         setSessions(data.sessions || []);
-
-        // Set zone averages for pull, center, and oppo
         setZoneData(data.zoneAverages || []);
       } catch (err: any) {
         setErrorMessage(err.message);
@@ -140,18 +128,52 @@ const HitTraxStats: React.FC = () => {
       </div>
     );
 
-  // Chart options with maintainAspectRatio set to false for responsiveness.
+  // Handler to start editing a session name
+  const handleStartEditing = (session: Session) => {
+    setEditingSessionId(session.sessionId);
+    setNewSessionName(
+      session.sessionName && session.sessionName.trim() !== ''
+        ? session.sessionName
+        : ''
+    );
+  };
+
+  // Handler to save the new session name
+  const handleSaveSessionName = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionName: newSessionName,
+          techName: 'hittrax',
+        }),
+      });
+      if (!res.ok) {
+        console.error('Failed to update session name');
+        return;
+      }
+      // Update local state with the new session name
+      setSessions((prevSessions) =>
+        prevSessions.map((s) =>
+          s.sessionId === sessionId ? { ...s, sessionName: newSessionName } : s
+        )
+      );
+      setEditingSessionId(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Chart options and data for overall trends
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        position: 'top' as const,
-      },
+      legend: { position: 'top' as const },
     },
   };
 
-  // Prepare chart data for overall session trends
   const labels = sessionData.map((s) => s.date);
   const avgExitVeloData = sessionData.map((s) => s.avgExitVelo);
   const avgLAData = sessionData.map((s) => s.avgLA);
@@ -302,7 +324,7 @@ const HitTraxStats: React.FC = () => {
           HitTrax Report
         </h1>
 
-        {/* Clickable Session List */}
+        {/* Clickable Session List with inline editing */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Sessions (Latest to Earliest)
@@ -311,11 +333,48 @@ const HitTraxStats: React.FC = () => {
             {sessions.map((session) => (
               <li
                 key={session.sessionId}
-                className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+                className="flex items-center justify-between py-2 px-4 hover:bg-gray-100"
               >
-                <Link href={`/hittrax/${session.sessionId}`}>
-                  {session.date} (Session ID: {session.sessionId})
-                </Link>
+                {editingSessionId === session.sessionId ? (
+                  <>
+                    <input
+                      type="text"
+                      value={newSessionName}
+                      onChange={(e) => setNewSessionName(e.target.value)}
+                      className="flex-1 border p-1 mr-2"
+                    />
+                    <button
+                      onClick={() => handleSaveSessionName(session.sessionId)}
+                      className="px-3 py-1 text-green-600 border border-green-600 mr-2"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingSessionId(null)}
+                      className="px-3 py-1 text-red-600 border border-red-600"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href={`/hittrax/${session.sessionId}`}
+                      className="flex-1"
+                    >
+                      {session.date + ' '}
+                      {session.sessionName && session.sessionName.trim() !== ''
+                        ? session.sessionName
+                        : session.sessionId}
+                    </Link>
+                    <button
+                      onClick={() => handleStartEditing(session)}
+                      className="ml-4 px-3 py-1 text-gray-900 border-2 border-gray-300 bg-gray-100 hover:bg-gray-200"
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                    </button>
+                  </>
+                )}
               </li>
             ))}
           </ul>
