@@ -29,56 +29,49 @@ ChartJS.register(
   Legend
 );
 
-interface Swing {
+interface BlastMotionSwing {
+  id: number;
+  sessionId: string;
+  sessionName: string;
+  athlete: string;
+  date: string;
+  swingId: string;
+  equipment: string | null;
+  handedness: string | null;
+  swingDetails: string | null;
+  planeScore: number | null;
+  connectionScore: number | null;
+  rotationScore: number | null;
   batSpeed: number | null;
-  handSpeed: number | null;
+  rotationalAcceleration: number | null;
+  onPlaneEfficiency: number | null;
+  attackAngle: number | null;
+  earlyConnection: number | null;
+  connectionAtImpact: number | null;
+  verticalBatAngle: number | null;
+  power: number | null;
+  timeToContact: number | null;
+  peakHandSpeed: number | null;
+  createdAt: string;
+  updatedAt: string;
+  playLevel: string;
 }
 
 /**
  * BlastMotionSessionDetails Component
  *
  * This component displays detailed statistics for a specific Blast Motion session,
- * including individual swing data, maximum bat speed, and hand speed metrics,
- * with an interactive line chart to visualize performance trends.
- *
- * Key Features:
- * - **Dynamic Data Fetching:**
- *   - Retrieves session data (bat speed, hand speed, and max values) using the session ID from the URL parameters.
- *   - Displays performance metrics in a visually appealing layout with real-time updates.
- *
- * - **Interactive Line Chart:**
- *   - Visualizes bat speed and hand speed trends across all swings within the session.
- *   - Uses Chart.js for smooth, responsive charts with distinct color-coding for easy comparison.
- *
- * - **Performance Metrics Display:**
- *   - Highlights the maximum bat speed and hand speed achieved during the session.
- *   - Offers quick insights into an athlete's peak performance.
- *
- * - **Role-Based Sidebar Navigation:**
- *   - Dynamically renders different sidebars based on the user's role (Coach/Admin).
- *
- * - **Authentication & Error Handling:**
- *   - Integrates with Clerk for user authentication.
- *   - Displays user-friendly error messages when session data is unavailable or fetching fails.
- *
- * Technologies Used:
- * - React (with hooks for state and lifecycle management)
- * - Next.js (for routing and API integration)
- * - Clerk (for authentication)
- * - Chart.js (for data visualization)
- * - Tailwind CSS (for styling)
- *
- * Usage:
- * - Typically accessed from an athlete's profile or dashboard when viewing detailed Blast Motion reports.
- * - Enables coaches and athletes to analyze swing performance and track improvement over time.
+ * including an interactive line chart and a paginated table of swing data.
+ * The table shows all fields except ID, sessionId, sessionName, athlete, date, and swingId.
  */
-
 const BlastMotionSessionDetails: React.FC = () => {
-  const [swings, setSwings] = useState<Swing[]>([]);
+  const [swings, setSwings] = useState<BlastMotionSwing[]>([]);
   const [maxBatSpeed, setMaxBatSpeed] = useState<number>(0);
   const [maxHandSpeed, setMaxHandSpeed] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const swingsPerPage = 10;
 
   const { sessionId } = useParams();
   const { user } = useUser();
@@ -92,9 +85,9 @@ const BlastMotionSessionDetails: React.FC = () => {
           const errorMessage =
             res.status === 404
               ? 'Blast Motion data could not be found.'
-              : res.status == 500
+              : res.status === 500
                 ? 'We encountered an issue on our end. Please try again later.'
-                : 'An unexpected issue occured. Please try again.';
+                : 'An unexpected issue occurred. Please try again.';
           setErrorMessage(errorMessage);
           return;
         }
@@ -104,9 +97,19 @@ const BlastMotionSessionDetails: React.FC = () => {
           throw new Error(data.error);
         }
 
+        // Save full swing objects (all fields)
         setSwings(data.swings || []);
-        setMaxBatSpeed(data.maxBatSpeed || 0);
-        setMaxHandSpeed(data.maxHandSpeed || 0);
+
+        // Calculate max values using batSpeed and peakHandSpeed
+        const batSpeeds = (data.swings || [])
+          .map((s: BlastMotionSwing) => s.batSpeed)
+          .filter((s: number | null): s is number => s !== null);
+        const handSpeeds = (data.swings || [])
+          .map((s: BlastMotionSwing) => s.peakHandSpeed)
+          .filter((s: number | null): s is number => s !== null);
+
+        setMaxBatSpeed(batSpeeds.length > 0 ? Math.max(...batSpeeds) : 0);
+        setMaxHandSpeed(handSpeeds.length > 0 ? Math.max(...handSpeeds) : 0);
       } catch (err: any) {
         setErrorMessage(err.message);
       } finally {
@@ -125,12 +128,13 @@ const BlastMotionSessionDetails: React.FC = () => {
       </div>
     );
 
+  // Prepare chart data
   const labels = swings.map((_, i) => `Swing ${i + 1}`);
   const batSpeedData = swings.map((s) =>
     s.batSpeed !== null ? s.batSpeed : 0
   );
   const handSpeedData = swings.map((s) =>
-    s.handSpeed !== null ? s.handSpeed : 0
+    s.peakHandSpeed !== null ? s.peakHandSpeed : 0
   );
 
   const data = {
@@ -164,6 +168,12 @@ const BlastMotionSessionDetails: React.FC = () => {
     },
   };
 
+  // Pagination logic
+  const indexOfLastSwing = currentPage * swingsPerPage;
+  const indexOfFirstSwing = indexOfLastSwing - swingsPerPage;
+  const currentSwings = swings.slice(indexOfFirstSwing, indexOfLastSwing);
+  const totalPages = Math.ceil(swings.length / swingsPerPage);
+
   return (
     <div className="flex min-h-screen">
       {/* Conditional Sidebar */}
@@ -195,7 +205,7 @@ const BlastMotionSessionDetails: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded shadow">
+        <div className="bg-white p-6 rounded shadow mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Swing Data Over Time
           </h2>
@@ -204,6 +214,143 @@ const BlastMotionSessionDetails: React.FC = () => {
           ) : (
             <p className="text-gray-500">No swing data available.</p>
           )}
+        </div>
+
+        {/* Paginated Table without ID, sessionId, sessionName, athlete, date, or swingId */}
+        <div className="bg-white p-4 rounded shadow overflow-x-auto">
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">
+            Swing Details
+          </h2>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                {[
+                  'Equipment',
+                  'Handedness',
+                  'Swing Details',
+                  'Plane Score',
+                  'Connection Score',
+                  'Rotation Score',
+                  'Bat Speed',
+                  'Rotational Acceleration',
+                  'On-Plane Efficiency',
+                  'Attack Angle',
+                  'Early Connection',
+                  'Connection At Impact',
+                  'Vertical Bat Angle',
+                  'Power',
+                  'Time To Contact',
+                  'Peak Hand Speed',
+                  // 'Created At',
+                  // 'Updated At',
+                  'Play Level',
+                ].map((header) => (
+                  <th
+                    key={header}
+                    className="px-2 py-1 text-left text-xs font-medium text-black uppercase tracking-wider"
+                  >
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {currentSwings.map((swing, idx) => (
+                <tr key={indexOfFirstSwing + idx}>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.equipment ?? 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.handedness ?? 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.swingDetails ?? 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.planeScore !== null ? swing.planeScore : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.connectionScore !== null
+                      ? swing.connectionScore
+                      : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.rotationScore !== null ? swing.rotationScore : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.batSpeed !== null ? swing.batSpeed : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.rotationalAcceleration !== null
+                      ? swing.rotationalAcceleration
+                      : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.onPlaneEfficiency !== null
+                      ? swing.onPlaneEfficiency
+                      : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.attackAngle !== null ? swing.attackAngle : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.earlyConnection !== null
+                      ? swing.earlyConnection
+                      : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.connectionAtImpact !== null
+                      ? swing.connectionAtImpact
+                      : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.verticalBatAngle !== null
+                      ? swing.verticalBatAngle
+                      : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.power !== null ? swing.power : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.timeToContact !== null ? swing.timeToContact : 'N/A'}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.peakHandSpeed !== null ? swing.peakHandSpeed : 'N/A'}
+                  </td>
+                  {/* <td className="px-2 py-1 text-xs text-black">
+                    {swing.createdAt}
+                  </td>
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.updatedAt}
+                  </td> */}
+                  <td className="px-2 py-1 text-xs text-black">
+                    {swing.playLevel}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-4 flex justify-between items-center">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-gray-700 text-xs">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>

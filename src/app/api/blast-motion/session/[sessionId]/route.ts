@@ -6,8 +6,10 @@ import prisma from '@/lib/prismaDb';
  *
  * **Fetch Swing Data for a Specific Session**
  *
- * This endpoint retrieves all swing data (bat speed and hand speed) for a given session ID.
- * It also calculates the maximum bat speed and hand speed recorded in that session.
+ * This endpoint retrieves all swing data for a given session ID,
+ * returning all fields from the `blastMotion` table. It also calculates
+ * the maximum bat speed and maximum hand speed (using the `batSpeed` and `peakHandSpeed`
+ * fields respectively) recorded in that session.
  *
  * ---
  *
@@ -26,8 +28,33 @@ import prisma from '@/lib/prismaDb';
  *   ```json
  *   {
  *     "swings": [
- *       { "batSpeed": 75, "handSpeed": 23 },
- *       { "batSpeed": 80, "handSpeed": 25 },
+ *       {
+ *         "id": 1,
+ *         "sessionId": "12345",
+ *         "sessionName": "",
+ *         "athlete": "John Doe",
+ *         "date": "2023-01-01T00:00:00.000Z",
+ *         "swingId": "swing1",
+ *         "equipment": null,
+ *         "handedness": "right",
+ *         "swingDetails": "Some details",
+ *         "planeScore": 85.0,
+ *         "connectionScore": 90.0,
+ *         "rotationScore": 80.0,
+ *         "batSpeed": 75.0,
+ *         "rotationalAcceleration": 5.0,
+ *         "onPlaneEfficiency": 95.0,
+ *         "attackAngle": 10.0,
+ *         "earlyConnection": 8.0,
+ *         "connectionAtImpact": 9.0,
+ *         "verticalBatAngle": 12.0,
+ *         "power": 100.0,
+ *         "timeToContact": 0.25,
+ *         "peakHandSpeed": 23.0,
+ *         "createdAt": "2023-01-01T00:00:00.000Z",
+ *         "updatedAt": "2023-01-01T01:00:00.000Z",
+ *         "playLevel": "None"
+ *       },
  *       ...
  *     ],
  *     "maxBatSpeed": 80,
@@ -36,7 +63,6 @@ import prisma from '@/lib/prismaDb';
  *   ```
  *
  * - **Error (404):**
- *   - If no swings are found for the provided session ID:
  *   ```json
  *   {
  *     "error": "No swings found for the given sessionId"
@@ -44,44 +70,21 @@ import prisma from '@/lib/prismaDb';
  *   ```
  *
  * - **Error (500):**
- *   - If there's an internal server error during the data fetch process:
  *   ```json
  *   {
  *     "error": "Failed to fetch session data",
  *     "details": "Error message here"
  *   }
  *   ```
- *
- * ---
- *
- * @example
- * // Example request using fetch:
- * fetch('/api/blastMotion/session/12345')
- *   .then(response => response.json())
- *   .then(data => console.log(data))
- *   .catch(error => console.error('Error fetching session data:', error));
- *
- * ---
- *
- * @notes
- * - Ensure that the `sessionId` parameter is provided in the request URL.
- * - The endpoint fetches data from the `blastMotion` table in the Prisma database.
- * - The data is sorted chronologically by the `createdAt` timestamp.
- * - Bat speed and hand speed values are filtered to exclude null entries before calculating the maximum values.
  */
-
 export async function GET(req: NextRequest, context: any) {
   const sessionId = context.params.sessionId;
 
   try {
-    // Fetch all records for the given sessionId
+    // Fetch all records for the given sessionId, sorted by creation time
     const swings = await prisma.blastMotion.findMany({
       where: { sessionId },
-      select: {
-        batSpeed: true,
-        peakHandSpeed: true, // Fetch the correct field name from the database
-      },
-      orderBy: { createdAt: 'asc' }, // Sort swings chronologically
+      orderBy: { createdAt: 'asc' },
     });
 
     if (!swings || swings.length === 0) {
@@ -91,26 +94,20 @@ export async function GET(req: NextRequest, context: any) {
       );
     }
 
-    // Rename `peakHandSpeed` to `handSpeed` in the response
-    const transformedSwings = swings.map((s) => ({
-      batSpeed: s.batSpeed,
-      handSpeed: s.peakHandSpeed, // Map the correct field
-    }));
-
-    // Extract bat speeds and hand speeds for max calculations
-    const batSpeeds = transformedSwings
+    // Calculate maximum bat speed and maximum hand speed (using peakHandSpeed)
+    const batSpeeds = swings
       .map((s) => s.batSpeed)
       .filter((s): s is number => s !== null);
-    const handSpeeds = transformedSwings
-      .map((s) => s.handSpeed)
+    const handSpeeds = swings
+      .map((s) => s.peakHandSpeed)
       .filter((s): s is number => s !== null);
 
-    // Calculate max values
     const maxBatSpeed = batSpeeds.length > 0 ? Math.max(...batSpeeds) : 0;
     const maxHandSpeed = handSpeeds.length > 0 ? Math.max(...handSpeeds) : 0;
 
+    // Return all fields from the swing records along with the max values
     return NextResponse.json({
-      swings: transformedSwings,
+      swings,
       maxBatSpeed,
       maxHandSpeed,
     });
