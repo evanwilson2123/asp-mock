@@ -79,6 +79,17 @@ const HitTraxStats: React.FC = () => {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState<string>('');
 
+  // Delete confirmation popup state
+  const [deletePopup, setDeletePopup] = useState<{
+    show: boolean;
+    sessionId: string;
+    confirmText: string;
+  }>({
+    show: false,
+    sessionId: '',
+    confirmText: '',
+  });
+
   const { athleteId } = useParams();
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
@@ -185,6 +196,10 @@ const HitTraxStats: React.FC = () => {
     } catch (error: any) {
       console.error(error);
     }
+  };
+
+  const showDeletePopup = (sessionId: string) => {
+    setDeletePopup({ show: true, sessionId, confirmText: '' });
   };
 
   // Chart options and data for overall trends
@@ -390,7 +405,7 @@ const HitTraxStats: React.FC = () => {
                         : session.sessionId}
                     </Link>
                     <button
-                      onClick={() => handleDeleteSession(session.sessionId)}
+                      onClick={() => showDeletePopup(session.sessionId)}
                       className="ml-4 px-3 py-1 text-gray-900 border-2 border-gray-300 bg-gray-100 hover:bg-gray-200"
                     >
                       <TrashIcon className="h-5 w-5" />
@@ -482,6 +497,63 @@ const HitTraxStats: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Popup */}
+      {deletePopup.show && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-80">
+            <h3 className="text-lg font-bold mb-4 text-black">
+              Confirm Deletion
+            </h3>
+            <p className="mb-2 text-black">
+              Type <strong>DELETE</strong> to confirm deletion.
+            </p>
+            <input
+              type="text"
+              placeholder="DELETE"
+              value={deletePopup.confirmText}
+              onChange={(e) =>
+                setDeletePopup((prev) => ({
+                  ...prev,
+                  confirmText: e.target.value,
+                }))
+              }
+              className="border p-2 mb-4 w-full text-black"
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={() =>
+                  setDeletePopup({
+                    show: false,
+                    sessionId: '',
+                    confirmText: '',
+                  })
+                }
+                className="mr-4 px-4 py-2 border rounded text-black"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (deletePopup.confirmText !== 'DELETE') {
+                    alert("Please type 'DELETE' to confirm deletion.");
+                    return;
+                  }
+                  await handleDeleteSession(deletePopup.sessionId);
+                  setDeletePopup({
+                    show: false,
+                    sessionId: '',
+                    confirmText: '',
+                  });
+                }}
+                className="px-4 py-2 border rounded bg-red-500 text-white"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

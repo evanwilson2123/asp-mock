@@ -40,7 +40,7 @@ interface AvgPitchSpeed {
 interface Session {
   sessionId: string;
   date: string;
-  sessionName?: string; // Added optional sessionName
+  sessionName?: string;
 }
 
 interface TrackmanData {
@@ -53,7 +53,7 @@ interface TrackmanData {
  * TrackmanStats Component
  *
  * Provides data visualization for pitching sessions using Trackman data,
- * now with inline editing for session names.
+ * now with inline editing for session names and delete confirmation popup.
  */
 const TrackmanStats: React.FC = () => {
   const [peakVelocities, setPeakVelocities] = useState<
@@ -69,6 +69,17 @@ const TrackmanStats: React.FC = () => {
   // Inline editing state
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState<string>('');
+
+  // Delete confirmation popup state
+  const [deletePopup, setDeletePopup] = useState<{
+    show: boolean;
+    sessionId: string;
+    confirmText: string;
+  }>({
+    show: false,
+    sessionId: '',
+    confirmText: '',
+  });
 
   const { athleteId } = useParams();
   const { user, isLoaded } = useUser();
@@ -111,7 +122,7 @@ const TrackmanStats: React.FC = () => {
       </div>
     );
 
-  // Handler to start editing a session name
+  // Handler to start inline editing a session name
   const handleStartEditing = (session: Session) => {
     setEditingSessionId(session.sessionId);
     setNewSessionName(
@@ -147,6 +158,7 @@ const TrackmanStats: React.FC = () => {
     }
   };
 
+  // Original deletion handler
   const handleDeleteSession = async (sessionId: string) => {
     try {
       const res = await fetch(`/api/sessions/${sessionId}`, {
@@ -167,6 +179,32 @@ const TrackmanStats: React.FC = () => {
     } catch (error: any) {
       console.error(error);
     }
+  };
+
+  // Handlers for the delete confirmation popup
+  const showDeletePopup = (sessionId: string) => {
+    setDeletePopup({ show: true, sessionId, confirmText: '' });
+  };
+
+  const handleDeleteConfirmationChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setDeletePopup((prev) => ({ ...prev, confirmText: e.target.value }));
+  };
+
+  const handleConfirmDeletion = async () => {
+    if (deletePopup.confirmText !== 'DELETE') {
+      alert("Please type 'DELETE' to confirm deletion.");
+      return;
+    }
+    // Proceed with deletion if the input is correct
+    await handleDeleteSession(deletePopup.sessionId);
+    // Hide the popup after deletion
+    setDeletePopup({ show: false, sessionId: '', confirmText: '' });
+  };
+
+  const handleCancelDeletion = () => {
+    setDeletePopup({ show: false, sessionId: '', confirmText: '' });
   };
 
   // Prepare chart data for average pitch speeds
@@ -272,7 +310,7 @@ const TrackmanStats: React.FC = () => {
                         : '(' + session.sessionId + ')'}
                     </a>
                     <button
-                      onClick={() => handleDeleteSession(session.sessionId)}
+                      onClick={() => showDeletePopup(session.sessionId)}
                       className="ml-4 px-3 py-1 text-gray-900 border-2 border-gray-300 bg-gray-100 hover:bg-gray-200"
                     >
                       <TrashIcon className="h-5 w-5" />
@@ -335,6 +373,41 @@ const TrackmanStats: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Popup */}
+      {deletePopup.show && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-80">
+            <h3 className="text-lg font-bold mb-4 text-black">
+              Confirm Deletion
+            </h3>
+            <p className="mb-2 text-black">
+              Type <strong>DELETE</strong> to confirm deletion.
+            </p>
+            <input
+              type="text"
+              placeholder="DELETE"
+              value={deletePopup.confirmText}
+              onChange={handleDeleteConfirmationChange}
+              className="border p-2 mb-4 w-full text-black"
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={handleCancelDeletion}
+                className="mr-4 px-4 py-2 border rounded text-black"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeletion}
+                className="px-4 py-2 border rounded bg-red-500 text-white"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
