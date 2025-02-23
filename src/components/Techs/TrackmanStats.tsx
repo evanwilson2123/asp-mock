@@ -8,7 +8,7 @@ import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '@/components/Loader';
 import SignInPrompt from '../SignInPrompt';
 import { Line } from 'react-chartjs-2';
-import { PencilIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -147,6 +147,28 @@ const TrackmanStats: React.FC = () => {
     }
   };
 
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          techName: 'trackman',
+          athleteId: athleteId,
+        }),
+      });
+      if (!res.ok) {
+        return;
+      }
+      const newSessions = sessions.filter((s) => s.sessionId !== sessionId);
+      setSessions(newSessions);
+    } catch (error: any) {
+      console.error(error);
+    }
+  };
+
   // Prepare chart data for average pitch speeds
   const colors = [
     '#FF6384',
@@ -249,6 +271,12 @@ const TrackmanStats: React.FC = () => {
                         ? session.sessionName
                         : '(' + session.sessionId + ')'}
                     </a>
+                    <button
+                      onClick={() => handleDeleteSession(session.sessionId)}
+                      className="ml-4 px-3 py-1 text-gray-900 border-2 border-gray-300 bg-gray-100 hover:bg-gray-200"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
                     <button
                       onClick={() => handleStartEditing(session)}
                       className="ml-4 px-3 py-1 text-gray-900 border-2 border-gray-300 bg-gray-100 hover:bg-gray-200"

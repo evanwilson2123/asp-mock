@@ -1,6 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
+import Athlete from '@/models/athlete';
+import { connectDB } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -9,6 +11,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    await connectDB();
     const { athleteId, pitches } = await req.json();
     if (!athleteId || !pitches) {
       return NextResponse.json(
@@ -19,6 +22,17 @@ export async function POST(req: NextRequest) {
 
     // Generate a sessionId for this pitching session.
     const sessionId = crypto.randomUUID();
+
+    const athlete = await Athlete.findById(athleteId).exec();
+    if (!athlete) {
+      return NextResponse.json(
+        { error: 'Could not find athlete' },
+        { status: 404 }
+      );
+    }
+
+    athlete.intended.push(sessionId);
+    await athlete.save();
 
     // Map each pitch to the Intended model fields.
     const intendedRecords = pitches.map((pitch: any) => ({

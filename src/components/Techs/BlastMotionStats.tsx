@@ -7,7 +7,7 @@ import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '../Dash/Sidebar';
 import Loader from '../Loader';
 import Link from 'next/link';
-import { PencilIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -168,6 +168,25 @@ const BlastMotionStats: React.FC = () => {
       setEditingSessionId(null);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ techName: 'blast', athleteId: athleteId }),
+      });
+      if (!res.ok) {
+        return;
+      }
+      const newSessions = sessions.filter((s) => s.sessionId !== sessionId);
+      setSessions(newSessions);
+    } catch (error: any) {
+      console.error(error);
     }
   };
 
@@ -341,6 +360,12 @@ const BlastMotionStats: React.FC = () => {
                         ? session.sessionName
                         : session.sessionId}
                     </Link>
+                    <button
+                      onClick={() => handleDeleteSession(session.sessionId)}
+                      className="ml-4 px-3 py-1 text-gray-900 border-2 border-gray-300 bg-gray-100 hover:bg-gray-200"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
                     <button
                       onClick={() => handleStartEditing(session)}
                       className="ml-4 px-3 py-1 text-gray-900 border-2 border-gray-300 bg-gray-100 hover:bg-gray-200"

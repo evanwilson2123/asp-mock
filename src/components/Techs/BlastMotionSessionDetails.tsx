@@ -99,6 +99,7 @@ const BlastMotionSessionDetails: React.FC = () => {
 
         // Save full swing objects (all fields)
         setSwings(data.swings || []);
+        console.log(data.swings[0].sessionName);
 
         // Calculate max values using batSpeed and peakHandSpeed
         const batSpeeds = (data.swings || [])
@@ -187,7 +188,7 @@ const BlastMotionSessionDetails: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
-          Session Details for {sessionId}
+          Session Details for {swings[0].sessionName}
         </h1>
 
         <div className="flex flex-col md:flex-row gap-8 mb-8">
