@@ -9,6 +9,7 @@ import Loader from '../Loader';
 import Image from 'next/image';
 import ErrorMessage from '../ErrorMessage';
 import { ICoachNote } from '@/models/coachesNote';
+import { TrashIcon } from '@heroicons/react/24/solid';
 
 interface Athlete {
   _id: string;
@@ -413,9 +414,9 @@ const AthleteDetails = () => {
                     onClick={() =>
                       note._id && handleDeleteNote(note._id.toString())
                     }
-                    className="text-red-500 hover:text-red-700 ml-4"
+                    className=""
                   >
-                    Delete
+                    <TrashIcon className="h-5 w-5 text-gray-700" />
                   </button>
                 </div>
               ))
