@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '@/components/Loader';
+import ErrorMessage from '../ErrorMessage';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,8 +17,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
-import ErrorMessage from '../ErrorMessage';
+import annotationPlugin from 'chartjs-plugin-annotation';
+import { Line, Scatter } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -26,7 +27,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  annotationPlugin
 );
 
 interface BlastMotionSwing {
@@ -61,8 +63,8 @@ interface BlastMotionSwing {
  * BlastMotionSessionDetails Component
  *
  * This component displays detailed statistics for a specific Blast Motion session,
- * including an interactive line chart and a paginated table of swing data.
- * The table shows all fields except ID, sessionId, sessionName, athlete, date, and swingId.
+ * including an interactive line chart, a scatter plot (with vertical/horizontal lines at 90),
+ * and a paginated table of swing data.
  */
 const BlastMotionSessionDetails: React.FC = () => {
   const [swings, setSwings] = useState<BlastMotionSwing[]>([]);
@@ -129,7 +131,7 @@ const BlastMotionSessionDetails: React.FC = () => {
       </div>
     );
 
-  // Prepare chart data
+  // Prepare line chart data for bat and hand speed over swings
   const labels = swings.map((_, i) => `Swing ${i + 1}`);
   const batSpeedData = swings.map((s) =>
     s.batSpeed !== null ? s.batSpeed : 0
@@ -138,7 +140,7 @@ const BlastMotionSessionDetails: React.FC = () => {
     s.peakHandSpeed !== null ? s.peakHandSpeed : 0
   );
 
-  const data = {
+  const lineChartData = {
     labels,
     datasets: [
       {
@@ -160,7 +162,7 @@ const BlastMotionSessionDetails: React.FC = () => {
     ],
   };
 
-  const options = {
+  const lineChartOptions = {
     responsive: true,
     plugins: {
       legend: {
@@ -169,7 +171,78 @@ const BlastMotionSessionDetails: React.FC = () => {
     },
   };
 
-  // Pagination logic
+  // Prepare scatter chart data for earlyConnection vs connectionAtImpact
+  const scatterDataPoints = swings
+    .filter(
+      (swing) =>
+        swing.earlyConnection !== null && swing.connectionAtImpact !== null
+    )
+    .map((swing) => ({
+      x: swing.earlyConnection as number,
+      y: swing.connectionAtImpact as number,
+    }));
+
+  // Use a uniform color for scatter points.
+  const scatterChartData = {
+    datasets: [
+      {
+        label: 'Early Connection vs Connection At Impact',
+        data: scatterDataPoints,
+        backgroundColor: 'rgba(255, 99, 132, 0.8)',
+      },
+    ],
+  };
+
+  // Configure annotation plugin using the older syntax (scaleID/value)
+  const scatterChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            return `Early: ${context.parsed.x}, Impact: ${context.parsed.y}`;
+          },
+        },
+      },
+      annotation: {
+        annotations: {
+          verticalLine: {
+            type: 'line' as const,
+            scaleID: 'x',
+            value: 90,
+            borderColor: 'rgba(0, 0, 0, 0.8)',
+            borderWidth: 2,
+          },
+          horizontalLine: {
+            type: 'line' as const,
+            scaleID: 'y',
+            value: 90,
+            borderColor: 'rgba(0, 0, 0, 0.8)',
+            borderWidth: 2,
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Early Connection',
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Connection At Impact',
+        },
+      },
+    },
+  };
+
+  // Pagination logic for swing details table
   const indexOfLastSwing = currentPage * swingsPerPage;
   const indexOfFirstSwing = indexOfLastSwing - swingsPerPage;
   const currentSwings = swings.slice(indexOfFirstSwing, indexOfLastSwing);
@@ -206,18 +279,33 @@ const BlastMotionSessionDetails: React.FC = () => {
           </div>
         </div>
 
+        {/* Line Chart for Swing Data */}
         <div className="bg-white p-6 rounded shadow mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Swing Data Over Time
           </h2>
           {swings.length > 0 ? (
-            <Line data={data} options={options} />
+            <Line data={lineChartData} options={lineChartOptions} />
           ) : (
             <p className="text-gray-500">No swing data available.</p>
           )}
         </div>
 
-        {/* Paginated Table without ID, sessionId, sessionName, athlete, date, or swingId */}
+        {/* Scatter Chart for Early Connection vs Connection At Impact */}
+        <div className="bg-white p-6 rounded shadow mb-8">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Early Connection vs Connection At Impact
+          </h2>
+          {scatterDataPoints.length > 0 ? (
+            <Scatter data={scatterChartData} options={scatterChartOptions} />
+          ) : (
+            <p className="text-gray-500">
+              Not enough data to display scatter plot.
+            </p>
+          )}
+        </div>
+
+        {/* Paginated Table for Swing Details */}
         <div className="bg-white p-4 rounded shadow overflow-x-auto">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">
             Swing Details
@@ -242,8 +330,6 @@ const BlastMotionSessionDetails: React.FC = () => {
                   'Power',
                   'Time To Contact',
                   'Peak Hand Speed',
-                  // 'Created At',
-                  // 'Updated At',
                   'Play Level',
                 ].map((header) => (
                   <th
@@ -318,12 +404,6 @@ const BlastMotionSessionDetails: React.FC = () => {
                   <td className="px-2 py-1 text-xs text-black">
                     {swing.peakHandSpeed !== null ? swing.peakHandSpeed : 'N/A'}
                   </td>
-                  {/* <td className="px-2 py-1 text-xs text-black">
-                    {swing.createdAt}
-                  </td>
-                  <td className="px-2 py-1 text-xs text-black">
-                    {swing.updatedAt}
-                  </td> */}
                   <td className="px-2 py-1 text-xs text-black">
                     {swing.playLevel}
                   </td>
