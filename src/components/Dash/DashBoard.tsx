@@ -541,7 +541,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* TRACKMAN */}
-          <div className="bg-white rounded shadow p-4 flex flex-col md:col-span-2 xl:col-span-1 border-2 border-gray-300 mb-10">
+          <div className="bg-white rounded shadow p-4 flex flex-col md:col-span-2 xl:col-span-1 border-2 border-gray-300">
             <h2 className="text-lg font-semibold mb-2">Trackman</h2>
             {/* Peak Velocities */}
             <div className="grid grid-cols-2 gap-2 mb-2">

@@ -1,59 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
 
-/**
- * GET /api/blast-motion
- *
- * This API endpoint retrieves BlastMotion data filtered by the specified play level (e.g., "High School", "College", "Pro").
- * It calculates the maximum bat speed, maximum hand speed, and session averages for the provided level.
- *
- * @param {NextRequest} req - The incoming request object. The query parameter `level` can be provided (defaults to "High School").
- *
- * @queryParam {string} [level="High School"] - The play level to filter the data (e.g., "High School", "College").
- *
- * @returns {Promise<NextResponse>} JSON response containing either:
- *
- * - **Success (200):**
- *   ```json
- *   {
- *     "maxBatSpeed": number,
- *     "maxHandSpeed": number,
- *     "sessionAverages": [
- *       {
- *         "sessionId": string,
- *         "date": string,
- *         "avgBatSpeed": number,
- *         "avgHandSpeed": number
- *       }
- *     ]
- *   }
- *   ```
- *
- * - **Error (404):**
- *   ```json
- *   { "error": "No BlastMotion data found for this level" }
- *   ```
- *
- * - **Error (500):**
- *   ```json
- *   { "error": "Failed to fetch BlastMotion data" }
- *   ```
- *
- * @example
- * // Fetching data for College level
- * GET /api/blast-motion?level=College
- *
- * @errorHandling
- * - Returns 404 if no data is found for the specified level.
- * - Returns 500 for internal server errors.
- */
 export async function GET(req: NextRequest): Promise<
   | NextResponse<{ error: string }>
   | NextResponse<{
       maxBatSpeed: number;
       maxHandSpeed: number;
       sessionAverages: {
-        sessionId: string;
         date: string;
         avgBatSpeed: number;
         avgHandSpeed: number;
@@ -61,12 +14,12 @@ export async function GET(req: NextRequest): Promise<
     }>
 > {
   const { searchParams } = new URL(req.url);
-  const level = searchParams.get('level') || 'High School'; // Default to "High School"
+  const level = searchParams.get('level') || 'High School';
 
   try {
     const data = await prisma.blastMotion.findMany({
       where: { playLevel: level },
-      orderBy: { date: 'desc' }, // Sort by date
+      orderBy: { date: 'desc' },
     });
 
     if (!data || data.length === 0) {
@@ -76,44 +29,44 @@ export async function GET(req: NextRequest): Promise<
       );
     }
 
-    // Group by session and calculate averages
-    const sessions: Record<
+    // Group data by date (formatted as YYYY-MM-DD)
+    const dateGroups: Record<
       string,
-      { batSpeeds: number[]; handSpeeds: number[]; date: string }
+      { batSpeeds: number[]; handSpeeds: number[] }
     > = {};
 
     data.forEach((record) => {
-      const sessionId = record.sessionId;
-      if (!sessions[sessionId]) {
-        sessions[sessionId] = {
-          batSpeeds: [],
-          handSpeeds: [],
-          date: record.date.toISOString().split('T')[0],
-        };
+      const dateStr = record.date.toISOString().split('T')[0];
+      if (!dateGroups[dateStr]) {
+        dateGroups[dateStr] = { batSpeeds: [], handSpeeds: [] };
       }
-      if (record.batSpeed) sessions[sessionId].batSpeeds.push(record.batSpeed);
-      if (record.peakHandSpeed)
-        sessions[sessionId].handSpeeds.push(record.peakHandSpeed);
+      if (record.batSpeed) {
+        dateGroups[dateStr].batSpeeds.push(record.batSpeed);
+      }
+      if (record.peakHandSpeed) {
+        dateGroups[dateStr].handSpeeds.push(record.peakHandSpeed);
+      }
     });
 
-    const sessionAverages = Object.keys(sessions).map((sessionId) => {
-      const session = sessions[sessionId];
+    // Calculate averages for each date
+    const sessionAverages = Object.keys(dateGroups).map((date) => {
+      const group = dateGroups[date];
       return {
-        sessionId,
-        date: session.date,
+        date,
         avgBatSpeed:
-          session.batSpeeds.length > 0
-            ? session.batSpeeds.reduce((a, b) => a + b, 0) /
-              session.batSpeeds.length
+          group.batSpeeds.length > 0
+            ? group.batSpeeds.reduce((a, b) => a + b, 0) /
+              group.batSpeeds.length
             : 0,
         avgHandSpeed:
-          session.handSpeeds.length > 0
-            ? session.handSpeeds.reduce((a, b) => a + b, 0) /
-              session.handSpeeds.length
+          group.handSpeeds.length > 0
+            ? group.handSpeeds.reduce((a, b) => a + b, 0) /
+              group.handSpeeds.length
             : 0,
       };
     });
 
+    // Calculate overall max values
     const maxBatSpeed = Math.max(...data.map((record) => record.batSpeed || 0));
     const maxHandSpeed = Math.max(
       ...data.map((record) => record.peakHandSpeed || 0)
