@@ -404,21 +404,25 @@ const BlastMotionSessionDetails: React.FC = () => {
           Session Details for {swings[0].sessionName}
         </h1>
         <div className="flex flex-col md:flex-row gap-8 mb-8">
-          <div className="bg-white p-6 rounded shadow w-full md:w-1/2">
-            <h2 className="text-lg font-bold text-gray-600">Max Bat Speed</h2>
-            <div className="mt-4 text-4xl font-semibold text-blue-600">
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/2 border-2 border-gray-300">
+            <h2 className="text-lg font-bold text-gray-600 justify-center flex">
+              Max Bat Speed
+            </h2>
+            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
               {maxBatSpeed.toFixed(1)} mph
             </div>
           </div>
-          <div className="bg-white p-6 rounded shadow w-full md:w-1/2">
-            <h2 className="text-lg font-bold text-gray-600">Max Hand Speed</h2>
-            <div className="mt-4 text-4xl font-semibold text-green-600">
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/2 border-2 border-gray-300">
+            <h2 className="text-lg font-bold text-gray-600 justify-center flex">
+              Max Hand Speed
+            </h2>
+            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
               {maxHandSpeed.toFixed(1)} mph
             </div>
           </div>
         </div>
         {/* Line Chart for Swing Data */}
-        <div className="bg-white p-6 rounded shadow mb-8">
+        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Swing Data Over Time
           </h2>
@@ -429,7 +433,7 @@ const BlastMotionSessionDetails: React.FC = () => {
           )}
         </div>
         {/* First Scatter Chart: Early Connection vs Connection At Impact */}
-        <div className="bg-white p-6 rounded shadow mb-8">
+        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Early Connection vs Connection At Impact
           </h2>
@@ -442,7 +446,7 @@ const BlastMotionSessionDetails: React.FC = () => {
           )}
         </div>
         {/* Second Scatter Chart: Attack Angle vs On-Plane Efficiency */}
-        <div className="bg-white p-6 rounded shadow mb-8">
+        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">
             Attack Angle vs On-Plane Efficiency
           </h2>
@@ -459,7 +463,7 @@ const BlastMotionSessionDetails: React.FC = () => {
           )}
         </div>
         {/* Polar Area Chart for Average Scores */}
-        <div className="bg-white p-6 rounded shadow mb-8">
+        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Average Scores
           </h2>
@@ -469,7 +473,7 @@ const BlastMotionSessionDetails: React.FC = () => {
         </div>
 
         {/* Paginated Table for Swing Details */}
-        <div className="bg-white p-4 rounded shadow overflow-x-auto">
+        <div className="bg-white p-4 rounded shadow overflow-x-auto border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">
             Swing Details
           </h2>
