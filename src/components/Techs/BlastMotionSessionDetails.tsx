@@ -16,9 +16,11 @@ import {
   Title,
   Tooltip,
   Legend,
+  ArcElement,
+  RadialLinearScale,
 } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import { Line, Scatter } from 'react-chartjs-2';
+import { Line, Scatter, PolarArea } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -28,6 +30,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
+  ArcElement,
+  RadialLinearScale,
   annotationPlugin
 );
 
@@ -62,16 +66,15 @@ interface BlastMotionSwing {
 /**
  * BlastMotionSessionDetails Component
  *
- * This component displays detailed statistics for a specific Blast Motion session,
- * including an interactive line chart, two scatter plots (one for Early Connection vs Connection At Impact
- * with a regression line and annotation lines, and another for Attack Angle vs On‑Plane Efficiency
- * with a regression line, a shaded box, and a computed percentage of swings falling within the box),
- * and a paginated table of swing data.
+ * Displays detailed session stats along with interactive charts.
  */
 const BlastMotionSessionDetails: React.FC = () => {
   const [swings, setSwings] = useState<BlastMotionSwing[]>([]);
   const [maxBatSpeed, setMaxBatSpeed] = useState<number>(0);
   const [maxHandSpeed, setMaxHandSpeed] = useState<number>(0);
+  const [avgPlaneScore, setAvgPlaneScore] = useState<number>(0);
+  const [avgConnectionScore, setAvgConnectionScore] = useState<number>(0);
+  const [avgRotationScore, setAvgRotationScore] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -100,17 +103,11 @@ const BlastMotionSessionDetails: React.FC = () => {
           throw new Error(data.error);
         }
         setSwings(data.swings || []);
-        console.log(data.swings[0].sessionName);
-
-        const batSpeeds = (data.swings || [])
-          .map((s: BlastMotionSwing) => s.batSpeed)
-          .filter((s: number | null): s is number => s !== null);
-        const handSpeeds = (data.swings || [])
-          .map((s: BlastMotionSwing) => s.peakHandSpeed)
-          .filter((s: number | null): s is number => s !== null);
-
-        setMaxBatSpeed(batSpeeds.length > 0 ? Math.max(...batSpeeds) : 0);
-        setMaxHandSpeed(handSpeeds.length > 0 ? Math.max(...handSpeeds) : 0);
+        setMaxBatSpeed(data.maxBatSpeed);
+        setMaxHandSpeed(data.maxHandSpeed);
+        setAvgPlaneScore(data.avgPlaneScore);
+        setAvgConnectionScore(data.avgConnectionScore);
+        setAvgRotationScore(data.avgRotationScore);
       } catch (err: any) {
         setErrorMessage(err.message);
       } finally {
@@ -129,7 +126,7 @@ const BlastMotionSessionDetails: React.FC = () => {
       </div>
     );
 
-  // Prepare line chart data for bat and hand speed over swings
+  // Line Chart Data for Bat and Hand Speed over swings
   const labels = swings.map((_, i) => `Swing ${i + 1}`);
   const batSpeedData = swings.map((s) =>
     s.batSpeed !== null ? s.batSpeed : 0
@@ -163,9 +160,7 @@ const BlastMotionSessionDetails: React.FC = () => {
   const lineChartOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'top' as const,
-      },
+      legend: { position: 'top' as const },
     },
   };
 
@@ -227,9 +222,7 @@ const BlastMotionSessionDetails: React.FC = () => {
   const scatterChartOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'top' as const,
-      },
+      legend: { position: 'top' as const },
       tooltip: {
         callbacks: {
           label: (context: any) =>
@@ -256,12 +249,8 @@ const BlastMotionSessionDetails: React.FC = () => {
       },
     },
     scales: {
-      x: {
-        title: { display: true, text: 'Early Connection' },
-      },
-      y: {
-        title: { display: true, text: 'Connection At Impact' },
-      },
+      x: { title: { display: true, text: 'Early Connection' } },
+      y: { title: { display: true, text: 'Connection At Impact' } },
     },
   };
 
@@ -331,9 +320,7 @@ const BlastMotionSessionDetails: React.FC = () => {
   const scatterChartOptions2 = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'top' as const,
-      },
+      legend: { position: 'top' as const },
       tooltip: {
         callbacks: {
           label: (context: any) =>
@@ -356,12 +343,43 @@ const BlastMotionSessionDetails: React.FC = () => {
       },
     },
     scales: {
-      x: {
-        title: { display: true, text: 'Attack Angle' },
+      x: { title: { display: true, text: 'Attack Angle' } },
+      y: { title: { display: true, text: 'On-Plane Efficiency' } },
+    },
+  };
+
+  // Polar Area Chart Data for Average Scores
+  const polarData = {
+    labels: ['Plane Score', 'Connection Score', 'Rotation Score'],
+    datasets: [
+      {
+        data: [avgPlaneScore, avgConnectionScore, avgRotationScore],
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.85)',
+          'rgba(54, 162, 235, 0.85)',
+          'rgba(255, 206, 86, 0.85)',
+        ],
+        borderWidth: 1,
       },
-      y: {
-        title: { display: true, text: 'On-Plane Efficiency' },
+    ],
+  };
+
+  const polarOptions = {
+    maintainAspectRatio: true,
+    responsive: true,
+    scales: {
+      r: {
+        min: 0,
+        max: 80, // This fixes the outer ring at 80 regardless of the data values
+        ticks: {
+          beginAtZero: true,
+          stepSize: 20,
+        },
       },
+    },
+    plugins: {
+      legend: { position: 'top' as const },
+      title: { display: true, text: 'Average Scores (out of 80)' },
     },
   };
 
@@ -440,6 +458,16 @@ const BlastMotionSessionDetails: React.FC = () => {
             </p>
           )}
         </div>
+        {/* Polar Area Chart for Average Scores */}
+        <div className="bg-white p-6 rounded shadow mb-8">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Average Scores
+          </h2>
+          <div style={{ width: '600px', height: '600px', margin: '0 auto' }}>
+            <PolarArea data={polarData} options={polarOptions} />
+          </div>
+        </div>
+
         {/* Paginated Table for Swing Details */}
         <div className="bg-white p-4 rounded shadow overflow-x-auto">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">
