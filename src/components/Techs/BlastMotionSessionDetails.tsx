@@ -365,7 +365,7 @@ const BlastMotionSessionDetails: React.FC = () => {
   };
 
   const polarOptions = {
-    maintainAspectRatio: true,
+    // maintainAspectRatio: true,
     responsive: true,
     scales: {
       r: {
@@ -463,11 +463,12 @@ const BlastMotionSessionDetails: React.FC = () => {
           )}
         </div>
         {/* Polar Area Chart for Average Scores */}
+        {/* Polar Area Chart for Average Scores */}
         <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Average Scores
           </h2>
-          <div style={{ width: '600px', height: '600px', margin: '0 auto' }}>
+          <div className="w-full max-w-md mx-auto aspect-square">
             <PolarArea data={polarData} options={polarOptions} />
           </div>
         </div>
