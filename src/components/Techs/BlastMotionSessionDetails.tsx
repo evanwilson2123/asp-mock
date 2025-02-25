@@ -63,7 +63,9 @@ interface BlastMotionSwing {
  * BlastMotionSessionDetails Component
  *
  * This component displays detailed statistics for a specific Blast Motion session,
- * including an interactive line chart, a scatter plot (with vertical/horizontal lines at 90),
+ * including an interactive line chart, two scatter plots (one for Early Connection vs Connection At Impact
+ * with a regression line and annotation lines, and another for Attack Angle vs On‑Plane Efficiency
+ * with a regression line, a shaded box, and a computed percentage of swings falling within the box),
  * and a paginated table of swing data.
  */
 const BlastMotionSessionDetails: React.FC = () => {
@@ -93,17 +95,13 @@ const BlastMotionSessionDetails: React.FC = () => {
           setErrorMessage(errorMessage);
           return;
         }
-
         const data = await res.json();
         if (data.error) {
           throw new Error(data.error);
         }
-
-        // Save full swing objects (all fields)
         setSwings(data.swings || []);
         console.log(data.swings[0].sessionName);
 
-        // Calculate max values using batSpeed and peakHandSpeed
         const batSpeeds = (data.swings || [])
           .map((s: BlastMotionSwing) => s.batSpeed)
           .filter((s: number | null): s is number => s !== null);
@@ -171,7 +169,7 @@ const BlastMotionSessionDetails: React.FC = () => {
     },
   };
 
-  // Prepare scatter chart data for earlyConnection vs connectionAtImpact
+  // First Scatter Chart: Early Connection vs Connection At Impact
   const scatterDataPoints = swings
     .filter(
       (swing) =>
@@ -182,18 +180,50 @@ const BlastMotionSessionDetails: React.FC = () => {
       y: swing.connectionAtImpact as number,
     }));
 
-  // Use a uniform color for scatter points.
+  const regressionDataPoints = (() => {
+    if (scatterDataPoints.length === 0) return [];
+    let sumX = 0,
+      sumY = 0,
+      sumXY = 0,
+      sumXX = 0;
+    const n = scatterDataPoints.length;
+    scatterDataPoints.forEach((pt) => {
+      sumX += pt.x;
+      sumY += pt.y;
+      sumXY += pt.x * pt.y;
+      sumXX += pt.x * pt.x;
+    });
+    const m = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const b = (sumY - m * sumX) / n;
+    const xValues = scatterDataPoints.map((pt) => pt.x);
+    const minX = Math.min(...xValues);
+    const maxX = Math.max(...xValues);
+    return [
+      { x: minX, y: m * minX + b },
+      { x: maxX, y: m * maxX + b },
+    ];
+  })();
+
   const scatterChartData = {
     datasets: [
       {
         label: 'Early Connection vs Connection At Impact',
         data: scatterDataPoints,
         backgroundColor: 'rgba(255, 99, 132, 0.8)',
+        showLine: false,
       },
+      {
+        type: 'line' as const,
+        label: 'Regression Line',
+        data: regressionDataPoints,
+        borderColor: 'rgba(0, 0, 255, 0.8)',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+      } as any,
     ],
   };
 
-  // Configure annotation plugin using the older syntax (scaleID/value)
   const scatterChartOptions = {
     responsive: true,
     plugins: {
@@ -202,9 +232,8 @@ const BlastMotionSessionDetails: React.FC = () => {
       },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
-            return `Early: ${context.parsed.x}, Impact: ${context.parsed.y}`;
-          },
+          label: (context: any) =>
+            `Early: ${context.parsed.x}, Impact: ${context.parsed.y}`,
         },
       },
       annotation: {
@@ -228,16 +257,110 @@ const BlastMotionSessionDetails: React.FC = () => {
     },
     scales: {
       x: {
-        title: {
-          display: true,
-          text: 'Early Connection',
-        },
+        title: { display: true, text: 'Early Connection' },
       },
       y: {
-        title: {
-          display: true,
-          text: 'Connection At Impact',
+        title: { display: true, text: 'Connection At Impact' },
+      },
+    },
+  };
+
+  // Second Scatter Chart: Attack Angle vs On-Plane Efficiency
+  const scatterDataPoints2 = swings
+    .filter(
+      (swing) => swing.attackAngle !== null && swing.onPlaneEfficiency !== null
+    )
+    .map((swing) => ({
+      x: swing.attackAngle as number,
+      y: swing.onPlaneEfficiency as number,
+    }));
+
+  const regressionDataPoints2 = (() => {
+    if (scatterDataPoints2.length === 0) return [];
+    let sumX = 0,
+      sumY = 0,
+      sumXY = 0,
+      sumXX = 0;
+    const n = scatterDataPoints2.length;
+    scatterDataPoints2.forEach((pt) => {
+      sumX += pt.x;
+      sumY += pt.y;
+      sumXY += pt.x * pt.y;
+      sumXX += pt.x * pt.x;
+    });
+    const m = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const b = (sumY - m * sumX) / n;
+    const xValues = scatterDataPoints2.map((pt) => pt.x);
+    const minX = Math.min(...xValues);
+    const maxX = Math.max(...xValues);
+    return [
+      { x: minX, y: m * minX + b },
+      { x: maxX, y: m * maxX + b },
+    ];
+  })();
+
+  const scatterChartData2 = {
+    datasets: [
+      {
+        label: 'Attack Angle vs On-Plane Efficiency',
+        data: scatterDataPoints2,
+        backgroundColor: 'rgba(75, 0, 130, 0.8)',
+        showLine: false,
+      },
+      {
+        type: 'line' as const,
+        label: 'Regression Line',
+        data: regressionDataPoints2,
+        borderColor: 'rgba(0, 0, 0, 0.8)',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+      } as any,
+    ],
+  };
+
+  // Compute percentage of swings falling within the box [x:5-15, y:75-85]
+  const inBoxCount = scatterDataPoints2.filter(
+    (pt) => pt.x >= 5 && pt.x <= 15 && pt.y >= 75 && pt.y <= 85
+  ).length;
+  const percentageInBox =
+    scatterDataPoints2.length > 0
+      ? (inBoxCount / scatterDataPoints2.length) * 100
+      : 0;
+
+  const scatterChartOptions2 = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) =>
+            `Attack: ${context.parsed.x}, Efficiency: ${context.parsed.y}`,
         },
+      },
+      annotation: {
+        annotations: {
+          shadedBox: {
+            type: 'box' as const,
+            xMin: 5,
+            xMax: 15,
+            yMin: 75,
+            yMax: 85,
+            backgroundColor: 'rgba(128, 128, 128, 0.2)',
+            borderColor: 'rgba(128, 128, 128, 1)',
+            borderWidth: 1,
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Attack Angle' },
+      },
+      y: {
+        title: { display: true, text: 'On-Plane Efficiency' },
       },
     },
   };
@@ -257,13 +380,11 @@ const BlastMotionSessionDetails: React.FC = () => {
       <div className="hidden md:block w-64 bg-gray-900 text-white">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
-
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Session Details for {swings[0].sessionName}
         </h1>
-
         <div className="flex flex-col md:flex-row gap-8 mb-8">
           <div className="bg-white p-6 rounded shadow w-full md:w-1/2">
             <h2 className="text-lg font-bold text-gray-600">Max Bat Speed</h2>
@@ -278,7 +399,6 @@ const BlastMotionSessionDetails: React.FC = () => {
             </div>
           </div>
         </div>
-
         {/* Line Chart for Swing Data */}
         <div className="bg-white p-6 rounded shadow mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
@@ -290,8 +410,7 @@ const BlastMotionSessionDetails: React.FC = () => {
             <p className="text-gray-500">No swing data available.</p>
           )}
         </div>
-
-        {/* Scatter Chart for Early Connection vs Connection At Impact */}
+        {/* First Scatter Chart: Early Connection vs Connection At Impact */}
         <div className="bg-white p-6 rounded shadow mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Early Connection vs Connection At Impact
@@ -304,7 +423,23 @@ const BlastMotionSessionDetails: React.FC = () => {
             </p>
           )}
         </div>
-
+        {/* Second Scatter Chart: Attack Angle vs On-Plane Efficiency */}
+        <div className="bg-white p-6 rounded shadow mb-8">
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">
+            Attack Angle vs On-Plane Efficiency
+          </h2>
+          <p className="mb-4 text-sm text-gray-700">
+            {percentageInBox.toFixed(1)}% of swings fall within the box (Attack
+            Angle: 5-15, Efficiency: 75-85)
+          </p>
+          {scatterDataPoints2.length > 0 ? (
+            <Scatter data={scatterChartData2} options={scatterChartOptions2} />
+          ) : (
+            <p className="text-gray-500">
+              Not enough data to display scatter plot.
+            </p>
+          )}
+        </div>
         {/* Paginated Table for Swing Details */}
         <div className="bg-white p-4 rounded shadow overflow-x-auto">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">
