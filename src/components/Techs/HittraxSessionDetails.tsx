@@ -12,11 +12,13 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement, // Import BarElement for bar charts
   Title,
   Tooltip,
   Legend,
+  Plugin,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Line, Scatter, Bar } from 'react-chartjs-2'; // Import Bar
 import ErrorMessage from '../ErrorMessage';
 
 ChartJS.register(
@@ -24,77 +26,122 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement, // Register BarElement
   Title,
   Tooltip,
   Legend
 );
 
+/**
+ * Custom Plugin: fieldBackgroundPlugin
+ *
+ * This plugin now draws:
+ * - Foul lines from home plate (0,0) to the left (-300,300)
+ *   and right (300,300) foul poles.
+ * - An outfield fence drawn as a quadratic curve between the foul poles,
+ *   using (0,400) as a control point to create a bulge that resembles
+ *   a typical baseball field.
+ */
+const fieldBackgroundPlugin: Plugin = {
+  id: 'fieldBackground',
+  beforeDatasetsDraw: (chart) => {
+    const {
+      ctx,
+      scales: { x: xScale, y: yScale },
+    } = chart;
+    ctx.save();
+
+    // Define field coordinates in data units
+    const homePlate = { x: 0, y: 0 };
+    const leftFoulPole = { x: -300, y: 300 };
+    const rightFoulPole = { x: 300, y: 300 };
+
+    // Convert data coordinates to pixel coordinates
+    const homePlatePx = {
+      x: xScale.getPixelForValue(homePlate.x),
+      y: yScale.getPixelForValue(homePlate.y),
+    };
+    const leftFoulPolePx = {
+      x: xScale.getPixelForValue(leftFoulPole.x),
+      y: yScale.getPixelForValue(leftFoulPole.y),
+    };
+    const rightFoulPolePx = {
+      x: xScale.getPixelForValue(rightFoulPole.x),
+      y: yScale.getPixelForValue(rightFoulPole.y),
+    };
+
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+
+    // Draw foul lines from home plate to each foul pole
+    ctx.beginPath();
+    ctx.moveTo(homePlatePx.x, homePlatePx.y);
+    ctx.lineTo(leftFoulPolePx.x, leftFoulPolePx.y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(homePlatePx.x, homePlatePx.y);
+    ctx.lineTo(rightFoulPolePx.x, rightFoulPolePx.y);
+    ctx.stroke();
+
+    // Draw the outfield fence as a quadratic curve.
+    // The curve starts at the left foul pole, ends at the right foul pole,
+    // and uses a control point above home plate to create a convex arc.
+    const controlPointData = { x: 0, y: 400 };
+    const controlPointPx = {
+      x: xScale.getPixelForValue(controlPointData.x),
+      y: yScale.getPixelForValue(controlPointData.y),
+    };
+
+    ctx.beginPath();
+    ctx.moveTo(leftFoulPolePx.x, leftFoulPolePx.y);
+    ctx.quadraticCurveTo(
+      controlPointPx.x,
+      controlPointPx.y,
+      rightFoulPolePx.x,
+      rightFoulPolePx.y
+    );
+    ctx.stroke();
+
+    ctx.restore();
+  },
+};
+
 interface Hit {
   velo: number | null;
   dist: number | null;
   LA: number | null;
+  sprayChartX?: number | null;
+  sprayChartZ?: number | null;
+}
+
+interface SessionData {
+  hits: Hit[];
+  maxExitVelo: number;
+  maxDistance: number;
+  avgLaunchAngle: number;
+  avgVelocitiesByHeight: { [key: string]: number };
+  avgVelocitiesByZone: { [key: string]: number };
 }
 
 /**
  * HitTraxSessionDetails Component
  *
- * This component displays detailed HitTrax session data for a specific athlete,
- * including metrics such as Exit Velocity, Distance, and Launch Angle for each swing.
- * The data is fetched dynamically from the server and visualized using interactive
- * line charts with performance metrics highlighted for quick analysis.
- *
- * Key Features:
- * - **Dynamic Data Fetching:**
- *   - Retrieves HitTrax session data from the API, including hits, max metrics,
- *     and average launch angle.
- *   - Displays error messages for failed API requests with descriptive feedback.
- *
- * - **Performance Metrics:**
- *   - Displays key statistics for the session:
- *     - **Max Exit Velocity (mph)**
- *     - **Max Distance (ft)**
- *     - **Average Launch Angle (°)**
- *   - Statistics are showcased in visually distinct cards with bold typography.
- *
- * - **Interactive Data Visualization:**
- *   - **Line Chart** to track trends for:
- *     - Exit Velocity over time
- *     - Distance traveled per hit
- *     - Launch Angle variations
- *   - Charts are styled with clear color differentiation and tooltips for better insights.
- *
- * - **Role-Based UI:**
- *   - Dynamically renders **CoachSidebar** or **Sidebar** based on the user's role
- *     (Coach/Admin) for personalized navigation.
- *
- * - **Error Handling & Loading States:**
- *   - Displays a loading spinner during data fetch operations.
- *   - Provides user-friendly error messages if data retrieval fails.
- *
- * Technologies Used:
- * - **React** with hooks (`useState`, `useEffect`) for state management and lifecycle control
- * - **Next.js** for routing and API calls
- * - **Clerk** for authentication and user role management
- * - **Chart.js** with `react-chartjs-2` for data visualization
- * - **Tailwind CSS** for responsive, modern UI styling
- *
- * Usage:
- * - Accessed from an athlete’s performance dashboard to analyze detailed HitTrax session metrics.
- * - Ideal for coaches and athletes aiming to monitor hitting performance, track improvements,
- *   and identify areas needing focus.
+ * Displays hit session details along with four charts:
+ * 1. A Line chart showing hit data over time (exit velocity, distance, launch angle).
+ * 2. A square Scatter chart (spray chart) plotting ball landing positions.
+ *    The spray chart uses the fieldBackgroundPlugin to draw the baseball field.
+ * 3. A Bar chart showing average exit velocities by height zone (low, middle, top).
+ * 4. A Bar chart showing average exit velocities by spray zone (pull, center, opposite).
  */
-
 const HitTraxSessionDetails: React.FC = () => {
-  const [hits, setHits] = useState<Hit[]>([]);
-  const [maxExitVelo, setMaxExitVelo] = useState<number>(0);
-  const [maxDistance, setMaxDistance] = useState<number>(0);
-  const [avgLaunchAngle, setAvgLaunchAngle] = useState<number>(0);
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { sessionId } = useParams();
   const { user } = useUser();
-  const role = user?.publicMetadata?.role;
+  const role = user?.publicMetadata?.role as string | undefined;
 
   useEffect(() => {
     const fetchSessionData = async () => {
@@ -103,10 +150,10 @@ const HitTraxSessionDetails: React.FC = () => {
         if (!res.ok) {
           const errorMessage =
             res.status === 404
-              ? 'Hittrax data could not be found.'
-              : res.status == 500
+              ? 'HitTrax data could not be found.'
+              : res.status === 500
                 ? 'We encountered an issue on our end. Please try again later.'
-                : 'An unexpected issue occured. Please try again.';
+                : 'An unexpected issue occurred. Please try again.';
           setErrorMessage(errorMessage);
           return;
         }
@@ -116,10 +163,11 @@ const HitTraxSessionDetails: React.FC = () => {
           throw new Error(data.error);
         }
 
-        setHits(data.hits || []);
-        setMaxExitVelo(data.maxExitVelo || 0);
-        setMaxDistance(data.maxDistance || 0);
-        setAvgLaunchAngle(data.avgLaunchAngle || 0);
+        if (!data.hits) {
+          throw new Error('Required hit data not provided');
+        }
+
+        setSessionData(data);
       } catch (err: any) {
         setErrorMessage(err.message);
       } finally {
@@ -134,16 +182,28 @@ const HitTraxSessionDetails: React.FC = () => {
   if (errorMessage)
     return (
       <div className="text-red-500">
-        <ErrorMessage role={role as string} message={errorMessage} />
+        <ErrorMessage role={role} message={errorMessage} />
       </div>
     );
 
+  if (!sessionData) return null;
+
+  const {
+    hits,
+    maxExitVelo,
+    maxDistance,
+    avgLaunchAngle,
+    avgVelocitiesByHeight,
+    avgVelocitiesByZone,
+  } = sessionData;
+
+  // Prepare data for the Line chart.
   const labels = hits.map((_, i) => `Swing ${i + 1}`);
   const exitVeloData = hits.map((h) => (h.velo !== null ? h.velo : 0));
   const distanceData = hits.map((h) => (h.dist !== null ? h.dist : 0));
   const launchAngleData = hits.map((h) => (h.LA !== null ? h.LA : 0));
 
-  const data = {
+  const lineChartData = {
     labels,
     datasets: [
       {
@@ -182,7 +242,7 @@ const HitTraxSessionDetails: React.FC = () => {
     ],
   };
 
-  const options = {
+  const lineChartOptions = {
     responsive: true,
     plugins: {
       legend: {
@@ -191,9 +251,147 @@ const HitTraxSessionDetails: React.FC = () => {
     },
   };
 
+  // Prepare data for the Scatter (Spray Chart).
+  const scatterPoints = hits
+    .filter((h) => h.sprayChartX != null && h.sprayChartZ != null)
+    .map((h) => ({
+      x: h.sprayChartX as number,
+      y: h.sprayChartZ as number,
+    }));
+
+  const scatterData = {
+    datasets: [
+      {
+        label: 'Balls Landed',
+        data: scatterPoints,
+        backgroundColor: 'blue',
+        pointRadius: 5,
+      },
+    ],
+  };
+
+  // Adjust the scales so we can accommodate the control point for the outfield fence.
+  const scatterOptions = {
+    aspectRatio: 1,
+    responsive: true,
+    scales: {
+      x: {
+        type: 'linear' as const,
+        position: 'bottom' as const,
+        min: -300,
+        max: 300,
+        title: {
+          display: true,
+          text: 'Spray Chart X',
+        },
+      },
+      y: {
+        type: 'linear' as const,
+        min: 0,
+        max: 400,
+        title: {
+          display: true,
+          text: 'Spray Chart Y',
+        },
+      },
+    },
+  };
+
+  // Prepare data for the Bar chart (Average Velocities by Height Zone)
+  const heightBarChartData = {
+    labels: ['Low', 'Middle', 'Top'], // Labels for the height zones
+    datasets: [
+      {
+        label: 'Average Exit Velocity (mph)',
+        data: [
+          avgVelocitiesByHeight['low'] || 0,
+          avgVelocitiesByHeight['middle'] || 0,
+          avgVelocitiesByHeight['top'] || 0,
+        ],
+        backgroundColor: 'rgba(54, 162, 235, 0.5)', // Blue bars
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const heightBarChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Average Exit Velocity by Height Zone',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Velocity (mph)',
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Height Zone',
+        },
+      },
+    },
+  };
+
+  // Prepare data for the Bar chart (Average Velocities by Spray Zone)
+  const sprayBarChartData = {
+    labels: ['Pull', 'Center', 'Opposite'], // Labels for the spray zones
+    datasets: [
+      {
+        label: 'Average Exit Velocity (mph)',
+        data: [
+          avgVelocitiesByZone['pull'] || 0,
+          avgVelocitiesByZone['center'] || 0,
+          avgVelocitiesByZone['opposite'] || 0,
+        ],
+        backgroundColor: 'rgba(75, 192, 192, 0.5)', // Teal bars (different color for distinction)
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const sprayBarChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Average Exit Velocity by Spray Zone',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Velocity (mph)',
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Spray Zone',
+        },
+      },
+    },
+  };
+
   return (
     <div className="flex min-h-screen">
-      {/* Conditional Sidebar */}
+      {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
@@ -232,14 +430,55 @@ const HitTraxSessionDetails: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded shadow">
+        {/* Line Chart for Hit Data */}
+        <div className="bg-white p-6 rounded shadow mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Hit Data Over Time
           </h2>
           {hits.length > 0 ? (
-            <Line data={data} options={options} />
+            <Line data={lineChartData} options={lineChartOptions} />
           ) : (
             <p className="text-gray-500">No hit data available.</p>
+          )}
+        </div>
+
+        {/* Bar Chart for Average Velocities by Height Zone */}
+        <div className="bg-white p-6 rounded shadow mb-8">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Average Exit Velocities by Height Zone
+          </h2>
+          {Object.keys(avgVelocitiesByHeight).length > 0 ? (
+            <Bar data={heightBarChartData} options={heightBarChartOptions} />
+          ) : (
+            <p className="text-gray-500">No height zone data available.</p>
+          )}
+        </div>
+
+        {/* Bar Chart for Average Velocities by Spray Zone */}
+        <div className="bg-white p-6 rounded shadow mb-8">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Average Exit Velocities by Spray Zone
+          </h2>
+          {Object.keys(avgVelocitiesByZone).length > 0 ? (
+            <Bar data={sprayBarChartData} options={sprayBarChartOptions} />
+          ) : (
+            <p className="text-gray-500">No spray zone data available.</p>
+          )}
+        </div>
+
+        {/* Scatter Chart (Spray Chart) with Field Background */}
+        <div className="bg-white p-6 rounded shadow">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Spray Chart
+          </h2>
+          {scatterPoints.length > 0 ? (
+            <Scatter
+              data={scatterData}
+              options={scatterOptions}
+              plugins={[fieldBackgroundPlugin]}
+            />
+          ) : (
+            <p className="text-gray-500">No spray chart data available.</p>
           )}
         </div>
       </div>

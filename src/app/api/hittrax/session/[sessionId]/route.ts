@@ -1,93 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
 
-/**
- * GET /api/hittrax/session/:sessionId
- *
- * **Fetch HitTrax Session Data**
- *
- * This endpoint retrieves all valid HitTrax hit records for a given session ID. It filters out invalid hits
- * (where `velo` or `dist` is 0 or null) and calculates key statistics such as maximum exit velocity,
- * maximum distance, and average launch angle.
- *
- * ---
- *
- * @param {NextRequest} req - The request object containing the session ID in the URL parameters.
- *
- * **Path Parameter:**
- * - `sessionId` (string) **Required**: The unique identifier for the session to fetch hits from.
- *
- * ---
- *
- * @returns {Promise<NextResponse>} JSON response:
- *
- * - **Success (200):**
- *   Returns the list of hits with key metrics:
- *   ```json
- *   {
- *     "hits": [
- *       { "velo": 85, "dist": 300, "LA": 25 },
- *       { "velo": 90, "dist": 320, "LA": 28 }
- *     ],
- *     "maxExitVelo": 90,
- *     "maxDistance": 320,
- *     "avgLaunchAngle": 26.5
- *   }
- *   ```
- *
- * - **Error (404):**
- *   - If no hits are found for the session:
- *   ```json
- *   {
- *     "error": "No hits found for the given sessionId"
- *   }
- *   ```
- *   - If no valid hits (non-zero values) are found:
- *   ```json
- *   {
- *     "error": "No valid hits found for the given sessionId"
- *   }
- *   ```
- *
- * - **Error (500):**
- *   - If there's an internal server error:
- *   ```json
- *   {
- *     "error": "Failed to fetch session data",
- *     "details": "Error message"
- *   }
- *   ```
- *
- * ---
- *
- * @example
- * // Example request using fetch:
- * fetch('/api/hittrax/session/12345', {
- *   method: 'GET'
- * })
- *   .then(response => response.json())
- *   .then(data => console.log(data))
- *   .catch(error => console.error('Error fetching session data:', error));
- *
- * ---
- *
- * @notes
- * - This endpoint filters out invalid hits where both `velo` and `dist` are either 0 or null.
- * - The average launch angle (`avgLaunchAngle`) is calculated only from valid hits with non-null values.
- * - Sorting is done chronologically by the `createdAt` timestamp in ascending order.
- */
 export async function GET(req: NextRequest, context: any) {
   const sessionId = context.params.sessionId;
 
   try {
-    // Fetch all records for the given sessionId
+    const heightMap: Map<string, number[]> = new Map();
+    // Fetch all records for the given sessionId, including spray chart coordinates.
     const hits = await prisma.hitTrax.findMany({
       where: { sessionId },
-      select: {
-        velo: true,
-        dist: true,
-        LA: true, // Include Launch Angle (LA)
-      },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -98,7 +19,7 @@ export async function GET(req: NextRequest, context: any) {
       );
     }
 
-    // Filter out hits where velo or dist is 0
+    // Filter out hits where velo or dist is 0 or null.
     const filteredHits = hits.filter(
       (h) => h.velo !== 0 && h.dist !== 0 && h.velo !== null && h.dist !== null
     );
@@ -110,7 +31,94 @@ export async function GET(req: NextRequest, context: any) {
       );
     }
 
-    // Extract exit velocities, distances, and launch angles for calculations
+    // Fetch handedness from HitTrax (assuming one record exists for the session)
+    const athleteInfo = await prisma.hitTrax.findFirst({
+      where: { sessionId },
+      select: { batting: true },
+    });
+    const handedness = athleteInfo?.batting || 'Right'; // Default to Right-handed if undefined
+
+    const centerZoneMargin = 15;
+
+    // Group velocities by pull, center, and opposite zones
+    const zoneVelocities: {
+      pull: number[];
+      center: number[];
+      opposite: number[];
+    } = {
+      pull: [],
+      center: [],
+      opposite: [],
+    };
+
+    for (const hit of filteredHits) {
+      if (hit.sprayChartX !== null && hit.velo !== null) {
+        if (handedness === 'Left') {
+          if (hit.sprayChartX < -centerZoneMargin) {
+            zoneVelocities.pull.push(hit.velo);
+          } else if (hit.sprayChartX > centerZoneMargin) {
+            zoneVelocities.opposite.push(hit.velo);
+          } else {
+            zoneVelocities.center.push(hit.velo);
+          }
+        } else {
+          if (hit.sprayChartX > centerZoneMargin) {
+            zoneVelocities.pull.push(hit.velo);
+          } else if (hit.sprayChartX < -centerZoneMargin) {
+            zoneVelocities.opposite.push(hit.velo);
+          } else {
+            zoneVelocities.center.push(hit.velo);
+          }
+        }
+      }
+    }
+
+    // Calculate average velocities for each zone
+    const avgVelocitiesByZone: { [key: string]: number } = {};
+    for (const [zone, velocities] of Object.entries(zoneVelocities)) {
+      if (velocities.length > 0) {
+        avgVelocitiesByZone[zone] =
+          velocities.reduce((sum, velo) => sum + velo, 0) / velocities.length;
+      } else {
+        avgVelocitiesByZone[zone] = 0; // Default to 0 if no hits in zone
+      }
+    }
+
+    // Height zone processing (kept as is for consistency)
+    for (const hit of hits) {
+      if (
+        hit.POIY === null ||
+        hit.strikeZoneBottom === null ||
+        hit.strikeZoneTop === null
+      ) {
+        continue;
+      }
+      const third = (hit.strikeZoneTop! - hit.strikeZoneBottom!) / 3;
+      if (hit.POIY < hit.strikeZoneBottom + third) {
+        if (!heightMap.get('low')) {
+          heightMap.set('low', [hit.velo!]);
+          continue;
+        }
+        heightMap.get('low')?.push(hit.velo!);
+      } else if (
+        hit.POIY > hit.strikeZoneBottom + third &&
+        hit.POIY < hit.strikeZoneTop - third
+      ) {
+        if (!heightMap.get('middle')) {
+          heightMap.set('middle', [hit.velo!]);
+          continue;
+        }
+        heightMap.get('middle')?.push(hit.velo!);
+      } else if (hit.POIY > hit.strikeZoneTop - third) {
+        if (!heightMap.get('top')) {
+          heightMap.set('top', [hit.velo!]);
+          continue;
+        }
+        heightMap.get('top')?.push(hit.velo!);
+      }
+    }
+
+    // Calculate key statistics.
     const exitVelocities = filteredHits
       .map((h) => h.velo)
       .filter((v): v is number => v !== null);
@@ -121,25 +129,33 @@ export async function GET(req: NextRequest, context: any) {
       .map((h) => h.LA)
       .filter((la): la is number => la !== null);
 
-    // Calculate max values
     const maxExitVelo =
       exitVelocities.length > 0 ? Math.max(...exitVelocities) : 0;
     const maxDistance = distances.length > 0 ? Math.max(...distances) : 0;
-    let laCount = 0;
-    let laTotal = 0;
-    for (let i = 0; i < launchAngles.length; i++) {
-      laCount++;
-      laTotal += launchAngles[i];
+    const avgLaunchAngle =
+      launchAngles.length > 0
+        ? launchAngles.reduce((sum, angle) => sum + angle, 0) /
+          launchAngles.length
+        : 0;
+
+    // Calculate average velocities for each height zone
+    const avgVelocitiesByHeight: { [key: string]: number } = {};
+    for (const [zone, velocities] of heightMap.entries()) {
+      if (velocities.length > 0) {
+        avgVelocitiesByHeight[zone] =
+          velocities.reduce((sum, velo) => sum + velo, 0) / velocities.length;
+      } else {
+        avgVelocitiesByHeight[zone] = 0; // Default to 0 if no hits in zone
+      }
     }
-    const avgLaunchAngle = laTotal / laCount;
-    // const avgLaunchAngle =
-    //   launchAngles.length > 0 ? Math.max(...launchAngles) : 0;
 
     return NextResponse.json({
       hits: filteredHits,
       maxExitVelo,
       maxDistance,
       avgLaunchAngle,
+      avgVelocitiesByHeight,
+      avgVelocitiesByZone, // Add average velocities by spray zone (pull, center, opposite)
     });
   } catch (error: any) {
     console.error('Error fetching HitTrax session data:', error);
