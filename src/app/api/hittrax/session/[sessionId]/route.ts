@@ -149,13 +149,58 @@ export async function GET(req: NextRequest, context: any) {
       }
     }
 
+    // Calculate statistics for the top 12.5% of hardest hits by exit velocity
+    if (exitVelocities.length > 0) {
+      const sortedVelocities = [...exitVelocities].sort((a, b) => b - a); // Sort in descending order
+      const topPercentIndex = Math.ceil(exitVelocities.length * 0.125); // 12.5% of hits
+      const topHits = filteredHits
+        .filter(
+          (h) =>
+            h.velo !== null &&
+            sortedVelocities.slice(0, topPercentIndex).includes(h.velo)
+        )
+        .filter((h) => h.dist !== null && h.LA !== null); // Ensure dist and LA are not null
+
+      let topVeloSum = 0,
+        topDistSum = 0,
+        topLASum = 0;
+      if (topHits.length > 0) {
+        topVeloSum = topHits.reduce((sum, hit) => sum + hit.velo!, 0);
+        topDistSum = topHits.reduce((sum, hit) => sum + hit.dist!, 0);
+        topLASum = topHits.reduce((sum, hit) => sum + hit.LA!, 0);
+      }
+
+      const avgTopVelo = topHits.length > 0 ? topVeloSum / topHits.length : 0;
+      const avgTopDist = topHits.length > 0 ? topDistSum / topHits.length : 0;
+      const avgTopLA = topHits.length > 0 ? topLASum / topHits.length : 0;
+
+      return NextResponse.json({
+        hits: filteredHits,
+        maxExitVelo,
+        maxDistance,
+        avgLaunchAngle,
+        avgVelocitiesByHeight,
+        avgVelocitiesByZone,
+        top12_5PercentStats: {
+          avgVelo: avgTopVelo,
+          avgDistance: avgTopDist,
+          avgLaunchAngle: avgTopLA,
+        },
+      });
+    }
+
     return NextResponse.json({
       hits: filteredHits,
       maxExitVelo,
       maxDistance,
       avgLaunchAngle,
       avgVelocitiesByHeight,
-      avgVelocitiesByZone, // Add average velocities by spray zone (pull, center, opposite)
+      avgVelocitiesByZone,
+      top12_5PercentStats: {
+        avgVelo: 0,
+        avgDistance: 0,
+        avgLaunchAngle: 0,
+      },
     });
   } catch (error: any) {
     console.error('Error fetching HitTrax session data:', error);

@@ -16,9 +16,9 @@ import {
   Title,
   Tooltip,
   Legend,
-  Plugin,
+  // Plugin,
 } from 'chart.js';
-import { Line, Scatter, Bar } from 'react-chartjs-2'; // Import Bar
+import { Line, Bar } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
 
 ChartJS.register(
@@ -42,70 +42,70 @@ ChartJS.register(
  *   using (0,400) as a control point to create a bulge that resembles
  *   a typical baseball field.
  */
-const fieldBackgroundPlugin: Plugin = {
-  id: 'fieldBackground',
-  beforeDatasetsDraw: (chart) => {
-    const {
-      ctx,
-      scales: { x: xScale, y: yScale },
-    } = chart;
-    ctx.save();
+// const fieldBackgroundPlugin: Plugin = {
+//   id: 'fieldBackground',
+//   beforeDatasetsDraw: (chart) => {
+//     const {
+//       ctx,
+//       scales: { x: xScale, y: yScale },
+//     } = chart;
+//     ctx.save();
 
-    // Define field coordinates in data units
-    const homePlate = { x: 0, y: 0 };
-    const leftFoulPole = { x: -300, y: 300 };
-    const rightFoulPole = { x: 300, y: 300 };
+//     // Define field coordinates in data units
+//     const homePlate = { x: 0, y: 0 };
+//     const leftFoulPole = { x: -300, y: 300 };
+//     const rightFoulPole = { x: 300, y: 300 };
 
-    // Convert data coordinates to pixel coordinates
-    const homePlatePx = {
-      x: xScale.getPixelForValue(homePlate.x),
-      y: yScale.getPixelForValue(homePlate.y),
-    };
-    const leftFoulPolePx = {
-      x: xScale.getPixelForValue(leftFoulPole.x),
-      y: yScale.getPixelForValue(leftFoulPole.y),
-    };
-    const rightFoulPolePx = {
-      x: xScale.getPixelForValue(rightFoulPole.x),
-      y: yScale.getPixelForValue(rightFoulPole.y),
-    };
+//     // Convert data coordinates to pixel coordinates
+//     const homePlatePx = {
+//       x: xScale.getPixelForValue(homePlate.x),
+//       y: yScale.getPixelForValue(homePlate.y),
+//     };
+//     const leftFoulPolePx = {
+//       x: xScale.getPixelForValue(leftFoulPole.x),
+//       y: yScale.getPixelForValue(leftFoulPole.y),
+//     };
+//     const rightFoulPolePx = {
+//       x: xScale.getPixelForValue(rightFoulPole.x),
+//       y: yScale.getPixelForValue(rightFoulPole.y),
+//     };
 
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = 2;
+//     ctx.strokeStyle = 'red';
+//     ctx.lineWidth = 2;
 
-    // Draw foul lines from home plate to each foul pole
-    ctx.beginPath();
-    ctx.moveTo(homePlatePx.x, homePlatePx.y);
-    ctx.lineTo(leftFoulPolePx.x, leftFoulPolePx.y);
-    ctx.stroke();
+//     // Draw foul lines from home plate to each foul pole
+//     ctx.beginPath();
+//     ctx.moveTo(homePlatePx.x, homePlatePx.y);
+//     ctx.lineTo(leftFoulPolePx.x, leftFoulPolePx.y);
+//     ctx.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(homePlatePx.x, homePlatePx.y);
-    ctx.lineTo(rightFoulPolePx.x, rightFoulPolePx.y);
-    ctx.stroke();
+//     ctx.beginPath();
+//     ctx.moveTo(homePlatePx.x, homePlatePx.y);
+//     ctx.lineTo(rightFoulPolePx.x, rightFoulPolePx.y);
+//     ctx.stroke();
 
-    // Draw the outfield fence as a quadratic curve.
-    // The curve starts at the left foul pole, ends at the right foul pole,
-    // and uses a control point above home plate to create a convex arc.
-    const controlPointData = { x: 0, y: 400 };
-    const controlPointPx = {
-      x: xScale.getPixelForValue(controlPointData.x),
-      y: yScale.getPixelForValue(controlPointData.y),
-    };
+//     // Draw the outfield fence as a quadratic curve.
+//     // The curve starts at the left foul pole, ends at the right foul pole,
+//     // and uses a control point above home plate to create a convex arc.
+//     const controlPointData = { x: 0, y: 400 };
+//     const controlPointPx = {
+//       x: xScale.getPixelForValue(controlPointData.x),
+//       y: yScale.getPixelForValue(controlPointData.y),
+//     };
 
-    ctx.beginPath();
-    ctx.moveTo(leftFoulPolePx.x, leftFoulPolePx.y);
-    ctx.quadraticCurveTo(
-      controlPointPx.x,
-      controlPointPx.y,
-      rightFoulPolePx.x,
-      rightFoulPolePx.y
-    );
-    ctx.stroke();
+//     ctx.beginPath();
+//     ctx.moveTo(leftFoulPolePx.x, leftFoulPolePx.y);
+//     ctx.quadraticCurveTo(
+//       controlPointPx.x,
+//       controlPointPx.y,
+//       rightFoulPolePx.x,
+//       rightFoulPolePx.y
+//     );
+//     ctx.stroke();
 
-    ctx.restore();
-  },
-};
+//     ctx.restore();
+//   },
+// };
 
 interface Hit {
   velo: number | null;
@@ -122,17 +122,22 @@ interface SessionData {
   avgLaunchAngle: number;
   avgVelocitiesByHeight: { [key: string]: number };
   avgVelocitiesByZone: { [key: string]: number };
+  top12_5PercentStats: {
+    avgVelo: number;
+    avgDistance: number;
+    avgLaunchAngle: number;
+  };
 }
 
 /**
  * HitTraxSessionDetails Component
  *
- * Displays hit session details along with four charts:
+ * Displays hit session details along with several charts:
  * 1. A Line chart showing hit data over time (exit velocity, distance, launch angle).
  * 2. A square Scatter chart (spray chart) plotting ball landing positions.
  *    The spray chart uses the fieldBackgroundPlugin to draw the baseball field.
- * 3. A Bar chart showing average exit velocities by height zone (low, middle, top).
- * 4. A Bar chart showing average exit velocities by spray zone (pull, center, opposite).
+ * 3. Two Bar charts showing average exit velocities by height zone and spray zone.
+ * 4. Instead of a bar chart for the top 12.5% hardest hits, the numbers are shown below the max stats.
  */
 const HitTraxSessionDetails: React.FC = () => {
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
@@ -195,6 +200,7 @@ const HitTraxSessionDetails: React.FC = () => {
     avgLaunchAngle,
     avgVelocitiesByHeight,
     avgVelocitiesByZone,
+    top12_5PercentStats,
   } = sessionData;
 
   // Prepare data for the Line chart.
@@ -252,54 +258,54 @@ const HitTraxSessionDetails: React.FC = () => {
   };
 
   // Prepare data for the Scatter (Spray Chart).
-  const scatterPoints = hits
-    .filter((h) => h.sprayChartX != null && h.sprayChartZ != null)
-    .map((h) => ({
-      x: h.sprayChartX as number,
-      y: h.sprayChartZ as number,
-    }));
+  // const scatterPoints = hits
+  //   .filter((h) => h.sprayChartX != null && h.sprayChartZ != null)
+  //   .map((h) => ({
+  //     x: h.sprayChartX as number,
+  //     y: h.sprayChartZ as number,
+  //   }));
 
-  const scatterData = {
-    datasets: [
-      {
-        label: 'Balls Landed',
-        data: scatterPoints,
-        backgroundColor: 'blue',
-        pointRadius: 5,
-      },
-    ],
-  };
+  // const scatterData = {
+  //   datasets: [
+  //     {
+  //       label: 'Balls Landed',
+  //       data: scatterPoints,
+  //       backgroundColor: 'blue',
+  //       pointRadius: 5,
+  //     },
+  //   ],
+  // };
 
-  // Adjust the scales so we can accommodate the control point for the outfield fence.
-  const scatterOptions = {
-    aspectRatio: 1,
-    responsive: true,
-    scales: {
-      x: {
-        type: 'linear' as const,
-        position: 'bottom' as const,
-        min: -300,
-        max: 300,
-        title: {
-          display: true,
-          text: 'Spray Chart X',
-        },
-      },
-      y: {
-        type: 'linear' as const,
-        min: 0,
-        max: 400,
-        title: {
-          display: true,
-          text: 'Spray Chart Y',
-        },
-      },
-    },
-  };
+  // // Adjust the scales so we can accommodate the control point for the outfield fence.
+  // const scatterOptions = {
+  //   aspectRatio: 1,
+  //   responsive: true,
+  //   scales: {
+  //     x: {
+  //       type: 'linear' as const,
+  //       position: 'bottom' as const,
+  //       min: -300,
+  //       max: 300,
+  //       title: {
+  //         display: true,
+  //         text: 'Spray Chart X',
+  //       },
+  //     },
+  //     y: {
+  //       type: 'linear' as const,
+  //       min: 0,
+  //       max: 400,
+  //       title: {
+  //         display: true,
+  //         text: 'Spray Chart Y',
+  //       },
+  //     },
+  //   },
+  // };
 
   // Prepare data for the Bar chart (Average Velocities by Height Zone)
   const heightBarChartData = {
-    labels: ['Low', 'Middle', 'Top'], // Labels for the height zones
+    labels: ['Low', 'Middle', 'Top'],
     datasets: [
       {
         label: 'Average Exit Velocity (mph)',
@@ -308,7 +314,7 @@ const HitTraxSessionDetails: React.FC = () => {
           avgVelocitiesByHeight['middle'] || 0,
           avgVelocitiesByHeight['top'] || 0,
         ],
-        backgroundColor: 'rgba(54, 162, 235, 0.5)', // Blue bars
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 1,
       },
@@ -345,7 +351,7 @@ const HitTraxSessionDetails: React.FC = () => {
 
   // Prepare data for the Bar chart (Average Velocities by Spray Zone)
   const sprayBarChartData = {
-    labels: ['Pull', 'Center', 'Opposite'], // Labels for the spray zones
+    labels: ['Pull', 'Center', 'Opposite'],
     datasets: [
       {
         label: 'Average Exit Velocity (mph)',
@@ -354,7 +360,7 @@ const HitTraxSessionDetails: React.FC = () => {
           avgVelocitiesByZone['center'] || 0,
           avgVelocitiesByZone['opposite'] || 0,
         ],
-        backgroundColor: 'rgba(75, 192, 192, 0.5)', // Teal bars (different color for distinction)
+        backgroundColor: 'rgba(75, 192, 192, 0.5)',
         borderColor: 'rgba(75, 192, 192, 1)',
         borderWidth: 1,
       },
@@ -401,37 +407,73 @@ const HitTraxSessionDetails: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
-        <h1 className="text-2xl font-bold text-gray-700 mb-6">
-          Session Details for {sessionId}
-        </h1>
-
+        <div className="rounded border-2 border-gray-300 bg-white mb-4">
+          <h1 className="text-3xl font-bold text-gray-700 justify-center flex">
+            Session Totals
+          </h1>
+        </div>
         <div className="flex flex-col md:flex-row gap-8 mb-8">
-          <div className="bg-white p-6 rounded shadow w-full md:w-1/3">
-            <h2 className="text-lg font-bold text-gray-600">
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/3 border-2 border-gray-300">
+            <h2 className="text-lg font-bold text-gray-600 justify-center flex">
               Max Exit Velocity
             </h2>
-            <div className="mt-4 text-4xl font-semibold text-blue-600">
+            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
               {maxExitVelo.toFixed(1)} mph
             </div>
           </div>
-          <div className="bg-white p-6 rounded shadow w-full md:w-1/3">
-            <h2 className="text-lg font-bold text-gray-600">Max Distance</h2>
-            <div className="mt-4 text-4xl font-semibold text-green-600">
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/3 border-2 border-gray-300">
+            <h2 className="text-lg font-bold text-gray-600 justify-center flex">
+              Max Distance
+            </h2>
+            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
               {maxDistance.toFixed(1)} ft
             </div>
           </div>
-          <div className="bg-white p-6 rounded shadow w-full md:w-1/3">
-            <h2 className="text-lg font-bold text-gray-600">
-              Average Launch Angle
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/3 border-2 border-gray-300">
+            <h2 className="text-lg font-bold text-gray-600 justify-center flex">
+              Avg Launch Angle
             </h2>
-            <div className="mt-4 text-4xl font-semibold text-orange-600">
+            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
               {avgLaunchAngle.toFixed(1)} °
             </div>
           </div>
         </div>
 
+        <div className="rounded border-2 border-gray-300 bg-white mb-4">
+          <h1 className="text-3xl font-bold text-gray-700 justify-center flex">
+            Top 12.5%
+          </h1>
+        </div>
+        {/* Top 12.5% Hardest Hits Statistics as Numbers */}
+        <div className="flex flex-col md:flex-row gap-8 mb-8">
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/3 border-2 border-gray-300">
+            <h2 className="text-lg font-bold text-gray-700 justify-center flex">
+              Avg Exit Velocity
+            </h2>
+            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
+              {top12_5PercentStats.avgVelo.toFixed(1)} mph
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/3 border-2 border-gray-300">
+            <h2 className="text-lg font-bold text-gray-700 justify-center flex">
+              Avg Distance
+            </h2>
+            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
+              {top12_5PercentStats.avgDistance.toFixed(1)} ft
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/3 border-2 border-gray-300">
+            <h2 className="text-lg font-bold text-gray-700 justofy-center flex">
+              Avg Launch Angle
+            </h2>
+            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
+              {top12_5PercentStats.avgLaunchAngle.toFixed(1)} °
+            </div>
+          </div>
+        </div>
+
         {/* Line Chart for Hit Data */}
-        <div className="bg-white p-6 rounded shadow mb-8">
+        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Hit Data Over Time
           </h2>
@@ -443,7 +485,7 @@ const HitTraxSessionDetails: React.FC = () => {
         </div>
 
         {/* Bar Chart for Average Velocities by Height Zone */}
-        <div className="bg-white p-6 rounded shadow mb-8">
+        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Average Exit Velocities by Height Zone
           </h2>
@@ -455,7 +497,7 @@ const HitTraxSessionDetails: React.FC = () => {
         </div>
 
         {/* Bar Chart for Average Velocities by Spray Zone */}
-        <div className="bg-white p-6 rounded shadow mb-8">
+        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Average Exit Velocities by Spray Zone
           </h2>
@@ -466,8 +508,8 @@ const HitTraxSessionDetails: React.FC = () => {
           )}
         </div>
 
-        {/* Scatter Chart (Spray Chart) with Field Background */}
-        <div className="bg-white p-6 rounded shadow">
+        {/* Scatter Chart (Spray Chart) with Field Background
+        <div className="bg-white p-6 rounded shadow border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Spray Chart
           </h2>
@@ -480,7 +522,7 @@ const HitTraxSessionDetails: React.FC = () => {
           ) : (
             <p className="text-gray-500">No spray chart data available.</p>
           )}
-        </div>
+        </div> */}
       </div>
     </div>
   );
