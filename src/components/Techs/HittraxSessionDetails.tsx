@@ -127,6 +127,7 @@ interface SessionData {
     avgDistance: number;
     avgLaunchAngle: number;
   };
+  percentOptimalLA: string;
 }
 
 /**
@@ -201,6 +202,7 @@ const HitTraxSessionDetails: React.FC = () => {
     avgVelocitiesByHeight,
     avgVelocitiesByZone,
     top12_5PercentStats,
+    percentOptimalLA,
   } = sessionData;
 
   // Prepare data for the Line chart.
@@ -413,7 +415,7 @@ const HitTraxSessionDetails: React.FC = () => {
           </h1>
         </div>
         <div className="flex flex-col md:flex-row gap-8 mb-8">
-          <div className="bg-white p-6 rounded shadow w-full md:w-1/3 border-2 border-gray-300">
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/4 border-2 border-gray-300">
             <h2 className="text-lg font-bold text-gray-600 justify-center flex">
               Max Exit Velocity
             </h2>
@@ -421,7 +423,7 @@ const HitTraxSessionDetails: React.FC = () => {
               {maxExitVelo.toFixed(1)} mph
             </div>
           </div>
-          <div className="bg-white p-6 rounded shadow w-full md:w-1/3 border-2 border-gray-300">
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/4 border-2 border-gray-300">
             <h2 className="text-lg font-bold text-gray-600 justify-center flex">
               Max Distance
             </h2>
@@ -429,12 +431,20 @@ const HitTraxSessionDetails: React.FC = () => {
               {maxDistance.toFixed(1)} ft
             </div>
           </div>
-          <div className="bg-white p-6 rounded shadow w-full md:w-1/3 border-2 border-gray-300">
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/4 border-2 border-gray-300">
             <h2 className="text-lg font-bold text-gray-600 justify-center flex">
               Avg Launch Angle
             </h2>
             <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
               {avgLaunchAngle.toFixed(1)} °
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded shadow w-full md:w-1/4 border-2 border-gray-300">
+            <h2 className="text-lg font-bold text-gray-600 justify-center flex">
+              % Launch Angle 7° - 25°
+            </h2>
+            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
+              {percentOptimalLA}%
             </div>
           </div>
         </div>

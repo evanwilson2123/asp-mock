@@ -149,6 +149,13 @@ export async function GET(req: NextRequest, context: any) {
       }
     }
 
+    const percentOptimalLA = (
+      (filteredHits.filter((f) => f.LA! < 25 && f.LA! > 7).length /
+        filteredHits.length) *
+      100
+    ).toFixed(2);
+    console.log(`Percent optimal LA ${percentOptimalLA}%`);
+
     // Calculate statistics for the top 12.5% of hardest hits by exit velocity
     if (exitVelocities.length > 0) {
       const sortedVelocities = [...exitVelocities].sort((a, b) => b - a); // Sort in descending order
@@ -181,6 +188,7 @@ export async function GET(req: NextRequest, context: any) {
         avgLaunchAngle,
         avgVelocitiesByHeight,
         avgVelocitiesByZone,
+        percentOptimalLA,
         top12_5PercentStats: {
           avgVelo: avgTopVelo,
           avgDistance: avgTopDist,
@@ -196,6 +204,7 @@ export async function GET(req: NextRequest, context: any) {
       avgLaunchAngle,
       avgVelocitiesByHeight,
       avgVelocitiesByZone,
+      percentOptimalLA,
       top12_5PercentStats: {
         avgVelo: 0,
         avgDistance: 0,
