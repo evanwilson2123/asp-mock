@@ -1,12 +1,121 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
 
+function positiveOutcomeByZone(hits: any): Map<string, number> {
+  // First, compute the global max exit velocity among all hits with a valid velo.
+  const validVelocities = hits
+    .filter((h: any) => h.velo != null)
+    .map((h: any) => h.velo as number);
+  const maxVelo = validVelocities.length > 0 ? Math.max(...validVelocities) : 0;
+
+  // Prepare a map to accumulate counts for each zone.
+  // For each zone we store an object with:
+  // - total: total number of hits in that zone.
+  // - positive: number of hits meeting our criteria.
+  const zoneCounts: Map<string, { total: number; positive: number }> =
+    new Map();
+
+  // Define the nine zone keys.
+  const zoneKeys = [
+    'topLeft',
+    'topCenter',
+    'topRight',
+    'middleLeft',
+    'middleCenter',
+    'middleRight',
+    'bottomLeft',
+    'bottomCenter',
+    'bottomRight',
+  ];
+  // Initialize counts for each zone.
+  zoneKeys.forEach((key) => zoneCounts.set(key, { total: 0, positive: 0 }));
+
+  // Loop over each hit.
+  for (const hit of hits) {
+    // Require all strike zone properties and coordinates.
+    if (
+      hit.strikeZoneWidth == null ||
+      hit.strikeZoneTop == null ||
+      hit.strikeZoneBottom == null ||
+      hit.POIX == null ||
+      hit.POIY == null
+    ) {
+      continue;
+    }
+
+    const strikeZoneWidth = hit.strikeZoneWidth;
+    const strikeZoneTop = hit.strikeZoneTop;
+    const strikeZoneBottom = hit.strikeZoneBottom;
+    const zoneHeight = strikeZoneTop - strikeZoneBottom;
+    const widthThird = strikeZoneWidth / 3;
+    const heightThird = zoneHeight / 3;
+
+    // Horizontal determination (assuming the strike zone is centered at 0).
+    const leftBoundary = -strikeZoneWidth / 2;
+    let horizontalZone: string;
+    if (hit.POIX >= leftBoundary && hit.POIX < leftBoundary + widthThird) {
+      horizontalZone = 'Left';
+    } else if (
+      hit.POIX >= leftBoundary + widthThird &&
+      hit.POIX < leftBoundary + 2 * widthThird
+    ) {
+      horizontalZone = 'Center';
+    } else {
+      horizontalZone = 'Right';
+    }
+
+    // Vertical determination using a reversed coordinate:
+    // Calculate how far hit.POIY is from the top of the strike zone.
+    const relativeY = strikeZoneTop - hit.POIY;
+    let verticalZone: string;
+    if (relativeY < heightThird) {
+      verticalZone = 'Top';
+    } else if (relativeY < 2 * heightThird) {
+      verticalZone = 'Middle';
+    } else {
+      verticalZone = 'Bottom';
+    }
+
+    // Construct the zone key (e.g., "topLeft", "middleCenter", etc.)
+    const key = verticalZone.toLowerCase() + horizontalZone;
+
+    // Update counts.
+    const zone = zoneCounts.get(key);
+    if (zone) {
+      zone.total++;
+      // Count as positive if:
+      // - velo is not null and is at least 80% of max exit velocity (top 20%),
+      // - and LA is not null and is between 7° and 25°.
+      if (
+        hit.velo != null &&
+        hit.LA != null &&
+        hit.velo >= 0.75 * maxVelo &&
+        hit.LA >= 7 &&
+        hit.LA <= 30
+      ) {
+        zone.positive++;
+      }
+    }
+  }
+
+  // Compute the percentage of positive outcomes for each zone.
+  // If a zone has no data (total is 0), we set its percentage to 101.
+  const result: Map<string, number> = new Map();
+  zoneKeys.forEach((key) => {
+    const zone = zoneCounts.get(key);
+    const percent = (zone!.positive / zone!.total) * 100;
+    result.set(key, percent);
+  });
+
+  return result;
+}
+
 export async function GET(req: NextRequest, context: any) {
   const sessionId = context.params.sessionId;
 
   try {
     const heightMap: Map<string, number[]> = new Map();
-    // Fetch all records for the given sessionId, including spray chart coordinates.
+    // Fetch all records for the given sessionId.
     const hits = await prisma.hitTrax.findMany({
       where: { sessionId },
       orderBy: { createdAt: 'asc' },
@@ -31,16 +140,35 @@ export async function GET(req: NextRequest, context: any) {
       );
     }
 
-    // Fetch handedness from HitTrax (assuming one record exists for the session)
+    // Calculate positive outcome percentages by zone as a Map.
+    const percentByZoneMap = positiveOutcomeByZone(hits);
+    // Convert the Map to a plain object for JSON serialization.
+    const zoneKeys = [
+      'topLeft',
+      'topCenter',
+      'topRight',
+      'middleLeft',
+      'middleCenter',
+      'middleRight',
+      'bottomLeft',
+      'bottomCenter',
+      'bottomRight',
+    ];
+    const percentByZone: { [key: string]: number } = {};
+    zoneKeys.forEach((key) => {
+      percentByZone[key] = percentByZoneMap.get(key)!;
+    });
+
+    // Fetch handedness from HitTrax.
     const athleteInfo = await prisma.hitTrax.findFirst({
       where: { sessionId },
       select: { batting: true },
     });
-    const handedness = athleteInfo?.batting || 'Right'; // Default to Right-handed if undefined
+    const handedness = athleteInfo?.batting || 'Right';
 
     const centerZoneMargin = 15;
 
-    // Group velocities by pull, center, and opposite zones
+    // Group velocities by spray chart zones.
     const zoneVelocities: {
       pull: number[];
       center: number[];
@@ -73,18 +201,15 @@ export async function GET(req: NextRequest, context: any) {
       }
     }
 
-    // Calculate average velocities for each zone
     const avgVelocitiesByZone: { [key: string]: number } = {};
     for (const [zone, velocities] of Object.entries(zoneVelocities)) {
-      if (velocities.length > 0) {
-        avgVelocitiesByZone[zone] =
-          velocities.reduce((sum, velo) => sum + velo, 0) / velocities.length;
-      } else {
-        avgVelocitiesByZone[zone] = 0; // Default to 0 if no hits in zone
-      }
+      avgVelocitiesByZone[zone] =
+        velocities.length > 0
+          ? velocities.reduce((sum, v) => sum + v, 0) / velocities.length
+          : 0;
     }
 
-    // Height zone processing (kept as is for consistency)
+    // Height zone processing.
     for (const hit of hits) {
       if (
         hit.POIY === null ||
@@ -93,7 +218,7 @@ export async function GET(req: NextRequest, context: any) {
       ) {
         continue;
       }
-      const third = (hit.strikeZoneTop! - hit.strikeZoneBottom!) / 3;
+      const third = (hit.strikeZoneTop - hit.strikeZoneBottom) / 3;
       if (hit.POIY < hit.strikeZoneBottom + third) {
         if (!heightMap.get('low')) {
           heightMap.set('low', [hit.velo!]);
@@ -118,7 +243,6 @@ export async function GET(req: NextRequest, context: any) {
       }
     }
 
-    // Calculate key statistics.
     const exitVelocities = filteredHits
       .map((h) => h.velo)
       .filter((v): v is number => v !== null);
@@ -138,15 +262,12 @@ export async function GET(req: NextRequest, context: any) {
           launchAngles.length
         : 0;
 
-    // Calculate average velocities for each height zone
     const avgVelocitiesByHeight: { [key: string]: number } = {};
     for (const [zone, velocities] of heightMap.entries()) {
-      if (velocities.length > 0) {
-        avgVelocitiesByHeight[zone] =
-          velocities.reduce((sum, velo) => sum + velo, 0) / velocities.length;
-      } else {
-        avgVelocitiesByHeight[zone] = 0; // Default to 0 if no hits in zone
-      }
+      avgVelocitiesByHeight[zone] =
+        velocities.length > 0
+          ? velocities.reduce((sum, v) => sum + v, 0) / velocities.length
+          : 0;
     }
 
     const percentOptimalLA = (
@@ -156,17 +277,17 @@ export async function GET(req: NextRequest, context: any) {
     ).toFixed(2);
     console.log(`Percent optimal LA ${percentOptimalLA}%`);
 
-    // Calculate statistics for the top 12.5% of hardest hits by exit velocity
+    // Calculate top 12.5% statistics.
     if (exitVelocities.length > 0) {
-      const sortedVelocities = [...exitVelocities].sort((a, b) => b - a); // Sort in descending order
-      const topPercentIndex = Math.ceil(exitVelocities.length * 0.125); // 12.5% of hits
+      const sortedVelocities = [...exitVelocities].sort((a, b) => b - a);
+      const topPercentIndex = Math.ceil(exitVelocities.length * 0.125);
       const topHits = filteredHits
         .filter(
           (h) =>
             h.velo !== null &&
             sortedVelocities.slice(0, topPercentIndex).includes(h.velo)
         )
-        .filter((h) => h.dist !== null && h.LA !== null); // Ensure dist and LA are not null
+        .filter((h) => h.dist !== null && h.LA !== null);
 
       let topVeloSum = 0,
         topDistSum = 0,
@@ -180,7 +301,7 @@ export async function GET(req: NextRequest, context: any) {
       const avgTopVelo = topHits.length > 0 ? topVeloSum / topHits.length : 0;
       const avgTopDist = topHits.length > 0 ? topDistSum / topHits.length : 0;
       const avgTopLA = topHits.length > 0 ? topLASum / topHits.length : 0;
-
+      console.log(percentByZone);
       return NextResponse.json({
         hits: filteredHits,
         maxExitVelo,
@@ -189,6 +310,7 @@ export async function GET(req: NextRequest, context: any) {
         avgVelocitiesByHeight,
         avgVelocitiesByZone,
         percentOptimalLA,
+        percentByZone: percentByZone,
         top12_5PercentStats: {
           avgVelo: avgTopVelo,
           avgDistance: avgTopDist,
@@ -196,7 +318,7 @@ export async function GET(req: NextRequest, context: any) {
         },
       });
     }
-
+    console.log(percentByZone);
     return NextResponse.json({
       hits: filteredHits,
       maxExitVelo,
@@ -205,6 +327,7 @@ export async function GET(req: NextRequest, context: any) {
       avgVelocitiesByHeight,
       avgVelocitiesByZone,
       percentOptimalLA,
+      percentByZone: percentByZone,
       top12_5PercentStats: {
         avgVelo: 0,
         avgDistance: 0,

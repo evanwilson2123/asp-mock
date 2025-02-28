@@ -20,6 +20,7 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
+import StrikeZone from '@/components/StrikeZone'; // <-- Imported StrikeZone
 
 ChartJS.register(
   CategoryScale,
@@ -31,81 +32,6 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
-/**
- * Custom Plugin: fieldBackgroundPlugin
- *
- * This plugin now draws:
- * - Foul lines from home plate (0,0) to the left (-300,300)
- *   and right (300,300) foul poles.
- * - An outfield fence drawn as a quadratic curve between the foul poles,
- *   using (0,400) as a control point to create a bulge that resembles
- *   a typical baseball field.
- */
-// const fieldBackgroundPlugin: Plugin = {
-//   id: 'fieldBackground',
-//   beforeDatasetsDraw: (chart) => {
-//     const {
-//       ctx,
-//       scales: { x: xScale, y: yScale },
-//     } = chart;
-//     ctx.save();
-
-//     // Define field coordinates in data units
-//     const homePlate = { x: 0, y: 0 };
-//     const leftFoulPole = { x: -300, y: 300 };
-//     const rightFoulPole = { x: 300, y: 300 };
-
-//     // Convert data coordinates to pixel coordinates
-//     const homePlatePx = {
-//       x: xScale.getPixelForValue(homePlate.x),
-//       y: yScale.getPixelForValue(homePlate.y),
-//     };
-//     const leftFoulPolePx = {
-//       x: xScale.getPixelForValue(leftFoulPole.x),
-//       y: yScale.getPixelForValue(leftFoulPole.y),
-//     };
-//     const rightFoulPolePx = {
-//       x: xScale.getPixelForValue(rightFoulPole.x),
-//       y: yScale.getPixelForValue(rightFoulPole.y),
-//     };
-
-//     ctx.strokeStyle = 'red';
-//     ctx.lineWidth = 2;
-
-//     // Draw foul lines from home plate to each foul pole
-//     ctx.beginPath();
-//     ctx.moveTo(homePlatePx.x, homePlatePx.y);
-//     ctx.lineTo(leftFoulPolePx.x, leftFoulPolePx.y);
-//     ctx.stroke();
-
-//     ctx.beginPath();
-//     ctx.moveTo(homePlatePx.x, homePlatePx.y);
-//     ctx.lineTo(rightFoulPolePx.x, rightFoulPolePx.y);
-//     ctx.stroke();
-
-//     // Draw the outfield fence as a quadratic curve.
-//     // The curve starts at the left foul pole, ends at the right foul pole,
-//     // and uses a control point above home plate to create a convex arc.
-//     const controlPointData = { x: 0, y: 400 };
-//     const controlPointPx = {
-//       x: xScale.getPixelForValue(controlPointData.x),
-//       y: yScale.getPixelForValue(controlPointData.y),
-//     };
-
-//     ctx.beginPath();
-//     ctx.moveTo(leftFoulPolePx.x, leftFoulPolePx.y);
-//     ctx.quadraticCurveTo(
-//       controlPointPx.x,
-//       controlPointPx.y,
-//       rightFoulPolePx.x,
-//       rightFoulPolePx.y
-//     );
-//     ctx.stroke();
-
-//     ctx.restore();
-//   },
-// };
 
 interface Hit {
   velo: number | null;
@@ -128,6 +54,18 @@ interface SessionData {
     avgLaunchAngle: number;
   };
   percentOptimalLA: string;
+  // Added percentByZone property as an object with each zone's percentage
+  percentByZone: {
+    topLeft: number;
+    topCenter: number;
+    topRight: number;
+    middleLeft: number;
+    middleCenter: number;
+    middleRight: number;
+    bottomLeft: number;
+    bottomCenter: number;
+    bottomRight: number;
+  };
 }
 
 /**
@@ -139,6 +77,7 @@ interface SessionData {
  *    The spray chart uses the fieldBackgroundPlugin to draw the baseball field.
  * 3. Two Bar charts showing average exit velocities by height zone and spray zone.
  * 4. Instead of a bar chart for the top 12.5% hardest hits, the numbers are shown below the max stats.
+ * 5. A new StrikeZone component that visualizes the positive outcome percentage by zone.
  */
 const HitTraxSessionDetails: React.FC = () => {
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
@@ -172,7 +111,7 @@ const HitTraxSessionDetails: React.FC = () => {
         if (!data.hits) {
           throw new Error('Required hit data not provided');
         }
-
+        console.log(data.percentByZone);
         setSessionData(data);
       } catch (err: any) {
         setErrorMessage(err.message);
@@ -203,6 +142,7 @@ const HitTraxSessionDetails: React.FC = () => {
     avgVelocitiesByZone,
     top12_5PercentStats,
     percentOptimalLA,
+    percentByZone, // Destructure percentByZone from sessionData
   } = sessionData;
 
   // Prepare data for the Line chart.
@@ -258,52 +198,6 @@ const HitTraxSessionDetails: React.FC = () => {
       },
     },
   };
-
-  // Prepare data for the Scatter (Spray Chart).
-  // const scatterPoints = hits
-  //   .filter((h) => h.sprayChartX != null && h.sprayChartZ != null)
-  //   .map((h) => ({
-  //     x: h.sprayChartX as number,
-  //     y: h.sprayChartZ as number,
-  //   }));
-
-  // const scatterData = {
-  //   datasets: [
-  //     {
-  //       label: 'Balls Landed',
-  //       data: scatterPoints,
-  //       backgroundColor: 'blue',
-  //       pointRadius: 5,
-  //     },
-  //   ],
-  // };
-
-  // // Adjust the scales so we can accommodate the control point for the outfield fence.
-  // const scatterOptions = {
-  //   aspectRatio: 1,
-  //   responsive: true,
-  //   scales: {
-  //     x: {
-  //       type: 'linear' as const,
-  //       position: 'bottom' as const,
-  //       min: -300,
-  //       max: 300,
-  //       title: {
-  //         display: true,
-  //         text: 'Spray Chart X',
-  //       },
-  //     },
-  //     y: {
-  //       type: 'linear' as const,
-  //       min: 0,
-  //       max: 400,
-  //       title: {
-  //         display: true,
-  //         text: 'Spray Chart Y',
-  //       },
-  //     },
-  //   },
-  // };
 
   // Prepare data for the Bar chart (Average Velocities by Height Zone)
   const heightBarChartData = {
@@ -397,6 +291,20 @@ const HitTraxSessionDetails: React.FC = () => {
     },
   };
 
+  // Convert percentByZone object into an ordered array for the StrikeZone component.
+  const orderedSections = [
+    percentByZone.topLeft || 0,
+    percentByZone.topCenter || 0,
+    percentByZone.topRight || 0,
+    percentByZone.middleLeft || 0,
+    percentByZone.middleCenter || 0,
+    percentByZone.middleRight || 0,
+    percentByZone.bottomLeft || 0,
+    percentByZone.bottomCenter || 0,
+    percentByZone.bottomRight || 0,
+  ];
+
+  console.log(orderedSections);
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
@@ -449,6 +357,12 @@ const HitTraxSessionDetails: React.FC = () => {
           </div>
         </div>
 
+        {/* New StrikeZone Section */}
+        <div className="rounded border-2 border-gray-300 bg-white mb-4">
+          <h1 className="text-3xl font-bold text-gray-700 justify-center flex">
+            Positive Outcome By Zone
+          </h1>
+        </div>
         <div className="rounded border-2 border-gray-300 bg-white mb-4">
           <h1 className="text-3xl font-bold text-gray-700 justify-center flex">
             Top 12.5%
@@ -492,6 +406,23 @@ const HitTraxSessionDetails: React.FC = () => {
           ) : (
             <p className="text-gray-500">No hit data available.</p>
           )}
+        </div>
+
+        <div className="mb-8 flex justify-center">
+          <StrikeZone
+            width={300}
+            height={400}
+            x={10}
+            y={10}
+            redColor="red"
+            orangeColor="orange"
+            yellowColor="yellow"
+            greenColor="green"
+            strokeColorBorder="black"
+            strokeWidth={2}
+            sections={orderedSections}
+            fillColor="blue"
+          />
         </div>
 
         {/* Bar Chart for Average Velocities by Height Zone */}
