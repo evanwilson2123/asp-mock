@@ -125,6 +125,13 @@ export async function DELETE(req: NextRequest, context: any) {
           (s: string) => s !== sessionId
         );
         await athlete.save();
+
+        // search for hittraxblast session and delete if found
+        await prisma.hittraxBlast.deleteMany({
+          where: {
+            blastId: sessionId,
+          },
+        });
         break;
       case 'hittrax':
         await prisma.hitTrax.deleteMany({
@@ -136,6 +143,13 @@ export async function DELETE(req: NextRequest, context: any) {
           (s: string) => s !== sessionId
         );
         await athlete.save();
+
+        // search for hittrax-blast session and delete if found
+        await prisma.hittraxBlast.deleteMany({
+          where: {
+            hittraxId: sessionId,
+          },
+        });
         break;
       case 'trackman':
         await prisma.trackman.deleteMany({
