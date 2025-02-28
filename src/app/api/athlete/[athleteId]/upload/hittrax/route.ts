@@ -11,6 +11,8 @@ interface HittraxBlast {
   athlete: string;
   blastId: string;
   hittraxId: string;
+  blastSessionId: string;
+  hittraxSessionId: string;
   squaredUpRate: number;
   attackAngle: number;
   launchAngle: number;
