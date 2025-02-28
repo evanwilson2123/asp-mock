@@ -18,8 +18,8 @@ interface StrikeZoneProps {
 const StrikeZone: React.FC<StrikeZoneProps> = ({
   width = 200,
   height = 300,
-  x = 50,
-  y = 50,
+  x = 0,
+  y = 0,
   redColor = 'red',
   orangeColor = 'orange',
   yellowColor = 'yellow',
@@ -42,13 +42,19 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
   const maxOpacity = 1.0;
 
   return (
-    <div className="border-2 border-gray-300">
-      <h1 className="text-2xl font-bold text-gray-700 justify-center flex">
+    <div className="flex flex-col items-center justify-center border-2 border-gray-300 p-4">
+      <h1 className="text-2xl font-bold text-gray-700 text-center">
         Positive Result By Zone
       </h1>
+      <h2 className="text-lg font-bold text-gray-700 text-center mb-4">
+        Top 75% exit velocity between 7° and 30°
+      </h2>
+      {/* Use viewBox so the inner grid is exactly centered */}
       <svg
-        width={width + 22.5}
-        height={height + 22.5}
+        width={width}
+        height={height}
+        viewBox={`${x} ${y} ${width} ${height}`}
+        className="mx-auto"
         style={{ border: '1px solid #ccc' }}
       >
         {/* Overall strike zone border */}
@@ -60,9 +66,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
           fill="none"
           stroke={strokeColorBorder}
           strokeWidth={strokeWidth}
-          className="justify-center flex"
         />
-
         {/* Draw each of the 9 cells */}
         {Array.from({ length: 9 }).map((_, index) => {
           const row = Math.floor(index / 3);
@@ -71,7 +75,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
           const cellY = y + row * cellHeight;
           const percent = sectionData[index];
 
-          // If percent > 100, consider that as "no data" and do not fill a color.
+          // If percent > 100, consider that as "no data"
           if (percent > 100) {
             return (
               <g key={index}>
@@ -87,10 +91,11 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                 <text
                   x={cellX + cellWidth / 2}
                   y={cellY + cellHeight / 2}
+                  textAnchor="middle"
+                  alignmentBaseline="middle"
+                  dy=".3em"
                   fill="black"
                   fontSize={14}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
                 >
                   No Data
                 </text>
@@ -132,10 +137,11 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
               <text
                 x={cellX + cellWidth / 2}
                 y={cellY + cellHeight / 2}
+                textAnchor="middle"
+                alignmentBaseline="middle"
+                dy=".3em"
                 fill="black"
                 fontSize={14}
-                textAnchor="middle"
-                dominantBaseline="middle"
               >
                 {percent.toFixed(2)}%
               </text>
