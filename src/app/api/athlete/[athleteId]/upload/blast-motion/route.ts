@@ -138,6 +138,7 @@ async function checkForComparisons(
           if (!squaredUpResult) {
             break;
           }
+          // test
           const hittraxBlast: HittraxBlast = {
             athlete: athleteId,
             blastId: blastSwing.swingId,
