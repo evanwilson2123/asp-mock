@@ -10,6 +10,7 @@ interface Response {
   athleteHCount: number;
   athletePHCount: number;
   athleteSCCount: number;
+  athleteTACount: number;
   pitchCount: number;
   blastCount: number;
   hitCount: number;
@@ -108,12 +109,16 @@ export async function GET() {
     const athleteSCCount = await Athlete.countDocuments({
       programType: 'S + C',
     }).exec();
+    const athleteTACount = await Athlete.countDocuments({
+      programType: 'Team Athlete',
+    });
     const response: Response = {
       athleteCount,
       athletePCount,
       athleteHCount,
       athletePHCount,
       athleteSCCount,
+      athleteTACount,
       pitchCount,
       blastCount,
       hitCount,

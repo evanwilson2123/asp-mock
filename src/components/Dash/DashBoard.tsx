@@ -77,6 +77,7 @@ interface AthleteNums {
   athleteHCount: number;
   athletePHCount: number;
   athleteSCCount: number;
+  athleteTACount: number;
   pitchCount: number;
   blastCount: number;
   hitCount: number;
@@ -388,6 +389,12 @@ const Dashboard: React.FC = () => {
                   <span className="text-sm text-gray-600">S &amp; C</span>
                   <span className="mt-1 text-3xl font-semibold text-gray-800">
                     {athleteNums.athleteSCCount}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-sm text-gray-600">Team Athletes</span>
+                  <span className="mt-1 text-3xl font-semibold text-gray-800">
+                    {athleteNums.athleteTACount}
                   </span>
                 </div>
               </div>

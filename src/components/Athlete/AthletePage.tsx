@@ -333,13 +333,17 @@ const AthleteDetails = () => {
                   }
                   className="block w-32 px-2 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  {['Pitching', 'Hitting', 'Pitching + Hitting', 'S + C'].map(
-                    (option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    )
-                  )}
+                  {[
+                    'Pitching',
+                    'Hitting',
+                    'Pitching + Hitting',
+                    'S + C',
+                    'Team Athlete',
+                  ].map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </select>
               </div>
               {/* Season Dropdown */}
