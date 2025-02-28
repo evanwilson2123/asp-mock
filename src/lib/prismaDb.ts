@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 // Hardcoded connection string for AWS RDS PostgreSQL
 const prisma = new PrismaClient({
@@ -7,7 +7,7 @@ const prisma = new PrismaClient({
       url: process.env.DATABASE_URL,
     },
   },
-  log: ["query", "info", "warn", "error"], // Enable detailed logs for debugging
+  log: ['query', 'info', 'warn', 'error'], // Enable detailed logs for debugging
 });
 
 export default prisma;

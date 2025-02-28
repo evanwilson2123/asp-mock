@@ -129,7 +129,7 @@ export async function DELETE(req: NextRequest, context: any) {
         // search for hittraxblast session and delete if found
         await prisma.hittraxBlast.deleteMany({
           where: {
-            blastId: sessionId,
+            blastSessionId: sessionId,
           },
         });
         break;
@@ -147,7 +147,7 @@ export async function DELETE(req: NextRequest, context: any) {
         // search for hittrax-blast session and delete if found
         await prisma.hittraxBlast.deleteMany({
           where: {
-            hittraxId: sessionId,
+            hittraxSessionId: sessionId,
           },
         });
         break;

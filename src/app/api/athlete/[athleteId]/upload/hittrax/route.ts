@@ -105,6 +105,8 @@ async function checkForComparisons(
             athlete: athleteId,
             blastId: blastSwing.swingId,
             hittraxId: blastSwing.swingId,
+            blastSessionId: blastSwing.sessionId,
+            hittraxSessionId: hitSwing.sessionId,
             squaredUpRate: squaredUpResult.squaredUpRate,
             attackAngle: blastSwing.attackAngle || 0,
             launchAngle: hitSwing.LA || 0,

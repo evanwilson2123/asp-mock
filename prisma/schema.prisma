@@ -359,6 +359,8 @@ model HittraxBlast {
   athlete                 String
   blastId                 String
   hittraxId               String
+  blastSessionId          String
+  hittraxSessionId        String
   squaredUpRate           Float
   attackAngle             Float
   launchAngle             Float
