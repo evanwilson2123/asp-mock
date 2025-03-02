@@ -256,6 +256,13 @@ const AthleteDetails = () => {
           >
             Hitting
           </button>
+          <button
+            key="goals"
+            onClick={() => router.push(`/athlete/${athleteId}/goals`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Goals
+          </button>
         </nav>
 
         {/* Profile Section */}
