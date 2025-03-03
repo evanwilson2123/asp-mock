@@ -22,6 +22,7 @@ export interface IAthlete {
   armcare?: string[];
   forceplates?: string[];
   intended?: string[];
+  pPhotoUrl?: string;
 }
 
 const athleteSchema = new Schema<IAthlete>({
@@ -44,6 +45,7 @@ const athleteSchema = new Schema<IAthlete>({
   armcare: [{ type: String, required: false }],
   forceplates: [{ type: String, required: false }],
   intended: [{ type: String, required: false }],
+  pPhotoUrl: { type: String, required: false },
 });
 
 const Athlete = models.Athlete || model<IAthlete>('Athlete', athleteSchema);

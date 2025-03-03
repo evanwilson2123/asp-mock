@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import Athlete from "@/models/athlete";
-import { connectDB } from "@/lib/db";
-import { auth } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from 'next/server';
+import Athlete from '@/models/athlete';
+import { connectDB } from '@/lib/db';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(
   req: NextRequest,
@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const { userId } = await auth();
   if (!userId) {
-    return NextResponse.json({ error: "Auth Failed" }, { status: 400 });
+    return NextResponse.json({ error: 'Auth Failed' }, { status: 400 });
   }
 
   try {
@@ -18,7 +18,7 @@ export async function GET(
 
     if (!athleteId) {
       return NextResponse.json(
-        { error: "Athlete ID missing" },
+        { error: 'Athlete ID missing' },
         { status: 400 }
       );
     }
@@ -27,7 +27,7 @@ export async function GET(
 
     if (!athlete) {
       return NextResponse.json(
-        { error: "Athlete not found in database" },
+        { error: 'Athlete not found in database' },
         { status: 404 }
       );
     }
@@ -36,7 +36,7 @@ export async function GET(
   } catch (error: any) {
     console.error(error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }

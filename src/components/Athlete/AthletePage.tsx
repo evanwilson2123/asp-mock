@@ -10,6 +10,7 @@ import Image from 'next/image';
 import ErrorMessage from '../ErrorMessage';
 import { ICoachNote } from '@/models/coachesNote';
 import { TrashIcon } from '@heroicons/react/24/solid';
+import { CameraIcon } from '@heroicons/react/24/outline'; // Added for photo upload overlay
 
 interface Athlete {
   _id: string;
@@ -19,7 +20,7 @@ interface Athlete {
   age?: number;
   height?: string;
   weight?: string;
-  profilePhotoUrl?: string;
+  pPhotoUrl?: string;
   level: string;
   season?: string;
   programType?: string;
@@ -51,6 +52,9 @@ const AthleteDetails = () => {
     season: '',
     programType: '',
   });
+  // New state for handling profile photo upload
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
   // ========== Authentication ==========
   const router = useRouter();
   const { athleteId } = useParams();
@@ -206,6 +210,38 @@ const AthleteDetails = () => {
     setConfirmationTech(null);
   };
 
+  // ========== Profile Photo Upload Handler ==========
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    try {
+      const response = await fetch(`/api/athlete/${athleteId}/uploadPhoto`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Photo upload failed');
+      }
+
+      // Assuming the API returns the updated athlete data with a new photo URL
+      const data = await response.json();
+      // Update the athlete state with the new profile photo URL
+      setAthlete((prev) =>
+        prev ? { ...prev, profilePhotoUrl: data.profilePhotoUrl } : prev
+      );
+    } catch (error: any) {
+      console.error('Error uploading photo:', error);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   if (loading) return <Loader />;
   if (errorMessage)
     return (
@@ -234,7 +270,6 @@ const AthleteDetails = () => {
               onClick={() =>
                 router.push(
                   `/athlete/${athleteId}/reports/${tech.toLowerCase().replace(/\s+/g, '-')}`
-                  // `/athlete/${athleteId}/pitching`
                 )
               }
               className="text-gray-700 font-semibold hover:text-gray-900 transition"
@@ -277,10 +312,10 @@ const AthleteDetails = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
             {/* Profile Info */}
             <div className="flex items-center space-x-6">
-              <div className="w-36 h-36 bg-gray-200 overflow-hidden rounded-lg">
-                {athlete?.profilePhotoUrl ? (
+              <div className="relative w-36 h-36 bg-gray-200 overflow-hidden rounded-lg">
+                {athlete?.pPhotoUrl ? (
                   <Image
-                    src={athlete.profilePhotoUrl}
+                    src={athlete.pPhotoUrl}
                     alt={`${athlete.firstName} ${athlete.lastName}`}
                     width={144}
                     height={144}
@@ -289,6 +324,21 @@ const AthleteDetails = () => {
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-500">
                     No Photo
+                  </div>
+                )}
+                {/* Overlay button for uploading a new photo */}
+                <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                  <CameraIcon className="h-8 w-8 text-white" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </label>
+                {uploadingPhoto && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white">
+                    Uploading...
                   </div>
                 )}
               </div>
