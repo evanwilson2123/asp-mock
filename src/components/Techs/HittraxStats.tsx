@@ -20,6 +20,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
+import { useRouter } from 'next/navigation';
 
 ChartJS.register(
   CategoryScale,
@@ -78,6 +79,8 @@ const HitTraxStats: React.FC = () => {
   // State for inline editing
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState<string>('');
+
+  const router = useRouter();
 
   // Delete confirmation popup state
   const [deletePopup, setDeletePopup] = useState<{
@@ -357,8 +360,30 @@ const HitTraxStats: React.FC = () => {
       </div>
 
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
-        <h1 className="text-2xl font-bold text-gray-700 mb-6">
-          HitTrax Report
+        <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
+          <button
+            key="athletePage"
+            onClick={() => router.push(`/athlete/${athleteId}`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Profile
+          </button>
+          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+            <button
+              key={tech}
+              onClick={() =>
+                router.push(`/athlete/${athleteId}/${tech.toLowerCase()}`)
+              }
+              className={`text-gray-700 font-semibold hover:text-gray-900 transition ${
+                tech === 'Hitting' ? 'underline' : ''
+              }`}
+            >
+              {tech}
+            </button>
+          ))}
+        </nav>
+        <h1 className="text-3xl font-bold text-gray-700 mb-6 flex justify-center">
+          HitTrax Overview
         </h1>
 
         {/* Clickable Session List with inline editing */}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
@@ -62,6 +62,8 @@ const IntendedReport: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchIntendedReport = async () => {
@@ -144,8 +146,30 @@ const IntendedReport: React.FC = () => {
       </div>
 
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
-        <h1 className="text-2xl font-bold text-gray-700 mb-6">
-          Intended Report
+        <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
+          <button
+            key="athletePage"
+            onClick={() => router.push(`/athlete/${athleteId}`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Profile
+          </button>
+          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+            <button
+              key={tech}
+              onClick={() =>
+                router.push(`/athlete/${athleteId}/${tech.toLowerCase()}`)
+              }
+              className={`text-gray-700 font-semibold hover:text-gray-900 transition ${
+                tech === 'Pitching' ? 'underline' : ''
+              }`}
+            >
+              {tech}
+            </button>
+          ))}
+        </nav>
+        <h1 className="text-3xl font-bold text-gray-700 mb-6 flex justify-center">
+          Intended Overview
         </h1>
 
         {/* Global Averages by Pitch Type */}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '../Dash/Sidebar';
@@ -67,6 +67,7 @@ const BlastMotionStats: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const router = useRouter();
 
   // State for inline editing
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
@@ -329,9 +330,33 @@ const BlastMotionStats: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
-        <h1 className="text-2xl font-bold text-gray-700 mb-6">
-          Blast Motion Report
-        </h1>
+        <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
+          <button
+            key="athletePage"
+            onClick={() => router.push(`/athlete/${athleteId}`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Profile
+          </button>
+          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+            <button
+              key={tech}
+              onClick={() =>
+                router.push(`/athlete/${athleteId}/${tech.toLowerCase()}`)
+              }
+              className={`text-gray-700 font-semibold hover:text-gray-900 transition ${
+                tech === 'Hitting' ? 'underline' : ''
+              }`}
+            >
+              {tech}
+            </button>
+          ))}
+        </nav>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-700 flex justify-center mb-4">
+            Blast Motion Overview
+          </h1>
+        </div>
 
         {/* Clickable Session List with inline editing */}
         <div className="mb-8">
