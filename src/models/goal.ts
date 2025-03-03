@@ -7,6 +7,7 @@
  * 2. it will allow them to choose the metric to track
  * 3. it will ideally use aggregate data to keep a constant ongoing value either average or maximum
  * 4. show status of whether or not goal has been completed
+ * 
  */
 import mongoose, { Schema, model, models, Types } from 'mongoose';
 
