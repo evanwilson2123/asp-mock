@@ -136,6 +136,13 @@ const Goals = () => {
               {tech}
             </button>
           ))}
+          <button
+            key="athletePage"
+            onClick={() => router.push(`/athlete/${athleteId}`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Profile
+          </button>
         </nav>
 
         {/* Goals Header */}
