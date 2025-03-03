@@ -10,6 +10,7 @@ import CoachSidebar from '../Dash/CoachSidebar';
 import Sidebar from '../Dash/Sidebar';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 /**
  * This is the 'Pitching' page, a page user's are directed to from their profile page after selecting 'Pitching' from their technology nav.
@@ -30,6 +31,8 @@ const Pitching = () => {
   const [loading, setLoading] = useState<boolean>(true);
   // Get the athlete ID from the URL params
   const { athleteId } = useParams();
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,6 +101,28 @@ const Pitching = () => {
       </div>
       {/* Main Content */}
       <div className="flex-1 p-6">
+        <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
+          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+            <button
+              key={tech}
+              onClick={() =>
+                router.push(`/athlete/${athleteId}/${tech.toLowerCase()}`)
+              }
+              className={`text-gray-700 font-semibold hover:text-gray-900 transition ${
+                tech === 'Pitching' ? 'underline' : ''
+              }`}
+            >
+              {tech}
+            </button>
+          ))}
+          <button
+            key="athletePage"
+            onClick={() => router.push(`/athlete/${athleteId}`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Profile
+          </button>
+        </nav>
         <div className="flex justify-center text-gray-900 text-3xl font-bold py-5">
           <h1>Pitch Tracking Technologies</h1>
         </div>

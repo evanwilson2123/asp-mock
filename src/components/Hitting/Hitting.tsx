@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import SignInPrompt from '../SignInPrompt';
 import Loader from '../Loader';
@@ -31,6 +31,8 @@ const Hitting = () => {
   const [loading, setLoading] = useState<boolean>(true);
   // Get the athlete ID from the URL params
   const { athleteId } = useParams();
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -99,9 +101,32 @@ const Hitting = () => {
       </div>
       {/* Main Content */}
       <div className="flex-1 p-6">
-        <div className="flex justify-center text-gray-900 text-3xl font-bold py-5">
+        <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
+          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+            <button
+              key={tech}
+              onClick={() =>
+                router.push(`/athlete/${athleteId}/${tech.toLowerCase()}`)
+              }
+              className={`text-gray-700 font-semibold hover:text-gray-900 transition ${
+                tech === 'Hitting' ? 'underline' : ''
+              }`}
+            >
+              {tech}
+            </button>
+          ))}
+          <button
+            key="athletePage"
+            onClick={() => router.push(`/athlete/${athleteId}`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Profile
+          </button>
+        </nav>
+        <div className="flex justify-center text-gray-900 text-3xl font-bold py-3">
           <h1>Hitting Technologies</h1>
         </div>
+
         <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-6">
           {hasBlast && (
             <Link
