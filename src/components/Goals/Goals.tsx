@@ -13,6 +13,7 @@ export interface IGoal {
   _id: string;
   athlete?: string;
   goalName: string;
+  tech: string;
   metricToTrack: string;
   goalValue: number;
   currentValue: number;
@@ -23,7 +24,7 @@ export interface IGoal {
  *
  * This component allows athletes to track their progress by:
  * 1. Naming a goal.
- * 2. Choosing the metric to track.
+ * 2. Choosing the tech and metric to track.
  * 3. Using aggregate data (via currentValue) to update progress in real time.
  * 4. Showing the status of the goal (completed vs. in progress).
  */
@@ -33,8 +34,11 @@ const Goals = () => {
   const [createGoal, setCreateGoal] = useState<boolean>(false);
   // Form state for a new goal
   const [newGoalName, setNewGoalName] = useState<string>('');
-  const [newMetric, setNewMetric] = useState<string>('');
   const [newGoalValue, setNewGoalValue] = useState<number>(0);
+
+  // New state for tech and metric selection
+  const [selectedTech, setSelectedTech] = useState<string>('');
+  const [selectedMetric, setSelectedMetric] = useState<string>('');
 
   // ===== State for loading and error messages =====
   const [loading, setLoading] = useState<boolean>(true);
@@ -44,6 +48,14 @@ const Goals = () => {
   const router = useRouter();
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
+
+  // Example tech options with associated metrics; update these as needed.
+  const techOptions = [
+    { tech: 'Blast Motion', metrics: ['Average Speed', 'Max Distance'] },
+    { tech: 'Hittrax', metrics: ['Metric 1', 'Metric 2'] },
+    { tech: 'Trackman', metrics: ['Metric X', 'Metric Y'] },
+    { tech: 'Intended Zone', metrics: ['MetricZ', 'MetricW'] },
+  ];
 
   // ===== Fetch Goals =====
   useEffect(() => {
@@ -73,13 +85,17 @@ const Goals = () => {
   // ===== Handle Creating a New Goal =====
   const handleCreateGoal = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Optional: log payload for debugging
+    const newGoalData = {
+      goalName: newGoalName,
+      tech: selectedTech,
+      metricToTrack: selectedMetric,
+      goalValue: newGoalValue,
+      currentValue: 0, // initial progress is 0
+    };
+    console.log('Submitting payload:', newGoalData);
+
     try {
-      const newGoalData = {
-        goalName: newGoalName,
-        metricToTrack: newMetric,
-        goalValue: newGoalValue,
-        currentValue: 0, // initial progress is 0
-      };
       const response = await fetch(`/api/athlete/${athleteId}/goals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -93,8 +109,9 @@ const Goals = () => {
       setGoals([...goals, data.goal]);
       // Reset form state
       setNewGoalName('');
-      setNewMetric('');
       setNewGoalValue(0);
+      setSelectedTech('');
+      setSelectedMetric('');
       setCreateGoal(false);
     } catch (error: any) {
       setErrorMessage(error.message || 'An unexpected error occurred');
@@ -123,7 +140,23 @@ const Goals = () => {
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         {/* Navigation Bar */}
         <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
-          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+          <button
+            key="athletePage"
+            onClick={() => router.push(`/athlete/${athleteId}`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Profile
+          </button>
+          <button
+            key="assessments"
+            onClick={() =>
+              router.push(`/athlete/${athleteId}/reports/assessments`)
+            }
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Assesments
+          </button>
+          {['Pitching', 'Hitting', 'Goals'].map((tech) => (
             <button
               key={tech}
               onClick={() =>
@@ -136,13 +169,6 @@ const Goals = () => {
               {tech}
             </button>
           ))}
-          <button
-            key="athletePage"
-            onClick={() => router.push(`/athlete/${athleteId}`)}
-            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
-          >
-            Profile
-          </button>
         </nav>
 
         {/* Goals Header */}
@@ -175,17 +201,47 @@ const Goals = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Metric to Track
+                  Select Tech
                 </label>
-                <input
-                  type="text"
-                  value={newMetric}
-                  onChange={(e) => setNewMetric(e.target.value)}
-                  placeholder="e.g., Average Speed, Max Distance"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <select
+                  value={selectedTech}
+                  onChange={(e) => {
+                    setSelectedTech(e.target.value);
+                    setSelectedMetric(''); // Reset metric when tech changes
+                  }}
+                  className="text-gray-900 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
-                />
+                >
+                  <option value="">-- Select Tech --</option>
+                  {techOptions.map((option) => (
+                    <option key={option.tech} value={option.tech}>
+                      {option.tech}
+                    </option>
+                  ))}
+                </select>
               </div>
+              {selectedTech && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Select Metric
+                  </label>
+                  <select
+                    value={selectedMetric}
+                    onChange={(e) => setSelectedMetric(e.target.value)}
+                    className="text-gray-900 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">-- Select Metric --</option>
+                    {techOptions
+                      .find((option) => option.tech === selectedTech)
+                      ?.metrics.map((metric) => (
+                        <option key={metric} value={metric}>
+                          {metric}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Goal Value
@@ -194,7 +250,7 @@ const Goals = () => {
                   type="number"
                   value={newGoalValue}
                   onChange={(e) => setNewGoalValue(Number(e.target.value))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-gray-900 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -233,6 +289,9 @@ const Goals = () => {
                       {isCompleted ? 'Completed' : 'In Progress'}
                     </span>
                   </div>
+                  <p className="mb-3 text-lg font-bold text-gray-700">
+                    Tech: {goal.tech}
+                  </p>
                   <p className="text-gray-600">
                     <strong>Metric:</strong> {goal.metricToTrack}
                   </p>

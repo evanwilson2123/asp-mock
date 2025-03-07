@@ -102,7 +102,23 @@ const Pitching = () => {
       {/* Main Content */}
       <div className="flex-1 p-6">
         <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
-          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+          <button
+            key="athletePage"
+            onClick={() => router.push(`/athlete/${athleteId}`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Profile
+          </button>
+          <button
+            key="assessments"
+            onClick={() =>
+              router.push(`/athlete/${athleteId}/reports/assessments`)
+            }
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Assesments
+          </button>
+          {['Pitching', 'Hitting', 'Goals'].map((tech) => (
             <button
               key={tech}
               onClick={() =>
@@ -115,13 +131,6 @@ const Pitching = () => {
               {tech}
             </button>
           ))}
-          <button
-            key="athletePage"
-            onClick={() => router.push(`/athlete/${athleteId}`)}
-            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
-          >
-            Profile
-          </button>
         </nav>
         <div className="flex justify-center text-gray-900 text-3xl font-bold py-5">
           <h1>Pitch Tracking Technologies</h1>
