@@ -19,6 +19,9 @@ export interface IGoal {
   metricToTrack: string;
   goalValue: number;
   currentValue: number;
+  avgMax: string;
+  sum: number;
+  length: number;
 }
 
 const goalSchema = new Schema<IGoal>({
@@ -28,6 +31,9 @@ const goalSchema = new Schema<IGoal>({
   metricToTrack: { type: String, required: true },
   goalValue: { type: Number, required: true },
   currentValue: { type: Number, required: false },
+  avgMax: { type: String, required: false },
+  sum: { type: Number, required: false },
+  length: { type: Number, required: false },
 });
 
 const Goal = models.Goal || model<IGoal>('Goal', goalSchema);

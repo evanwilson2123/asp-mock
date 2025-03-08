@@ -51,7 +51,10 @@ const Goals = () => {
 
   // Example tech options with associated metrics; update these as needed.
   const techOptions = [
-    { tech: 'Blast Motion', metrics: ['Average Speed', 'Max Distance'] },
+    {
+      tech: 'Blast Motion',
+      metrics: ['Average Speed', 'Max Distance', 'Connection Score'],
+    },
     { tech: 'Hittrax', metrics: ['Metric 1', 'Metric 2'] },
     { tech: 'Trackman', metrics: ['Metric X', 'Metric Y'] },
     { tech: 'Intended Zone', metrics: ['MetricZ', 'MetricW'] },
