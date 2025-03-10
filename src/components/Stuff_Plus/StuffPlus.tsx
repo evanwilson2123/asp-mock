@@ -46,11 +46,14 @@ const StuffPlus: React.FC = () => {
     console.log('Sending payload:', payload);
 
     try {
-      const res = await fetch('http://127.0.0.1:8080/calculate-stuff', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        'https://asp-py-9gjt.onrender.com/calculate-stuff',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.detail || 'Request failed');
