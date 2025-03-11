@@ -17,6 +17,7 @@ export interface IGoal {
   metricToTrack: string;
   goalValue: number;
   currentValue: number;
+  avgMax?: string;
 }
 
 /**
@@ -25,8 +26,9 @@ export interface IGoal {
  * This component allows athletes to track their progress by:
  * 1. Naming a goal.
  * 2. Choosing the tech and metric to track.
- * 3. Using aggregate data (via currentValue) to update progress in real time.
- * 4. Showing the status of the goal (completed vs. in progress).
+ * 3. Selecting whether the goal is for an average or max value.
+ * 4. Using aggregate data (via currentValue) to update progress in real time.
+ * 5. Showing the status of the goal (completed vs. in progress).
  */
 const Goals = () => {
   // ===== State for managing goals and the create-goal form =====
@@ -39,6 +41,9 @@ const Goals = () => {
   // New state for tech and metric selection
   const [selectedTech, setSelectedTech] = useState<string>('');
   const [selectedMetric, setSelectedMetric] = useState<string>('');
+
+  // New state for selecting average or max value
+  const [avgMax, setAvgMax] = useState<string>('');
 
   // ===== State for loading and error messages =====
   const [loading, setLoading] = useState<boolean>(true);
@@ -53,11 +58,34 @@ const Goals = () => {
   const techOptions = [
     {
       tech: 'Blast Motion',
-      metrics: ['Average Speed', 'Max Distance', 'Connection Score'],
+      metrics: [
+        'Plane Score',
+        'Connection Score',
+        'Rotation Score',
+        'Bat Speed',
+        'Rotational Acceleration',
+        'On Plane Efficiency',
+        'Attack Angle',
+        'Early Connection',
+        'Connection At Impact',
+        'Vertical Bat Angle',
+        'Power',
+        'Time To Contact',
+        'Peak Hand Speed',
+      ],
     },
-    { tech: 'Hittrax', metrics: ['Metric 1', 'Metric 2'] },
-    { tech: 'Trackman', metrics: ['Metric X', 'Metric Y'] },
-    { tech: 'Intended Zone', metrics: ['MetricZ', 'MetricW'] },
+    { tech: 'Hittrax', metrics: ['Exit Velocity', 'Launch Angle', 'Distance'] },
+    {
+      tech: 'Trackman',
+      metrics: [
+        'Pitch Release Speed',
+        'Spin Efficiency',
+        'Induced Vertical Break',
+        'Horizontal Break',
+        'Spin Rate',
+      ],
+    },
+    { tech: 'Intended Zone', metrics: ['Distance'] },
   ];
 
   // ===== Fetch Goals =====
@@ -95,6 +123,7 @@ const Goals = () => {
       metricToTrack: selectedMetric,
       goalValue: newGoalValue,
       currentValue: 0, // initial progress is 0
+      avgMax: avgMax, // new property for average or max selection
     };
     console.log('Submitting payload:', newGoalData);
 
@@ -115,6 +144,7 @@ const Goals = () => {
       setNewGoalValue(0);
       setSelectedTech('');
       setSelectedMetric('');
+      setAvgMax('');
       setCreateGoal(false);
     } catch (error: any) {
       setErrorMessage(error.message || 'An unexpected error occurred');
@@ -257,6 +287,21 @@ const Goals = () => {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Goal Type (Average or Max)
+                </label>
+                <select
+                  value={avgMax}
+                  onChange={(e) => setAvgMax(e.target.value)}
+                  className="text-gray-900 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">-- Select Type --</option>
+                  <option value="avg">Average</option>
+                  <option value="max">Max</option>
+                </select>
+              </div>
               <button
                 type="submit"
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
@@ -304,6 +349,11 @@ const Goals = () => {
                   <p className="text-gray-600">
                     <strong>Current:</strong> {goal.currentValue}
                   </p>
+                  {goal.avgMax && (
+                    <p className="text-gray-600">
+                      <strong>Type:</strong> {goal.avgMax}
+                    </p>
+                  )}
                 </div>
               );
             })
