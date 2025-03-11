@@ -142,6 +142,7 @@ async function calculateCurrent(
         },
       });
       if (intendedPitches.length === 0) {
+        console.log('No records');
         return { current: 0, sum: 0, length: 0, avgMax: '' };
       }
       const intendedCurrent = calculateCurrentIntended(
@@ -630,6 +631,7 @@ function calculateCurrentIntended(
       key = 'distanceIn';
       break;
     default:
+      console.log('second default hit');
       return { current: 0, sum: 0, length: 0, avgMax };
   }
 
