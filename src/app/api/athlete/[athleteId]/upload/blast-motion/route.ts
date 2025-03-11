@@ -6,6 +6,7 @@ import { auth } from '@clerk/nextjs/server';
 import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
 import { randomUUID } from 'crypto';
+import Goal from '@/models/goal';
 
 const CSV_HEADERS = [
   'Date',
@@ -367,6 +368,79 @@ export async function POST(req: NextRequest, context: any) {
     }
 
     await checkForComparisons(csvData, athleteId);
+
+    const goals = await Goal.find({
+      athlete: athleteId,
+      tech: 'Blast Motion',
+    });
+
+    if (goals.length !== 0) {
+      console.log('Updating goals based on new Blast Motion data...');
+
+      // Define the mapping between metric names and object keys
+      const metricMapping: { [key: string]: string } = {
+        'Plane Score': 'planeScore',
+        'Connection Score': 'connectionScore',
+        'Rotation Score': 'rotationScore',
+        'Bat Speed': 'batSpeed',
+        'Rotational Acceleration': 'rotationalAcceleration',
+        'On Plane Efficiency': 'onPlaneEfficiency',
+        'Attack Angle': 'attackAngle',
+        'Early Connection': 'earlyConnection',
+        'Connection At Impact': 'connectionAtImpact',
+        'Vertical Bat Angle': 'verticalBatAngle',
+        Power: 'power',
+        'Time To Contact': 'timeToContact',
+        'Peak Hand Speed': 'peakHandSpeed',
+      };
+
+      // Loop through each goal and update its value based on the new CSV data
+      for (const goal of goals) {
+        const key = metricMapping[goal.metricToTrack]; // Map the metric to its corresponding key
+
+        if (!key) {
+          console.log(
+            `No matching field found for metric: ${goal.metricToTrack}`
+          );
+          continue;
+        }
+
+        // Extract relevant values from CSV data for this metric
+        const relevantData = csvData
+          .map((swing) => swing[key])
+          .filter((value) => typeof value === 'number' && !isNaN(value));
+
+        if (relevantData.length === 0) {
+          console.log(`No valid data found for metric: ${goal.metricToTrack}`);
+          continue;
+        }
+
+        let updatedValue: number;
+        let sum = goal.sum || 0;
+        let length = goal.length || 0;
+
+        if (goal.avgMax === 'avg') {
+          sum += relevantData.reduce((acc, val) => acc + val, 0);
+          length += relevantData.length;
+          updatedValue = sum / length;
+        } else {
+          updatedValue = Math.max(goal.currentValue || 0, ...relevantData);
+        }
+
+        // Update the goal
+        await Goal.findByIdAndUpdate(goal._id, {
+          currentValue: updatedValue,
+          sum: goal.avgMax === 'avg' ? sum : 0,
+          length: goal.avgMax === 'avg' ? length : 0,
+        });
+
+        console.log(
+          `Updated goal: ${goal.goalName} - New Value: ${updatedValue}`
+        );
+      }
+
+      console.log('Goal updates complete.');
+    }
 
     console.log('Inserting data into database...');
     await prisma.blastMotion.createMany({ data: csvData });

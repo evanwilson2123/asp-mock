@@ -6,6 +6,7 @@ import { auth } from '@clerk/nextjs/server';
 import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
 import crypto from 'crypto';
+import Goal from '@/models/goal';
 
 /**
  * POST /api/athlete/:athleteId/trackman/upload
@@ -204,6 +205,84 @@ export async function POST(req: NextRequest, context: any) {
         spinRate,
       });
     }
+
+    if (trackmanRows.length === 0) {
+      return NextResponse.json(
+        { error: 'No valid data found in the uploaded file' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Fetching Trackman goals...');
+    const goals = await Goal.find({
+      athlete: athleteId,
+      tech: 'Trackman',
+    });
+
+    if (goals.length !== 0) {
+      console.log('Updating goals based on new Trackman data...');
+
+      // Define the mapping between metric names and object keys
+      const metricMapping: { [key: string]: string } = {
+        'Pitch Release Speed': 'pitchReleaseSpeed',
+        'Spin Efficiency': 'spinEfficiency',
+        'Induced Vertical Break': 'inducedVerticalBreak',
+        'Horizontal Break': 'horizontalBreak',
+        'Spin Rate': 'spinRate',
+      };
+
+      for (const goal of goals) {
+        const key = metricMapping[
+          goal.metricToTrack
+        ] as keyof (typeof trackmanRows)[0];
+
+        if (!key) {
+          console.log(
+            `No matching field found for metric: ${goal.metricToTrack}`
+          );
+          continue;
+        }
+
+        // Extract relevant values from CSV data for this metric
+        const relevantData = trackmanRows
+          .map((record) => record[key])
+          .filter(
+            (value): value is number =>
+              typeof value === 'number' && !isNaN(value)
+          );
+
+        if (relevantData.length === 0) {
+          console.log(`No valid data found for metric: ${goal.metricToTrack}`);
+          continue;
+        }
+
+        let updatedValue: number;
+        let sum = goal.sum || 0;
+        let length = goal.length || 0;
+
+        if (goal.avgMax === 'avg') {
+          sum += relevantData.reduce((acc, val) => acc + val, 0);
+          length += relevantData.length;
+          updatedValue = sum / length;
+        } else {
+          updatedValue = Math.max(goal.currentValue || 0, ...relevantData);
+        }
+
+        await Goal.findByIdAndUpdate(goal._id, {
+          currentValue: updatedValue,
+          sum: goal.avgMax === 'avg' ? sum : 0,
+          length: goal.avgMax === 'avg' ? length : 0,
+        });
+
+        console.log(
+          `Updated goal: ${goal.goalName} - New Value: ${updatedValue}`
+        );
+      }
+
+      console.log('Goal updates complete.');
+    }
+
+    console.log('Inserting data into database...');
 
     // Save rows to Prisma
     const savedData = await prisma.trackman.createMany({

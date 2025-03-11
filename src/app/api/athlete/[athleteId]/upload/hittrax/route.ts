@@ -6,6 +6,7 @@ import { auth } from '@clerk/nextjs/server';
 import { randomUUID } from 'crypto';
 import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
+import Goal from '@/models/goal';
 
 interface HittraxBlast {
   athlete: string;
@@ -334,6 +335,68 @@ export async function POST(req: NextRequest, context: any) {
     }
 
     await checkForComparisons(rows, athleteId);
+
+    console.log('Fetching Hittrax Goals...');
+    const goals = await Goal.find({
+      athlete: athleteId,
+      tech: 'Hittrax',
+    });
+
+    if (goals.length !== 0) {
+      console.log('Updating goals based on new HitTrax data...');
+
+      // Define the mapping between metric names and object keys
+      const metricMapping: { [key: string]: string } = {
+        'Exit Velocity': 'velo',
+        'Launch Angle': 'LA',
+        Distance: 'dist',
+      };
+
+      for (const goal of goals) {
+        const key = metricMapping[goal.metricToTrack];
+
+        if (!key) {
+          console.log(
+            `No matching field found for metric: ${goal.metricToTrack}`
+          );
+          continue;
+        }
+
+        // Extract relevant values from CSV data for this metric
+        const relevantData = rows
+          .map((record) => record[key])
+          .filter((value) => typeof value === 'number' && !isNaN(value));
+
+        if (relevantData.length === 0) {
+          console.log(`No valid data found for metric: ${goal.metricToTrack}`);
+          continue;
+        }
+
+        let updatedValue: number;
+        let sum = goal.sum || 0;
+        let length = goal.length || 0;
+
+        if (goal.avgMax === 'avg') {
+          sum += relevantData.reduce((acc, val) => acc + val, 0);
+          length += relevantData.length;
+          updatedValue = sum / length;
+        } else {
+          updatedValue = Math.max(goal.currentValue || 0, ...relevantData);
+        }
+
+        await Goal.findByIdAndUpdate(goal._id, {
+          currentValue: updatedValue,
+          sum: goal.avgMax === 'avg' ? sum : 0,
+          length: goal.avgMax === 'avg' ? length : 0,
+        });
+
+        console.log(
+          `Updated goal: ${goal.goalName} - New Value: ${updatedValue}`
+        );
+      }
+
+      console.log('Goal updates complete.');
+    }
 
     console.log('Inserting data into database...');
     await prisma.hitTrax.createMany({

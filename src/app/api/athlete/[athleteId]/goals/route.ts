@@ -77,7 +77,7 @@ export async function POST(req: NextRequest, context: any) {
       metricToTrack,
       goalValue,
       currentValue: current.current,
-      avgMax: 'avg',
+      avgMax: avgMax,
       sum: current.sum,
       length: current.length,
     });
@@ -122,13 +122,15 @@ async function calculateCurrent(
       }
       const hitCurrent = calculateCurrentHitTrax(metric, avgMax, hitSwings);
       return hitCurrent;
-    case 'Track Man':
+    case 'Trackman':
+      console.log('Track Man hit');
       const trackPitches = await prisma.trackman.findMany({
         where: {
           athleteId: athleteId,
         },
       });
       if (trackPitches.length === 0) {
+        console.log('No trackman pitches');
         return { current: 0, sum: 0, length: 0, avgMax: '' };
       }
       const trackCurrent = calculateCurrentTrack(metric, avgMax, trackPitches);
@@ -149,6 +151,7 @@ async function calculateCurrent(
       );
       return intendedCurrent;
     default:
+      console.log('Default hit');
       return { current: 0, sum: 0, length: 0, avgMax: '' };
   }
 }
@@ -563,7 +566,10 @@ function calculateCurrentTrack(
   avgMax: string,
   records: any[]
 ): CurrentResponse {
-  if (records.length === 0) return { current: 0, sum: 0, length: 0, avgMax };
+  if (records.length === 0) {
+    console.log('No records');
+    return { current: 0, sum: 0, length: 0, avgMax };
+  }
 
   const getSum = (key: string) =>
     records.reduce((acc: number, rec: any) => acc + (rec[key] ?? 0), 0);
@@ -589,6 +595,7 @@ function calculateCurrentTrack(
       key = 'spinRate';
       break;
     default:
+      console.log('Incorrect Metric');
       return { current: 0, sum: 0, length: 0, avgMax };
   }
 
