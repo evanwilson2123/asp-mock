@@ -41,6 +41,7 @@ const Reports: React.FC = () => {
 
   // Fetch athlete data on mount.
   useEffect(() => {
+    setLoading(true);
     const fetchAthlete = async () => {
       try {
         const response = await fetch(`/api/athlete/${athleteId}`);
@@ -52,6 +53,8 @@ const Reports: React.FC = () => {
       } catch (error: any) {
         console.error(error);
         setErrorMessage('Error fetching athlete');
+      } finally {
+        setLoading(false);
       }
     };
 

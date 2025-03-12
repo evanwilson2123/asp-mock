@@ -228,6 +228,7 @@ model Trackman {
   locationSide            Float?
   zoneLocation            String?
   spinRate                Float?
+  stuffPlus               Float?
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
   playLevel               String
