@@ -22,12 +22,12 @@ export async function GET(req: NextRequest): Promise<
       orderBy: { date: 'desc' },
     });
 
-    if (!data || data.length === 0) {
-      return NextResponse.json(
-        { error: 'No BlastMotion data found for this level' },
-        { status: 404 }
-      );
-    }
+    // if (!data || data.length === 0) {
+    //   return NextResponse.json(
+    //     { error: 'No BlastMotion data found for this level' },
+    //     { status: 404 }
+    //   );
+    // }
 
     // Group data by date (formatted as YYYY-MM-DD)
     const dateGroups: Record<

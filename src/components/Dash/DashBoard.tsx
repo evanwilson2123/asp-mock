@@ -20,6 +20,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import NoData from './NoData';
 
 ChartJS.register(
   CategoryScale,
@@ -490,7 +491,7 @@ const Dashboard: React.FC = () => {
               {blastChartData.labels.length > 0 ? (
                 <Line data={blastChartData} options={chartOptions} />
               ) : (
-                <p className="text-gray-500">No Blast Motion data available.</p>
+                <NoData message="No Blastmotion Data Available." />
               )}
             </div>
           </div>
@@ -542,7 +543,7 @@ const Dashboard: React.FC = () => {
               {hitTraxChartData.labels.length > 0 ? (
                 <Line data={hitTraxChartData} options={chartOptions} />
               ) : (
-                <p className="text-gray-500">No HitTrax data available.</p>
+                <NoData message="No Hittrax Data Available." />
               )}
             </div>
           </div>
@@ -575,11 +576,11 @@ const Dashboard: React.FC = () => {
               {trackmanChartData.labels.length > 0 ? (
                 <Line data={trackmanChartData} options={chartOptions} />
               ) : (
-                <p className="text-gray-500">No Trackman data available.</p>
+                <NoData message="No Trackman Data Available." />
               )}
             </div>
           </div>
-          <div className="mb-3"></div>
+          <div></div>
         </div>
       </div>
     </div>

@@ -75,12 +75,12 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    if (!data || data.length === 0) {
-      return NextResponse.json(
-        { error: `No Trackman data found for level: ${level}` },
-        { status: 404 }
-      );
-    }
+    // if (!data || data.length === 0) {
+    //   return NextResponse.json(
+    //     { error: `No Trackman data found for level: ${level}` },
+    //     { status: 404 }
+    //   );
+    // }
 
     // 3) Build pitchStats (peak speed by pitchType)
     //    Example: "Fastball" -> highest pitchReleaseSpeed

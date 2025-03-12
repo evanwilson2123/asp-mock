@@ -66,12 +66,12 @@ export async function GET(req: NextRequest) {
       orderBy: { date: 'desc' },
     });
 
-    if (!data || data.length === 0) {
-      return NextResponse.json(
-        { error: 'No HitTrax data found for this level' },
-        { status: 404 }
-      );
-    }
+    // if (!data || data.length === 0) {
+    //   return NextResponse.json(
+    //     { error: 'No HitTrax data found for this level' },
+    //     { status: 404 }
+    //   );
+    // }
 
     const sessions: Record<
       string,
