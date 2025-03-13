@@ -42,3 +42,27 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function GET() {
+  const { userId } = await auth();
+  if (!userId) {
+    console.log('Unauthenticated Request');
+    return NextResponse.json(
+      { error: 'Unauthenticated Request' },
+      { status: 400 }
+    );
+  }
+  try {
+    await connectDB();
+
+    const templates = await AssesmentTemplate.find().exec();
+    console.log(templates);
+    return NextResponse.json({ templates }, { status: 200 });
+  } catch (error: any) {
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}

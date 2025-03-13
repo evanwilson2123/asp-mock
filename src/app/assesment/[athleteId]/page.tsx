@@ -1,11 +1,10 @@
-import AssesmentPage from '@/components/Assement/AssesmentPage';
-
+import SelectTemplate from '@/components/Assement/SelectTemplate';
 import React from 'react';
 
 const page = () => {
   return (
     <div>
-      <AssesmentPage />
+      <SelectTemplate />
     </div>
   );
 };

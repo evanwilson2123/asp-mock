@@ -1,11 +1,10 @@
-import AssesmentPage from '@/components/Assement/AssesmentPage';
-
+import AssessmentForm from '@/components/Assement/AssessmentForm';
 import React from 'react';
 
 const page = () => {
   return (
     <div>
-      <AssesmentPage />
+      <AssessmentForm />
     </div>
   );
 };
