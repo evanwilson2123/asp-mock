@@ -1,4 +1,5 @@
-import AssesmentPage from '@/components/Assement/AssesmentPage';
+// import AssesmentPage from '@/components/Assement/AssesmentPage';
+import CreateTemplate from '@/components/Assement/CreateTemplate';
 import React from 'react';
 
 const page = () => {
@@ -7,7 +8,8 @@ const page = () => {
     //   <ComingSoon description="We are in the process of building the page where athlete assesments are completed. Stay tuned!" />
     // </div>
     <div>
-      <AssesmentPage />
+      {/* <AssesmentPage /> */}
+      <CreateTemplate />
     </div>
   );
 };
