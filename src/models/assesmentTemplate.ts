@@ -1,23 +1,22 @@
 import { Schema, model, models, Types } from 'mongoose';
-import assesmentFieldSchema, { IAssessmentField } from './assesmentField';
+import assesmentSectionSchema, { IAssessmentSection } from './assesmentSection';
 
 export interface IAssessmentTemplate {
   _id: Types.ObjectId;
   name: string;
-  fields: IAssessmentField[];
+  // Change "fields" to "sections"
+  sections: IAssessmentSection[];
   desc?: string;
 }
 
 const assesmentTemplateSchema = new Schema<IAssessmentTemplate>(
   {
     name: { type: String, required: true },
-    fields: { type: [assesmentFieldSchema], required: true },
+    sections: { type: [assesmentSectionSchema], required: true },
     desc: { type: String, required: false },
   },
   { timestamps: true }
 );
-
-// RESTART BITCH
 
 const AssesmentTemplate =
   models.AssesmentTemplate ||

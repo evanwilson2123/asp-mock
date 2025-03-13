@@ -18,23 +18,30 @@ export interface Field {
   options?: string;
 }
 
+export interface Section {
+  title: string;
+  fields: Field[];
+}
+
 export interface Template {
   _id: string;
   name: string;
   desc?: string;
-  fields: Field[];
+  sections: Section[];
 }
 
 const AssessmentForm: React.FC = () => {
   const { athleteId, templateId } = useParams();
-  // const router = useRouter();
   const { user } = useUser();
 
   const [template, setTemplate] = useState<Template | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // formValues holds the input values for each field (keyed by field id)
+  // State for assessment title
+  const [assessmentTitle, setAssessmentTitle] = useState<string>('');
+
+  // formValues holds the input values for each field (keyed by field _id)
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [submitLoading, setSubmitLoading] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -50,11 +57,12 @@ const AssessmentForm: React.FC = () => {
         const data = await res.json();
         // Assume API returns { template: { ... } }
         setTemplate(data.template);
-        // Initialize formValues for each field:
+        // Initialize formValues for each field in every section:
         const initialValues: Record<string, any> = {};
-        data.template.fields.forEach((field: Field) => {
-          // For checkbox, default to false; otherwise an empty string.
-          initialValues[field._id] = field.type === 'checkbox' ? false : '';
+        data.template.sections.forEach((section: Section) => {
+          section.fields.forEach((field: Field) => {
+            initialValues[field._id] = field.type === 'checkbox' ? false : '';
+          });
         });
         setFormValues(initialValues);
       } catch (err: any) {
@@ -100,15 +108,27 @@ const AssessmentForm: React.FC = () => {
     setSubmitError(null);
     setSubmitSuccess(null);
 
-    // Create payload including athleteId, templateId and filled-out values.
+    // Build sections payload by grouping field responses by section
+    const sectionsPayload = template!.sections.map((section) => ({
+      title: section.title,
+      responses: section.fields.reduce(
+        (acc, field) => {
+          acc[field._id] = formValues[field._id];
+          return acc;
+        },
+        {} as Record<string, any>
+      ),
+    }));
+
     const payload = {
       athleteId,
       templateId,
-      values: formValues,
+      title: assessmentTitle, // New title field included in payload
+      sections: sectionsPayload,
     };
 
     try {
-      const res = await fetch(`/api/assesment/${templateId}`, {
+      const res = await fetch(`/api/assesment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -119,7 +139,6 @@ const AssessmentForm: React.FC = () => {
       }
       await res.json();
       setSubmitSuccess('Assessment submitted successfully!');
-      // Optionally navigate or perform additional actions here.
     } catch (err: any) {
       setSubmitError(err.message);
     } finally {
@@ -147,67 +166,88 @@ const AssessmentForm: React.FC = () => {
           onSubmit={handleSubmit}
           className="bg-white p-6 rounded-lg shadow-md"
         >
-          {template.fields.map((field, index) => (
-            <div key={field._id || index} className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {field.label}{' '}
-                {field.required && <span className="text-red-500">*</span>}
-              </label>
-              {field.type === 'text' && (
-                <input
-                  type="text"
-                  value={formValues[field._id]}
-                  onChange={(e) => handleChange(e, field)}
-                  required={field.required}
-                  className="text-black w-full p-2 border rounded"
-                />
-              )}
-              {field.type === 'number' && (
-                <input
-                  type="number"
-                  value={formValues[field._id]}
-                  onChange={(e) => handleChange(e, field)}
-                  required={field.required}
-                  className="text-black w-full p-2 border rounded"
-                />
-              )}
-              {field.type === 'date' && (
-                <input
-                  type="date"
-                  value={formValues[field._id]}
-                  onChange={(e) => handleChange(e, field)}
-                  required={field.required}
-                  className="text-black w-full p-2 border rounded"
-                />
-              )}
-              {field.type === 'checkbox' && (
-                <input
-                  type="checkbox"
-                  checked={formValues[field._id]}
-                  onChange={(e) => handleChange(e, field)}
-                  className="text-black p-2 border rounded"
-                />
-              )}
-              {field.type === 'select' && (
-                <select
-                  value={formValues[field._id]}
-                  onChange={(e) => handleChange(e, field)}
-                  required={field.required}
-                  className="text-black w-full p-2 border rounded"
-                >
-                  <option value="">Select an option</option>
-                  {field.options && typeof field.options === 'string'
-                    ? field.options.split(',').map((option, i) => (
-                        <option
-                          key={`${option.trim()}-${i}`}
-                          value={option.trim()}
-                        >
-                          {option.trim()}
-                        </option>
-                      ))
-                    : null}
-                </select>
-              )}
+          {/* New field for assessment title */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Assessment Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={assessmentTitle}
+              onChange={(e) => setAssessmentTitle(e.target.value)}
+              required
+              className="text-black w-full p-2 border rounded"
+            />
+          </div>
+
+          {template.sections.map((section, sIndex) => (
+            <div key={sIndex} className="mb-6">
+              <h2 className="text-black text-2xl font-bold mb-4">
+                {section.title}
+              </h2>
+              {section.fields.map((field, index) => (
+                <div key={field._id || index} className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {field.label}{' '}
+                    {field.required && <span className="text-red-500">*</span>}
+                  </label>
+                  {field.type === 'text' && (
+                    <input
+                      type="text"
+                      value={formValues[field._id]}
+                      onChange={(e) => handleChange(e, field)}
+                      required={field.required}
+                      className="text-black w-full p-2 border rounded"
+                    />
+                  )}
+                  {field.type === 'number' && (
+                    <input
+                      type="number"
+                      value={formValues[field._id]}
+                      onChange={(e) => handleChange(e, field)}
+                      required={field.required}
+                      className="text-black w-full p-2 border rounded"
+                    />
+                  )}
+                  {field.type === 'date' && (
+                    <input
+                      type="date"
+                      value={formValues[field._id]}
+                      onChange={(e) => handleChange(e, field)}
+                      required={field.required}
+                      className="text-black w-full p-2 border rounded"
+                    />
+                  )}
+                  {field.type === 'checkbox' && (
+                    <input
+                      type="checkbox"
+                      checked={formValues[field._id]}
+                      onChange={(e) => handleChange(e, field)}
+                      className="text-black p-2 border rounded"
+                    />
+                  )}
+                  {field.type === 'select' && (
+                    <select
+                      value={formValues[field._id]}
+                      onChange={(e) => handleChange(e, field)}
+                      required={field.required}
+                      className="text-black w-full p-2 border rounded"
+                    >
+                      <option value="">Select an option</option>
+                      {field.options && typeof field.options === 'string'
+                        ? field.options.split(',').map((option, i) => (
+                            <option
+                              key={`${option.trim()}-${i}`}
+                              value={option.trim()}
+                            >
+                              {option.trim()}
+                            </option>
+                          ))
+                        : null}
+                    </select>
+                  )}
+                </div>
+              ))}
             </div>
           ))}
 

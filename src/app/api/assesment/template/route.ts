@@ -17,17 +17,19 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     // Parse the request body
-    const { name, fields } = await req.json();
+    const { name, desc, sections } = await req.json();
 
     // Validate the request payload (you can add more robust validation here)
-    if (!name || !fields || !Array.isArray(fields)) {
+    if (!name || !sections || !Array.isArray(sections)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
+    // Optionally, you might iterate through sections to ensure each has a title and fields array.
 
-    // Create a new template instance
+    // Create a new template instance using the sections instead of a flat fields array
     const newTemplate = new AssesmentTemplate({
       name,
-      fields,
+      desc,
+      sections,
     });
 
     // Save the new template to the database
