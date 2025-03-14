@@ -1,4 +1,3 @@
-// /app/api/templates/route.ts (or adjust the folder structure as needed)
 import { connectDB } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,20 +15,26 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    // Parse the request body
-    const { name, desc, sections } = await req.json();
+    // Parse the request body and include graphs configuration
+    const { name, desc, sections, graphs } = await req.json();
 
-    // Validate the request payload (you can add more robust validation here)
+    // Validate the request payload
     if (!name || !sections || !Array.isArray(sections)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
-    // Optionally, you might iterate through sections to ensure each has a title and fields array.
+    if (graphs && !Array.isArray(graphs)) {
+      return NextResponse.json(
+        { error: 'Invalid graphs payload' },
+        { status: 400 }
+      );
+    }
 
-    // Create a new template instance using the sections instead of a flat fields array
+    // Create a new template instance including the graphs configuration (no conversion needed)
     const newTemplate = new AssesmentTemplate({
       name,
       desc,
       sections,
+      graphs, // This is now an array of objects with string fieldIds
     });
 
     // Save the new template to the database
@@ -56,7 +61,6 @@ export async function GET() {
   }
   try {
     await connectDB();
-
     const templates = await AssesmentTemplate.find().exec();
     console.log(templates);
     return NextResponse.json({ templates }, { status: 200 });

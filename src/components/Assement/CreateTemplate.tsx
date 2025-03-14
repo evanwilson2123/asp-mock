@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { nanoid } from 'nanoid';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
@@ -7,7 +8,7 @@ import Sidebar from '@/components/Dash/Sidebar';
 export type FieldType = 'text' | 'number' | 'select' | 'date' | 'checkbox';
 
 export interface Field {
-  id: string;
+  id: string; // Ephemeral ID from the client
   label: string;
   type: FieldType;
   required: boolean;
@@ -20,10 +21,18 @@ export interface Section {
   fields: Field[];
 }
 
+export interface Graph {
+  id: string;
+  title: string;
+  type: 'bar' | 'line' | 'pie';
+  fieldIds: string[]; // List of numeric field IDs selected for this graph
+}
+
 const CreateTemplate: React.FC = () => {
   const [templateName, setTemplateName] = useState('');
   const [templateDesc, setTemplateDesc] = useState('');
   const [sections, setSections] = useState<Section[]>([]);
+  const [graphs, setGraphs] = useState<Graph[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -31,7 +40,6 @@ const CreateTemplate: React.FC = () => {
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
-  // Ensure only ADMIN users can access this page
   if (role && role !== 'ADMIN') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -47,66 +55,127 @@ const CreateTemplate: React.FC = () => {
     );
   }
 
-  // Add a new section
+  // Section handling functions
   const handleAddSection = () => {
-    setSections([
-      ...sections,
+    setSections((prev) => [
+      ...prev,
       {
-        id: Date.now().toString(),
+        id: nanoid(),
         title: '',
         fields: [],
       },
     ]);
   };
 
-  // Remove a section
   const handleRemoveSection = (sectionIndex: number) => {
-    setSections(sections.filter((_, i) => i !== sectionIndex));
+    setSections((prev) => prev.filter((_, i) => i !== sectionIndex));
   };
 
-  // Update a section's title
   const handleSectionTitleChange = (sectionIndex: number, value: string) => {
-    const updatedSections = [...sections];
-    updatedSections[sectionIndex].title = value;
-    setSections(updatedSections);
-  };
-
-  // Add a new field to a section
-  const handleAddField = (sectionIndex: number) => {
-    const updatedSections = [...sections];
-    updatedSections[sectionIndex].fields.push({
-      id: Date.now().toString(),
-      label: '',
-      type: 'text',
-      required: false,
-      options: '',
+    setSections((prev) => {
+      const updated = [...prev];
+      updated[sectionIndex].title = value;
+      return updated;
     });
-    setSections(updatedSections);
   };
 
-  // Update a field's property in a section
+  // Field handling functions
+  const handleAddField = (sectionIndex: number) => {
+    setSections((prev) => {
+      const updated = [...prev];
+      updated[sectionIndex].fields.push({
+        id: nanoid(), // Use nanoid for unique field ID
+        label: '',
+        type: 'text',
+        required: false,
+        options: '',
+      });
+      return updated;
+    });
+  };
+
   const handleFieldChange = (
     sectionIndex: number,
     fieldIndex: number,
     key: keyof Field,
     value: string | boolean
   ) => {
-    const updatedSections = [...sections];
-    updatedSections[sectionIndex].fields[fieldIndex] = {
-      ...updatedSections[sectionIndex].fields[fieldIndex],
-      [key]: value,
-    };
-    setSections(updatedSections);
+    setSections((prev) => {
+      const updated = [...prev];
+      updated[sectionIndex].fields[fieldIndex] = {
+        ...updated[sectionIndex].fields[fieldIndex],
+        [key]: value,
+      };
+      return updated;
+    });
   };
 
-  // Remove a field from a section
   const handleRemoveField = (sectionIndex: number, fieldIndex: number) => {
-    const updatedSections = [...sections];
-    updatedSections[sectionIndex].fields = updatedSections[
-      sectionIndex
-    ].fields.filter((_, i) => i !== fieldIndex);
-    setSections(updatedSections);
+    setSections((prev) => {
+      const updated = [...prev];
+      updated[sectionIndex].fields = updated[sectionIndex].fields.filter(
+        (_, i) => i !== fieldIndex
+      );
+      return updated;
+    });
   };
+
+  // Graph handling functions
+  const addGraph = () => {
+    setGraphs((prev) => [
+      ...prev,
+      {
+        id: nanoid(), // Use nanoid for unique graph ID
+        title: '',
+        type: 'bar',
+        fieldIds: [],
+      },
+    ]);
+  };
+
+  const removeGraph = (graphIndex: number) => {
+    setGraphs((prev) => prev.filter((_, i) => i !== graphIndex));
+  };
+
+  const handleGraphChange = (
+    graphIndex: number,
+    key: keyof Graph,
+    value: string
+  ) => {
+    setGraphs((prev) => {
+      const updated = [...prev];
+      updated[graphIndex] = {
+        ...updated[graphIndex],
+        [key]: value,
+      };
+      return updated;
+    });
+  };
+
+  const handleGraphFieldToggle = (
+    graphIndex: number,
+    fieldId: string,
+    checked: boolean
+  ) => {
+    setGraphs((prev) => {
+      const updated = [...prev];
+      let currentFieldIds = updated[graphIndex].fieldIds;
+      if (checked) {
+        if (!currentFieldIds.includes(fieldId)) {
+          currentFieldIds.push(fieldId);
+        }
+      } else {
+        currentFieldIds = currentFieldIds.filter((id) => id !== fieldId);
+      }
+      updated[graphIndex].fieldIds = currentFieldIds;
+      return updated;
+    });
+  };
+
+  // Compute available numeric fields from sections
+  const availableNumericFields = sections.flatMap((section) =>
+    section.fields.filter((field) => field.type === 'number')
+  );
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,7 +184,7 @@ const CreateTemplate: React.FC = () => {
     setError(null);
     setSuccessMessage(null);
 
-    // Build payload using sections with their respective fields.
+    // Build payload using sections and graphs
     const templateData = {
       name: templateName,
       desc: templateDesc,
@@ -129,7 +198,13 @@ const CreateTemplate: React.FC = () => {
             field.type === 'select'
               ? field.options?.split(',').map((opt) => opt.trim())
               : undefined,
+          clientId: field.id, // Store the ephemeral client-generated ID
         })),
+      })),
+      graphs: graphs.map((graph) => ({
+        title: graph.title,
+        type: graph.type,
+        fieldIds: graph.fieldIds,
       })),
     };
 
@@ -147,6 +222,7 @@ const CreateTemplate: React.FC = () => {
       setTemplateName('');
       setTemplateDesc('');
       setSections([]);
+      setGraphs([]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -156,7 +232,7 @@ const CreateTemplate: React.FC = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar: Conditional rendering based on user role */}
+      {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
@@ -164,7 +240,7 @@ const CreateTemplate: React.FC = () => {
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white shadow-lg rounded-lg p-6">
@@ -182,6 +258,7 @@ const CreateTemplate: React.FC = () => {
               </div>
             )}
             <form onSubmit={handleSubmit}>
+              {/* Template Name */}
               <div className="mb-8">
                 <label
                   htmlFor="templateName"
@@ -199,6 +276,7 @@ const CreateTemplate: React.FC = () => {
                 />
               </div>
 
+              {/* Template Description */}
               <div className="mb-8">
                 <label
                   htmlFor="templateDesc"
@@ -216,6 +294,7 @@ const CreateTemplate: React.FC = () => {
                 />
               </div>
 
+              {/* Sections */}
               <div className="mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">
                   Sections
@@ -225,6 +304,7 @@ const CreateTemplate: React.FC = () => {
                     key={section.id}
                     className="mb-6 border border-gray-200 p-4 rounded-md"
                   >
+                    {/* Section Title */}
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700">
                         Section Title
@@ -239,6 +319,8 @@ const CreateTemplate: React.FC = () => {
                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
+
+                    {/* Fields */}
                     <div className="mb-4">
                       <h3 className="text-xl font-semibold text-gray-800 mb-2">
                         Fields
@@ -293,6 +375,7 @@ const CreateTemplate: React.FC = () => {
                             </div>
                           </div>
 
+                          {/* Required Checkbox */}
                           <div className="mt-4">
                             <label className="inline-flex items-center">
                               <input
@@ -314,6 +397,7 @@ const CreateTemplate: React.FC = () => {
                             </label>
                           </div>
 
+                          {/* Select Options */}
                           {field.type === 'select' && (
                             <div className="mt-4">
                               <label className="block text-sm font-medium text-gray-700">
@@ -335,6 +419,7 @@ const CreateTemplate: React.FC = () => {
                             </div>
                           )}
 
+                          {/* Remove Field */}
                           <div className="mt-4">
                             <button
                               type="button"
@@ -354,6 +439,8 @@ const CreateTemplate: React.FC = () => {
                         Add Field
                       </button>
                     </div>
+
+                    {/* Remove Section */}
                     <button
                       type="button"
                       onClick={() => handleRemoveSection(sIndex)}
@@ -372,6 +459,84 @@ const CreateTemplate: React.FC = () => {
                 </button>
               </div>
 
+              {/* Graphs Configuration */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                  Graphs
+                </h2>
+                {graphs.map((graph, gIndex) => (
+                  <div key={graph.id} className="mb-6 border p-4 rounded-md">
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-black">
+                        Graph Title
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Graph Title"
+                        value={graph.title}
+                        onChange={(e) =>
+                          handleGraphChange(gIndex, 'title', e.target.value)
+                        }
+                        className="text-black mb-2 p-2 border rounded w-full"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-black">
+                        Graph Type
+                      </label>
+                      <select
+                        value={graph.type}
+                        onChange={(e) =>
+                          handleGraphChange(gIndex, 'type', e.target.value)
+                        }
+                        className="text-black mb-2 p-2 border rounded w-full"
+                      >
+                        <option value="bar">Bar</option>
+                        <option value="line">Line</option>
+                        <option value="pie">Pie</option>
+                      </select>
+                    </div>
+                    <div className="mb-4">
+                      <label className="text-black block font-medium mb-1">
+                        Select Fields:
+                      </label>
+                      {availableNumericFields.map((field) => (
+                        <div key={field.id} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={graph.fieldIds.includes(field.id)}
+                            onChange={(e) =>
+                              handleGraphFieldToggle(
+                                gIndex,
+                                field.id,
+                                e.target.checked
+                              )
+                            }
+                            className="text-black mr-2"
+                          />
+                          <span className="text-black">{field.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeGraph(gIndex)}
+                      className="bg-red-600 text-white px-3 py-1 rounded"
+                    >
+                      Remove Graph
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addGraph}
+                  className="bg-blue-600 text-white px-4 py-2 rounded"
+                >
+                  Add Graph
+                </button>
+              </div>
+
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}

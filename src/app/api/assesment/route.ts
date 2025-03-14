@@ -14,9 +14,25 @@ export async function POST(req: NextRequest) {
   }
   try {
     await connectDB();
-    // Expecting a payload with athleteId, templateId, and sections.
-    // Each section should look something like:
-    // { title: "Section Title", responses: { fieldId1: "Answer", fieldId2: true } }
+
+    /* 
+      Expected payload structure:
+      {
+        title: string,               // Assessment title
+        athleteId: string,
+        templateId: string,
+        sections: [
+          {
+            title: string,
+            responses: {
+              // Each key here MUST be the ephemeral field ID (clientId)
+              // For example: "clientId-of-Number1": "5", "clientId-of-Number2": "10"
+            }
+          },
+          ...
+        ]
+      }
+    */
     const { title, athleteId, templateId, sections } = await req.json();
 
     if (!athleteId) {
@@ -38,12 +54,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create a new assessment using the organized sections payload.
+    // (Optional) If you need to transform the responses to ensure keys are strings,
+    // you can do so here. For example:
+    // const transformedSections = sections.map((section: any) => ({
+    //   title: section.title,
+    //   responses: Object.entries(section.responses).reduce((acc, [key, value]) => {
+    //     // Ensure key is a string (it should be the field's clientId)
+    //     acc[String(key)] = value;
+    //     return acc;
+    //   }, {}),
+    // }));
+    // Then use transformedSections in the assessment creation.
+
     const assessment = new Assessment({
-      title: title,
+      title,
       athleteId,
       templateId,
-      sections,
+      sections, // Ensure these responses are keyed by each field's clientId
     });
 
     await assessment.save();

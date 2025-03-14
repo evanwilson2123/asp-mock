@@ -8,6 +8,7 @@ export interface IAssessmentField {
   type: FieldType;
   required: boolean;
   options?: string[];
+  clientId?: string; // <-- NEW: ephemeral ID from the client
 }
 
 const assesmentFieldSchema = new Schema<IAssessmentField>({
@@ -19,6 +20,7 @@ const assesmentFieldSchema = new Schema<IAssessmentField>({
   },
   required: { type: Boolean, required: true, default: false },
   options: { type: [String], required: false },
+  clientId: { type: String, required: false }, // <-- NEW
 });
 
 export default assesmentFieldSchema;

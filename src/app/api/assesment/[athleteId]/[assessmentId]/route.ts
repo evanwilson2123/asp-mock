@@ -60,7 +60,8 @@ export async function GET(req: NextRequest, context: any) {
       );
     }
 
-    // Transform the assessment's sections for display
+    // Transform the assessment's sections for display.
+    // Now we use the clientId if available to build the field mapping.
     const displaySections = assess.sections.map((assessSection, sIndex) => {
       // Assuming sections match by index; adjust if needed.
       const templateSection = template.sections[sIndex];
@@ -71,8 +72,10 @@ export async function GET(req: NextRequest, context: any) {
                 (f: any) => f._id.toString() === fieldId
               )
             : null;
+          // Use clientId if available; otherwise fall back to the Mongo _id.
+          const idForMapping = field?.clientId || fieldId;
           return {
-            fieldId,
+            fieldId: idForMapping,
             label: field ? field.label : fieldId,
             value,
             type: field ? field.type : 'text',
@@ -85,7 +88,7 @@ export async function GET(req: NextRequest, context: any) {
       };
     });
 
-    // Return the plain assessment along with a display-friendly structure
+    // Return the assessment along with a display-friendly structure including graphs.
     return NextResponse.json(
       {
         assessment: assess,
@@ -93,6 +96,7 @@ export async function GET(req: NextRequest, context: any) {
           athleteId: assess.athleteId,
           templateId: assess.templateId,
           sections: displaySections,
+          graphs: template.graphs || [],
         },
       },
       { status: 200 }
