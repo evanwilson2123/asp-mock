@@ -33,7 +33,7 @@ import MobileSidebar from './MobileSidebar';
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const [isCoachesToolsOpen, setIsCoachesToolsOpen] = useState(false); // State to manage dropdown
-  const [isReportsOpen, setIsReportsOpen] = useState(false); // State to manage reports drop down
+  // const [isReportsOpen, setIsReportsOpen] = useState(false); // State to manage reports drop down
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
@@ -89,7 +89,7 @@ const Sidebar: React.FC = () => {
             <Link href="/csv-upload">CSV-Upload</Link>
           </li> */}
             {/* Reports Section */}
-            <li
+            {/* <li
               className="p-3 rounded hover:bg-gray-700 text-base flex justify-between items-center cursor-pointer"
               onClick={() => setIsReportsOpen(!isReportsOpen)}
             >
@@ -110,10 +110,10 @@ const Sidebar: React.FC = () => {
                   d="M19 9l-7 7-7-7"
                 />
               </svg>
-            </li>
+            </li> */}
 
             {/* Dropdown Options For Reports*/}
-            {isReportsOpen && (
+            {/* {isReportsOpen && (
               <ul className="mt-2 space-y-2 pl-4">
                 <li
                   className={`p-2 rounded ${
@@ -135,7 +135,14 @@ const Sidebar: React.FC = () => {
                   <Link href="/arm-care">ArmCare.com</Link>
                 </li>
               </ul>
-            )}
+            )} */}
+            <li
+              className={`hover:bg-gray-700 p-3 rounded ${
+                pathname === '/reports' ? 'bg-gray-700' : ''
+              }`}
+            >
+              <Link href="/reports">Reports</Link>
+            </li>
 
             <li
               className={`hover:bg-gray-700 p-3 rounded ${

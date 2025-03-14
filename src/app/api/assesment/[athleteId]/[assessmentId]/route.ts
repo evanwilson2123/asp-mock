@@ -6,11 +6,7 @@ import AssesmentTemplate, {
   IAssessmentTemplate,
 } from '@/models/assesmentTemplate';
 
-export async function GET(
-  req: NextRequest,
-  // { params }: { params: { athleteId: string; assessmentId: string } }
-  context: any
-) {
+export async function GET(req: NextRequest, context: any) {
   const { athleteId, assessmentId } = await context.params;
   if (!athleteId) {
     console.log('Missing athleteId');
