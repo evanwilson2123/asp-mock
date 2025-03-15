@@ -305,13 +305,13 @@ const AthleteDetails = () => {
           >
             Goals
           </button>
-          <button
+          {/* <button
             key="reports"
             onClick={() => router.push(`/athlete/${athleteId}/reports`)}
             className="text-gray-700 font-semibold hover:text-gray-900 transition"
           >
             Reports
-          </button>
+          </button> */}
         </nav>
 
         {/* Profile Section */}

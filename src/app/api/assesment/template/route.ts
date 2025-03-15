@@ -61,7 +61,7 @@ export async function GET() {
   }
   try {
     await connectDB();
-    const templates = await AssesmentTemplate.find().exec();
+    const templates = await AssesmentTemplate.find({ available: true }).exec();
     console.log(templates);
     return NextResponse.json({ templates }, { status: 200 });
   } catch (error: any) {

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from '@/components/Dash/Sidebar';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
@@ -23,6 +23,8 @@ const ViewAssessments: React.FC = () => {
 
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
+
+  const router = useRouter();
 
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +86,35 @@ const ViewAssessments: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
+        <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
+          <button
+            key="athletePage"
+            onClick={() => router.push(`/athlete/${athleteId}`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Profile
+          </button>
+          <button
+            key="assessments"
+            onClick={() =>
+              router.push(`/athlete/${athleteId}/reports/assessments`)
+            }
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end underline"
+          >
+            Assesments
+          </button>
+          {['Pitching', 'Hitting', 'Goals'].map((tech) => (
+            <button
+              key={tech}
+              onClick={() =>
+                router.push(`/athlete/${athleteId}/${tech.toLowerCase()}`)
+              }
+              className={`text-gray-700 font-semibold hover:text-gray-900 transition`}
+            >
+              {tech}
+            </button>
+          ))}
+        </nav>
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Assessments</h1>

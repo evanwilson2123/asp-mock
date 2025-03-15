@@ -19,6 +19,7 @@ export interface IAssessmentTemplate {
   sections: IAssessmentSection[];
   desc?: string;
   graphs?: IGraphConfig[];
+  available: boolean;
 }
 
 const assesmentTemplateSchema = new Schema<IAssessmentTemplate>(
@@ -27,6 +28,7 @@ const assesmentTemplateSchema = new Schema<IAssessmentTemplate>(
     sections: { type: [assesmentSectionSchema], required: true },
     desc: { type: String, required: false },
     graphs: { type: [graphConfigSchema], required: false },
+    available: { type: Boolean, required: true, default: true },
   },
   { timestamps: true }
 );
