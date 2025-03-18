@@ -29,19 +29,19 @@ export async function GET(req: NextRequest, context: any) {
   try {
     await connectDB();
 
-    const blastTags = await AthleteTag.find({
+    const tags = await AthleteTag.find({
       athleteId: athleteId,
       tech: tech,
     }).exec();
 
-    if (!blastTags) {
+    if (!tags) {
       console.log(
         `No tags found for athleteId: ${athleteId} and tech: ${tech}`
       );
       return NextResponse.json({ error: 'No tags found' }, { status: 404 });
     }
 
-    return NextResponse.json({ blastTags }, { status: 200 });
+    return NextResponse.json({ tags }, { status: 200 });
   } catch (error: any) {
     console.error(error);
     return NextResponse.json(

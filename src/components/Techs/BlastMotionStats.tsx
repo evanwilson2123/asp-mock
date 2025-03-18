@@ -357,6 +357,14 @@ const BlastMotionStats: React.FC = () => {
             Blast Motion Overview
           </h1>
         </div>
+        <div className="bg-blue-700">
+          <button
+            className="text-white"
+            onClick={() => router.push(`/athlete/${athleteId}/tags/blast`)}
+          >
+            Blast Tags
+          </button>
+        </div>
 
         {/* Clickable Session List with inline editing */}
         <div className="mb-8">
