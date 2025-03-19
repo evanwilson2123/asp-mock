@@ -4,15 +4,22 @@ import { IAthleteTag } from '@/models/athleteTag';
 import Loader from '../Loader';
 import ErrorMessage from '../ErrorMessage';
 import { useUser } from '@clerk/nextjs';
-// import { useRouter } from 'next/navigation';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
+import { TrashIcon } from '@heroicons/react/24/solid';
 
 interface TagData {
   name: string;
+  tech: string;
   description?: string;
   notes: string;
   links?: string[];
+}
+
+interface DeletePopupState {
+  show: boolean;
+  tagId: string;
+  confirmText: string;
 }
 
 const ManageTags = () => {
@@ -20,18 +27,25 @@ const ManageTags = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createTag, setCreateTag] = useState<boolean>(false);
+
   // New tag form state
   const [newTagName, setNewTagName] = useState<string>('');
   const [newTagDescription, setNewTagDescription] = useState<string>('');
   const [newTagNotes, setNewTagNotes] = useState<string>('');
   const [newTagLinks, setNewTagLinks] = useState<string>(''); // comma-separated links
 
-  // Use a single state to track the open tag's id
+  // Use a single state to track the open tag's id (for expanding details)
   const [openTagId, setOpenTagId] = useState<string | null>(null);
+
+  // Delete confirmation popup state
+  const [deletePopup, setDeletePopup] = useState<DeletePopupState>({
+    show: false,
+    tagId: '',
+    confirmText: '',
+  });
 
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
-  //   const router = useRouter();
 
   // Fetch tags once when the component mounts.
   useEffect(() => {
@@ -59,11 +73,41 @@ const ManageTags = () => {
     setOpenTagId((prevId) => (prevId === tagId ? null : tagId));
   };
 
+  // Show delete confirmation popup for a given tag.
+  const showDeletePopup = (tagId: string) => {
+    setDeletePopup({ show: true, tagId, confirmText: '' });
+  };
+
+  // Handle deletion of a tag after confirmation.
+  const handleDeleteTag = async () => {
+    try {
+      const res = await fetch(`/api/tags/tag/${deletePopup.tagId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Error deleting tag');
+        return;
+      }
+      setTags((prevTags) =>
+        prevTags.filter((tag) => tag._id.toString() !== deletePopup.tagId)
+      );
+      // Clear openTagId if the deleted tag was open.
+      if (openTagId === deletePopup.tagId) setOpenTagId(null);
+      // Close the popup
+      setDeletePopup({ show: false, tagId: '', confirmText: '' });
+    } catch (error: any) {
+      console.error(error);
+      setErrorMessage('Internal Server Error');
+    }
+  };
+
   // Handle creation of a new tag.
   const handleCreateTag = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const tagData: TagData = {
       name: newTagName,
+      tech: '', // Set tech appropriately if needed
       description: newTagDescription || undefined,
       notes: newTagNotes,
       links: newTagLinks
@@ -138,12 +182,20 @@ const ManageTags = () => {
                   <h2 className="text-xl font-bold text-gray-700">
                     {tag.name}
                   </h2>
-                  <button
-                    onClick={() => toggleTagDetails(tag._id.toString())}
-                    className="text-gray-500 hover:text-gray-700 transition"
-                  >
-                    {openTagId === tag._id.toString() ? '▲' : '▼'}
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => toggleTagDetails(tag._id.toString())}
+                      className="text-gray-500 hover:text-gray-700 transition"
+                    >
+                      {openTagId === tag._id.toString() ? '▲' : '▼'}
+                    </button>
+                    <button
+                      onClick={() => showDeletePopup(tag._id.toString())}
+                      className="text-red-500 hover:text-red-700 transition"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
                 {openTagId === tag._id.toString() && (
                   <div className="mt-4 text-gray-600">
@@ -249,6 +301,58 @@ const ManageTags = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deletePopup.show && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-80">
+            <h3 className="text-lg font-bold mb-4 text-black">
+              Confirm Deletion
+            </h3>
+            <p className="mb-2 text-black">
+              Type <strong>DELETE</strong> to confirm deletion.
+            </p>
+            <input
+              type="text"
+              placeholder="DELETE"
+              value={deletePopup.confirmText}
+              onChange={(e) =>
+                setDeletePopup((prev) => ({
+                  ...prev,
+                  confirmText: e.target.value,
+                }))
+              }
+              className="border p-2 mb-4 w-full text-black"
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={() =>
+                  setDeletePopup({
+                    show: false,
+                    tagId: '',
+                    confirmText: '',
+                  })
+                }
+                className="mr-4 px-4 py-2 border rounded text-black"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (deletePopup.confirmText !== 'DELETE') {
+                    alert("Please type 'DELETE' to confirm deletion.");
+                    return;
+                  }
+                  await handleDeleteTag();
+                }}
+                className="px-4 py-2 border rounded bg-red-500 text-white"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
