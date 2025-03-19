@@ -189,6 +189,9 @@ const Sidebar: React.FC = () => {
                 <li className="p-2 rounded hover:bg-gray-700">
                   <Link href="/stuff-plus">Stuff Plus Calculator</Link>
                 </li>
+                <li className="p-2 rounded hover:bg-gray-700">
+                  <Link href="/manage-tags">Manage Athlete Tags</Link>
+                </li>
                 {/* <li className="p-2 rounded hover:bg-gray-700">
                 <Link href="/program-planner">Program Planner</Link>
               </li> */}

@@ -9,24 +9,17 @@ import CoachSidebar from '../Dash/CoachSidebar';
 import Sidebar from '../Dash/Sidebar';
 import { useRouter } from 'next/navigation';
 
-interface TagData {
-  name: string;
-  description?: string;
-  notes: string;
-  links?: string[];
-}
-
 const ViewTags = () => {
   // Get the URL params.
   const { athleteId, tech } = useParams();
   // Set the state for the tags.
   const [tags, setTags] = useState<IAthleteTag[]>([]);
-  const [createTag, setCreateTag] = useState<boolean>(false);
-  // New tag state variables.
-  const [newTagName, setNewTagName] = useState<string>('');
-  const [newTagDescription, setNewTagDescription] = useState<string>('');
-  const [newTagNotes, setNewTagNotes] = useState<string>('');
-  const [newTagLinks, setNewTagLinks] = useState<string>(''); // comma-separated links
+  // const [createTag, setCreateTag] = useState<boolean>(false);
+  // // New tag state variables.
+  // const [newTagName, setNewTagName] = useState<string>('');
+  // const [newTagDescription, setNewTagDescription] = useState<string>('');
+  // const [newTagNotes, setNewTagNotes] = useState<string>('');
+  // const [newTagLinks, setNewTagLinks] = useState<string>(''); // comma-separated links
 
   // Set loading and error state.
   const [loading, setLoading] = useState<boolean>(true);
@@ -38,45 +31,45 @@ const ViewTags = () => {
   const router = useRouter();
 
   // Handle creating a new tag.
-  const handleCreateTag = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // Create a TagData object based on form input.
-    const tagData: TagData = {
-      name: newTagName,
-      description: newTagDescription ? newTagDescription : undefined,
-      notes: newTagNotes,
-      links: newTagLinks
-        ? newTagLinks.split(',').map((link) => link.trim())
-        : undefined,
-    };
+  // const handleCreateTag = async (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   // Create a TagData object based on form input.
+  //   const tagData: TagData = {
+  //     name: newTagName,
+  //     description: newTagDescription ? newTagDescription : undefined,
+  //     notes: newTagNotes,
+  //     links: newTagLinks
+  //       ? newTagLinks.split(',').map((link) => link.trim())
+  //       : undefined,
+  //   };
 
-    // For now, we simply log the new tag data.
-    // You can later post this to an API endpoint.
-    console.log('New Tag Data:', tagData);
-    const res = await fetch(`/api/tags/${athleteId}/blast`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(tagData),
-    });
+  //   // For now, we simply log the new tag data.
+  //   // You can later post this to an API endpoint.
+  //   console.log('New Tag Data:', tagData);
+  //   const res = await fetch(`/api/tags/${athleteId}/blast`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: JSON.stringify(tagData),
+  //   });
 
-    const data = await res.json();
+  //   const data = await res.json();
 
-    if (!res.ok) {
-      setErrorMessage(data.error);
-      return;
-    }
+  //   if (!res.ok) {
+  //     setErrorMessage(data.error);
+  //     return;
+  //   }
 
-    tags.push(data.tag);
+  //   tags.push(data.tag);
 
-    // Clear the form fields and close the form.
-    setNewTagName('');
-    setNewTagDescription('');
-    setNewTagNotes('');
-    setNewTagLinks('');
-    setCreateTag(false);
-  };
+  //   // Clear the form fields and close the form.
+  //   setNewTagName('');
+  //   setNewTagDescription('');
+  //   setNewTagNotes('');
+  //   setNewTagLinks('');
+  //   setCreateTag(false);
+  // };
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -158,12 +151,12 @@ const ViewTags = () => {
           <h1 className="text-3xl text-gray-900 font-bold">
             {tech ? tech[0].toUpperCase() + tech.slice(1) + ' Tags' : 'Tags'}
           </h1>
-          <button
+          {/* <button
             onClick={() => setCreateTag(!createTag)}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
           >
             {createTag ? 'Cancel' : 'Create new Tag'}
-          </button>
+          </button> */}
         </div>
         {/* Tag Mapping */}
         <div className="grid grid-cols-1 gap-6">
@@ -187,7 +180,7 @@ const ViewTags = () => {
             </div>
           )}
         </div>
-        {createTag && (
+        {/* {createTag && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6 mt-6">
             <h2 className="text-xl font-bold text-gray-700 mb-4">
               Create New Tag
@@ -246,7 +239,7 @@ const ViewTags = () => {
               </button>
             </form>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

@@ -4,8 +4,8 @@ export type Tech = 'blast' | 'hittrax' | 'trackman' | 'armcare' | 'forceplates';
 
 export interface IAthleteTag {
   _id: Types.ObjectId;
-  athleteId?: Types.ObjectId;
-  tech: Tech;
+  athleteIds?: Types.ObjectId[];
+  tech?: Tech;
   name: string;
   description?: string;
   notes: string;
@@ -13,10 +13,10 @@ export interface IAthleteTag {
 }
 
 const athleteTagSchema = new Schema<IAthleteTag>({
-  athleteId: { type: Schema.Types.ObjectId, required: true, ref: 'Athlete' },
+  athleteIds: [{ type: Schema.Types.ObjectId, required: true, ref: 'Athlete' }],
   tech: {
     type: String,
-    required: true,
+    required: false,
     enum: ['blast', 'hittrax', 'trackman', 'armcare', 'forceplates'],
   },
   name: { type: String, required: true },
