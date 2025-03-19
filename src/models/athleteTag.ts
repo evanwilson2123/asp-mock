@@ -3,6 +3,7 @@ import { Schema, model, models, Types } from 'mongoose';
 export type Tech = 'blast' | 'hittrax' | 'trackman' | 'armcare' | 'forceplates';
 
 export interface IAthleteTag {
+  _id: Types.ObjectId;
   athleteId?: Types.ObjectId;
   tech: Tech;
   name: string;

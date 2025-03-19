@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -357,9 +356,10 @@ const BlastMotionStats: React.FC = () => {
             Blast Motion Overview
           </h1>
         </div>
-        <div className="bg-blue-700">
+        {/* Updated Blast Tags Button */}
+        <div className="flex justify-center my-4">
           <button
-            className="text-white"
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:from-purple-600 hover:to-pink-600 transition duration-300"
             onClick={() => router.push(`/athlete/${athleteId}/tags/blast`)}
           >
             Blast Tags
