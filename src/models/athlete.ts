@@ -23,6 +23,11 @@ export interface IAthlete {
   forceplates?: string[];
   intended?: string[];
   pPhotoUrl?: string;
+  blastTags: Types.ObjectId[];
+  hitTags: Types.ObjectId[];
+  trackTags: Types.ObjectId[];
+  armTags: Types.ObjectId[];
+  forceTags: Types.ObjectId[];
 }
 
 const athleteSchema = new Schema<IAthlete>({
@@ -46,6 +51,21 @@ const athleteSchema = new Schema<IAthlete>({
   forceplates: [{ type: String, required: false }],
   intended: [{ type: String, required: false }],
   pPhotoUrl: { type: String, required: false },
+  blastTags: [
+    { type: mongoose.Types.ObjectId, ref: 'AthleteTag', required: false },
+  ],
+  hitTags: [
+    { type: mongoose.Types.ObjectId, ref: 'AthleteTag', required: false },
+  ],
+  trackTags: [
+    { type: mongoose.Types.ObjectId, ref: 'AthleteTag', required: false },
+  ],
+  armTags: [
+    { type: mongoose.Types.ObjectId, ref: 'AthleteTag', required: false },
+  ],
+  forceTags: [
+    { type: mongoose.Types.ObjectId, ref: 'AthleteTag', required: false },
+  ],
 });
 
 const Athlete = models.Athlete || model<IAthlete>('Athlete', athleteSchema);

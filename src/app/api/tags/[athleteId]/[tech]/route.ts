@@ -1,6 +1,8 @@
 import { connectDB } from '@/lib/db';
-import AthleteTag from '@/models/athleteTag';
+import Athlete from '@/models/athlete';
+import AthleteTag, { IAthleteTag } from '@/models/athleteTag';
 import { auth } from '@clerk/nextjs/server';
+import { Types } from 'mongoose';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -29,9 +31,32 @@ export async function GET(req: NextRequest, context: any) {
   try {
     await connectDB();
 
-    const tags = await AthleteTag.find({
-      athleteId: athleteId,
-      tech: tech,
+    let tagIds: Types.ObjectId[] = [];
+
+    const athlete = await Athlete.findById(athleteId).exec();
+
+    switch (tech) {
+      case 'blast':
+        tagIds = athlete.blastTags;
+        break;
+      case 'hittrax':
+        tagIds = athlete.hitTags;
+        break;
+      case 'trackman':
+        tagIds = athlete.trackTags;
+        break;
+      case 'armcare':
+        tagIds = athlete.armTags;
+        break;
+      case 'forceplates':
+        tagIds = athlete.forceTags;
+        break;
+      default:
+        return NextResponse.json({ error: 'Invalid Tech' }, { status: 400 });
+    }
+
+    const tags: IAthleteTag[] = await AthleteTag.find({
+      _id: { $in: tagIds },
     }).exec();
 
     if (!tags) {
@@ -51,61 +76,57 @@ export async function GET(req: NextRequest, context: any) {
   }
 }
 
-/**
- *
- * @param req { name, description?, notes, links? }
- * @param context { athleteId, tech }
- * @returns { tag: IAthleteTag }
- *
- * This POST request is built with the intention of creating a new tag,
- * these tags will be used to reference athletes to both automatically
- * and coach selected exercises based on their tech recorded statistics
- */
 export async function POST(req: NextRequest, context: any) {
   const { userId } = await auth();
   if (!userId) {
-    console.log('Unauthenticated Request');
     return NextResponse.json(
       { error: 'Unauthenticated Request' },
       { status: 400 }
     );
   }
   const { athleteId, tech } = await context.params;
-
-  // if required parameters are missing, return an error
   if (!athleteId || !tech) {
-    console.log(`Missing parameter\n athleteId: ${athleteId} tech: ${tech}`);
-    return NextResponse.json({ error: 'Missing parameter' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing param' }, { status: 400 });
   }
-
   try {
     await connectDB();
 
-    const { name, description, notes, links } = await req.json();
-    // Check and verify the existence of the required body components
-    if (!name || !notes) {
-      return NextResponse.json(
-        { error: 'Missing name or notes' },
-        { status: 400 }
-      );
+    const { tagId } = await req.json();
+    if (!tagId) {
+      return NextResponse.json({ error: 'Missing tagId' }, { status: 400 });
     }
 
-    // Create the new tag
-    const tag = new AthleteTag({
-      athleteId: athleteId,
-      tech: tech,
-      name: name,
-      description: description,
-      notes: notes,
-      links: links,
-    });
+    const athlete = await Athlete.findById(athleteId).exec();
+    if (!athlete) {
+      return NextResponse.json({ error: 'Athlete not found' }, { status: 404 });
+    }
 
-    await tag.save();
+    switch (tech) {
+      case 'blast':
+        athlete.blastTags.push(tagId);
+        break;
+      case 'hittrax':
+        athlete.hitTags.push(tagId);
+        break;
+      case 'trackman':
+        athlete.trackTags.push(tagId);
+        break;
+      case 'armcare':
+        athlete.armTags.push(tagId);
+        break;
+      case 'forceplates':
+        athlete.forceTags.push(tagId);
+        break;
+      default:
+        return NextResponse.json({ error: 'Invalid tech' }, { status: 400 });
+    }
 
-    console.log('Tag created');
-    return NextResponse.json({ tag }, { status: 200 });
+    await athlete.save();
 
-    // Catch any uncaught errors and log
+    return NextResponse.json(
+      { message: 'Tag saved successfully' },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error(error);
     return NextResponse.json(

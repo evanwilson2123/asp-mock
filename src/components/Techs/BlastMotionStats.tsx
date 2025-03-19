@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
-import Sidebar from '../Dash/Sidebar';
+import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '../Loader';
 import Link from 'next/link';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
@@ -33,7 +33,7 @@ ChartJS.register(
   annotationPlugin
 );
 
-// Extend the session average interface to include all required fields
+// Interfaces for sessions and tags
 interface SessionAvg {
   date: string;
   avgBatSpeed: number;
@@ -50,13 +50,11 @@ interface Session {
   date: string;
 }
 
-/**
- * BlastMotionStats Component
- *
- * This component displays comprehensive Blast Motion data for an athlete,
- * including session history, maximum performance metrics, and detailed trend
- * visualizations for various swing statistics.
- */
+interface BlastTag {
+  _id: string;
+  name: string;
+}
+
 const BlastMotionStats: React.FC = () => {
   const [maxBatSpeed, setMaxBatSpeed] = useState<number>(0);
   const [maxHandSpeed, setMaxHandSpeed] = useState<number>(0);
@@ -67,12 +65,20 @@ const BlastMotionStats: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
+  const { athleteId } = useParams();
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role;
 
-  // State for inline editing
+  // State for blast tags associated with the athlete (for BlastMotion)
+  const [blastTags, setBlastTags] = useState<BlastTag[]>([]);
+  // State for all available tags (for dropdown)
+  const [availableTags, setAvailableTags] = useState<BlastTag[]>([]);
+
+  // State for inline editing sessions (existing code)
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState<string>('');
 
-  // Delete confirmation popup state
+  // Delete confirmation popup state (for sessions)
   const [deletePopup, setDeletePopup] = useState<{
     show: boolean;
     sessionId: string;
@@ -83,16 +89,7 @@ const BlastMotionStats: React.FC = () => {
     confirmText: '',
   });
 
-  const { athleteId } = useParams();
-  const { user } = useUser();
-  const role = user?.publicMetadata?.role;
-
-  // Helper to show the delete confirmation popup
-  const showDeletePopup = (sessionId: string) => {
-    setDeletePopup({ show: true, sessionId, confirmText: '' });
-  };
-
-  // Fetch aggregator data on mount
+  // Fetch blast motion data (sessions, charts, etc.)
   useEffect(() => {
     const fetchBlastData = async () => {
       try {
@@ -109,25 +106,20 @@ const BlastMotionStats: React.FC = () => {
           setErrorMessage(errorMsg);
           return;
         }
-
         const data = await res.json();
         if (data.error) {
           throw new Error(data.error);
         }
-
         // Sort session averages in chronological order (oldest first)
         const sortedSessionAverages = data.sessionAverages.sort(
           (a: SessionAvg, b: SessionAvg) =>
             new Date(a.date).getTime() - new Date(b.date).getTime()
         );
-
         setMaxBatSpeed(data.maxBatSpeed || 0);
         setMaxHandSpeed(data.maxHandSpeed || 0);
         setMaxRotationalAccel(data.maxRotationalAcceleration || 0);
         setMaxPower(data.maxPower || 0);
         setSessionData(sortedSessionAverages);
-
-        // Use the sessions array directly from the API response
         setSessions(data.sessions);
       } catch (err: any) {
         setErrorMessage(err.message);
@@ -135,22 +127,85 @@ const BlastMotionStats: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchBlastData();
   }, [athleteId]);
 
-  if (loading) {
-    return <Loader />;
-  }
-  if (errorMessage) {
-    return (
-      <div className="text-red-500">
-        <ErrorMessage role={role as string} message={errorMessage} />
-      </div>
-    );
-  }
+  // Fetch athlete's blast tags from '/api/tags/[athleteId]/blast'
+  useEffect(() => {
+    const fetchBlastTags = async () => {
+      try {
+        const res = await fetch(`/api/tags/${athleteId}/blast`);
+        if (res.ok) {
+          const data = await res.json();
+          setBlastTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching blast tags:', err);
+      }
+    };
+    if (athleteId) fetchBlastTags();
+  }, [athleteId]);
 
-  // Handler to start editing a session name
+  // Fetch available tags from '/api/tags'
+  useEffect(() => {
+    const fetchAvailableTags = async () => {
+      try {
+        const res = await fetch(`/api/tags`);
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching available tags:', err);
+      }
+    };
+    fetchAvailableTags();
+  }, []);
+
+  // Handler to add a blast tag association
+  const handleAddBlastTag = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const tagId = e.target.value;
+    if (!tagId) return;
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/blast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagId }),
+      });
+      if (res.ok) {
+        const addedTag = availableTags.find((tag) => tag._id === tagId);
+        if (addedTag) {
+          setBlastTags((prev) => [...prev, addedTag]);
+        }
+      } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Error adding tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage('Internal Server Error');
+    }
+  };
+
+  // Handler to remove a blast tag association
+  const handleRemoveBlastTag = async (tagId: string) => {
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/blast/${tagId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setBlastTags((prev) => prev.filter((tag) => tag._id !== tagId));
+      } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Error removing tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage('Internal Server Error');
+    }
+  };
+
+  // Session editing and deletion handlers
   const handleStartEditing = (session: Session) => {
     setEditingSessionId(session.sessionId);
     setNewSessionName(
@@ -160,7 +215,6 @@ const BlastMotionStats: React.FC = () => {
     );
   };
 
-  // Handler to save the new session name
   const handleSaveSessionName = async (sessionId: string) => {
     try {
       const res = await fetch(`/api/sessions/${sessionId}`, {
@@ -175,7 +229,6 @@ const BlastMotionStats: React.FC = () => {
         console.error('Failed to update session name');
         return;
       }
-      // Update local state with the new session name
       setSessions((prevSessions) =>
         prevSessions.map((s) =>
           s.sessionId === sessionId ? { ...s, sessionName: newSessionName } : s
@@ -263,7 +316,7 @@ const BlastMotionStats: React.FC = () => {
     },
   };
 
-  // Prepare chart data for the connections chart (early connections and connection at impacts)
+  // Prepare chart data for the connections chart
   const earlyConnectionsData = sessionData.map((s) => s.avgEarlyConnection);
   const connectionAtImpactsData = sessionData.map(
     (s) => s.avgConnectionAtImpacts
@@ -290,7 +343,6 @@ const BlastMotionStats: React.FC = () => {
     ],
   };
 
-  // Options for the connections chart with an annotation at 90°.
   const connectionsChartOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
@@ -317,17 +369,22 @@ const BlastMotionStats: React.FC = () => {
     },
   };
 
+  if (loading) return <Loader />;
+  if (errorMessage)
+    return <ErrorMessage role={role as string} message={errorMessage} />;
+
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
+      {/* Mobile Sidebar */}
       <div className="md:hidden bg-gray-100">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
+      {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-gray-900 text-white">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
           <button
@@ -351,22 +408,49 @@ const BlastMotionStats: React.FC = () => {
             </button>
           ))}
         </nav>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-700 flex justify-center mb-4">
+        {/* Blast Motion Overview and Inline Tag Management */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-3xl font-bold text-gray-700">
             Blast Motion Overview
           </h1>
-        </div>
-        {/* Updated Blast Tags Button */}
-        <div className="flex justify-center my-4">
-          <button
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:from-purple-600 hover:to-pink-600 transition duration-300"
-            onClick={() => router.push(`/athlete/${athleteId}/tags/blast`)}
-          >
-            Blast Tags
-          </button>
+          <div className="flex items-center">
+            <span className="text-gray-900 mr-2 font-semibold">Tags:</span>
+            {blastTags.length > 0 ? (
+              blastTags.map((tag) => (
+                <span
+                  key={tag._id}
+                  className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
+                >
+                  {tag.name}
+                  <button
+                    onClick={() => handleRemoveBlastTag(tag._id)}
+                    className="ml-1 text-red-500"
+                  >
+                    <TrashIcon className="h-4 w-4 inline" />
+                  </button>
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-500">None</span>
+            )}
+            <select
+              onChange={handleAddBlastTag}
+              defaultValue=""
+              className="ml-2 p-2 border rounded text-gray-900"
+            >
+              <option value="">Add Tag</option>
+              {availableTags
+                .filter((tag) => !blastTags.some((bt) => bt._id === tag._id))
+                .map((tag) => (
+                  <option key={tag._id} value={tag._id}>
+                    {tag.name}
+                  </option>
+                ))}
+            </select>
+          </div>
         </div>
 
-        {/* Clickable Session List with inline editing */}
+        {/* Sessions, Charts, etc. */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Sessions (Latest to Earliest)
@@ -410,7 +494,13 @@ const BlastMotionStats: React.FC = () => {
                         : session.sessionId}
                     </Link>
                     <button
-                      onClick={() => showDeletePopup(session.sessionId)}
+                      onClick={() =>
+                        setDeletePopup({
+                          show: true,
+                          sessionId: session.sessionId,
+                          confirmText: '',
+                        })
+                      }
                       className="ml-4 px-3 py-1 text-gray-900 border-2 border-gray-300 bg-gray-100 hover:bg-gray-200"
                     >
                       <TrashIcon className="h-5 w-5" />
@@ -430,7 +520,6 @@ const BlastMotionStats: React.FC = () => {
 
         {/* All-time max stats */}
         <div className="flex flex-col md:flex-row items-center gap-8 mb-8">
-          {/* Bat Speed Card */}
           <div className="bg-white p-6 rounded shadow flex flex-col items-center w-full md:w-1/4">
             <span className="text-xl font-bold text-gray-600">
               Max Bat Speed
@@ -442,8 +531,6 @@ const BlastMotionStats: React.FC = () => {
             </div>
             <p className="mt-2 text-blue-600 font-medium">mph</p>
           </div>
-
-          {/* Hand Speed Card */}
           <div className="bg-white p-6 rounded shadow flex flex-col items-center w-full md:w-1/4">
             <span className="text-xl font-bold text-gray-600">
               Max Hand Speed
@@ -455,8 +542,6 @@ const BlastMotionStats: React.FC = () => {
             </div>
             <p className="mt-2 text-green-600 font-medium">mph</p>
           </div>
-
-          {/* Rotational Acceleration Card */}
           <div className="bg-white p-6 rounded shadow flex flex-col items-center w-full md:w-1/4">
             <span className="text-xl font-bold text-gray-600">
               Max Rot. Acceleration
@@ -468,8 +553,6 @@ const BlastMotionStats: React.FC = () => {
             </div>
             <p className="mt-2 text-yellow-600 font-medium">G&apos;s</p>
           </div>
-
-          {/* Power Card */}
           <div className="bg-white p-6 rounded shadow flex flex-col items-center w-full md:w-1/4">
             <span className="text-xl font-bold text-gray-600">Max Power</span>
             <div className="mt-4 relative rounded-full w-32 h-32 border-8 border-purple-200 flex items-center justify-center">
@@ -519,7 +602,7 @@ const BlastMotionStats: React.FC = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Popup */}
+      {/* Delete Confirmation Popup for Sessions */}
       {deletePopup.show && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded shadow-lg w-80">
