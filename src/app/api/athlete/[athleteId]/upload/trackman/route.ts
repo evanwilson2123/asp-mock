@@ -314,6 +314,7 @@ import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
 import crypto from 'crypto';
 import Goal from '@/models/goal';
+import AthleteTag from '@/models/athleteTag';
 
 const CALCULATE_STUFF_PLUS_URL =
   process.env.CALCULATE_STUFF_PLUS_URL ||
@@ -541,6 +542,40 @@ export async function POST(
     const savedData = await prisma.trackman.createMany({
       data: trackmanRows,
     });
+
+    const tags = await AthleteTag.find({
+      tech: 'trackman',
+      automatic: true,
+    });
+
+    if (tags.length !== 0) {
+      for (const tag of tags) {
+        const avgMetric = await prisma.trackman.aggregate({
+          _avg: {
+            [tag.metric]: true,
+          },
+          where: {
+            athleteId: athleteId,
+          },
+        });
+        if (tag.lessThan) {
+          if (tag.lessThan > avgMetric._avg[tag.metric]) {
+            athlete.trackTags.push(tag._id);
+          }
+        } else if (tag.greaterThan) {
+          if (tag.greaterThan < avgMetric._avg[tag.metric]) {
+            athlete.trackTags.push(tag._id);
+          }
+        } else if (tag.min && tag.max) {
+          if (
+            tag.min < avgMetric._avg[tag.metric] &&
+            avgMetric._avg[tag.metric] < tag.max
+          ) {
+            athlete.trackTags.push(tag._id);
+          }
+        }
+      }
+    }
 
     athlete.trackman.push(sessionId);
     await athlete.save();

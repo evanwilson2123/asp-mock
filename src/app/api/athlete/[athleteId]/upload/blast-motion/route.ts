@@ -7,6 +7,7 @@ import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
 import { randomUUID } from 'crypto';
 import Goal from '@/models/goal';
+import AthleteTag from '@/models/athleteTag';
 
 const CSV_HEADERS = [
   'Date',
@@ -452,6 +453,44 @@ export async function POST(req: NextRequest, context: any) {
         athlete.blastMotion.push(sid);
       }
     });
+    // Tags section
+    const tags = await AthleteTag.find({
+      tech: 'blast',
+      automatic: true,
+    });
+
+    if (tags.length !== 0) {
+      console.log('Updating tags based on Blast data');
+
+      for (const tag of tags) {
+        const avgMetric = await prisma.blastMotion.aggregate({
+          _avg: {
+            [tag.metric]: true,
+          },
+          where: {
+            athlete: athleteId,
+          },
+        });
+        console.log(`Greater than: ${tag.greaterThan}`);
+        console.log(`${tag.metric} Average: ${avgMetric._avg[tag.metric]}`);
+        if (tag.lessThan) {
+          if (avgMetric._avg[tag.metric] < tag.lessThan) {
+            console.log('found tag');
+            athlete.blastTags.push(tag._id);
+          }
+        } else if (tag.greaterThan) {
+          if (avgMetric._avg[tag.metric] > tag.greaterThan) {
+            console.log('found tag');
+            athlete.blastTags.push(tag._id);
+          }
+        } else if (tag.min && tag.max) {
+          if (avgMetric._avg[tag.metric] > tag.min && avgMetric < tag.max) {
+            console.log('found tag');
+            athlete.blastTags.push(tag._id);
+          }
+        }
+      }
+    }
     await athlete.save();
 
     return NextResponse.json({

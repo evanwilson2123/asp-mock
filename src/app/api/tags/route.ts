@@ -14,7 +14,7 @@ export async function GET() {
   try {
     await connectDB();
 
-    const tags = await AthleteTag.find().exec();
+    const tags = await AthleteTag.find({}).exec();
 
     return NextResponse.json({ tags }, { status: 200 });
   } catch (error: any) {
@@ -38,20 +38,56 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const { name, description, notes, links } = await req.json();
+    const {
+      name,
+      description,
+      notes,
+      links,
+      automatic, // boolean flag indicating Automatic vs Standard tag
+      tech, // expected to be one of 'blast', 'hittrax', 'trackman', 'armcare', 'forceplates'
+      session, // boolean flag: true if the tag is for a session, false if for an overview
+      metric,
+      min,
+      max,
+      greaterThan,
+      lessThan,
+    } = await req.json();
+
+    // Check required fields for both Standard and Automatic
     if (!name || !notes) {
-      console.log('Missing body field');
-      return NextResponse.json({ error: 'Missing body' }, { status: 400 });
+      console.log('Missing required fields');
+      return NextResponse.json(
+        { error: 'Missing required fields: name and notes are required.' },
+        { status: 400 }
+      );
     }
 
-    const tag = new AthleteTag({
-      athleteIds: [],
-      name: name,
-      description: description,
-      notes: notes,
-      links: links,
-    });
+    // Base tag data common to both forms
+    const tagData: any = {
+      name,
+      description,
+      notes,
+      links,
+      automatic: Boolean(automatic),
+      session: Boolean(session),
+    };
 
+    // If the tag is created using the Automatic form,
+    // add additional properties.
+    if (automatic) {
+      tagData.tech = tech; // Make sure the frontend sends the mapped enum (e.g. "blast")
+      tagData.metric = metric;
+
+      // Convert to numbers if provided
+      if (min !== undefined && min !== '') tagData.min = Number(min);
+      if (max !== undefined && max !== '') tagData.max = Number(max);
+      if (greaterThan !== undefined && greaterThan !== '')
+        tagData.greaterThan = Number(greaterThan);
+      if (lessThan !== undefined && lessThan !== '')
+        tagData.lessThan = Number(lessThan);
+    }
+
+    const tag = new AthleteTag(tagData);
     await tag.save();
 
     return NextResponse.json({ tag }, { status: 200 });

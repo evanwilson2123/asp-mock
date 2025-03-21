@@ -8,21 +8,21 @@ import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
 import { TrashIcon } from '@heroicons/react/24/solid';
 
-interface TagData {
-  name: string;
-  tech: string;
-  description?: string;
-  notes: string;
-  links?: string[];
-  // Extra fields for automatic tags (optional)
-  overviewSession?: string;
-  metric?: string;
-  mode?: string;
-  min?: string;
-  max?: string;
-  thresholdType?: string;
-  thresholdValue?: string;
-}
+// interface TagData {
+//   name: string;
+//   tech: string;
+//   description?: string;
+//   notes: string;
+//   links?: string[];
+//   // Extra fields for automatic tags (optional)
+//   overviewSession?: string;
+//   metric?: string;
+//   mode?: string;
+//   min?: string;
+//   max?: string;
+//   thresholdType?: string;
+//   thresholdValue?: string;
+// }
 
 interface DeletePopupState {
   show: boolean;
@@ -126,30 +126,60 @@ const ManageTags = () => {
   // Handle creation of a new tag.
   const handleCreateTag = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const tagData: TagData = {
+
+    // Base tag data
+    const tagData: any = {
       name: newTagName,
-      tech: activeForm === 'Automatic' ? newTagTech : '',
       description: newTagDescription || undefined,
       notes: newTagNotes,
       links: newTagLinks
         ? newTagLinks.split(',').map((link) => link.trim())
         : undefined,
+      automatic: activeForm === 'Automatic',
+      session: false, // default; will be updated below if needed
     };
 
     if (activeForm === 'Automatic') {
-      // // If tech is not Armcare, include overview/session selection.
-      // if (newTagTech && newTagTech.toLowerCase() !== 'armcare') {
-      //   tagData.overviewSession = newTagOverviewSession;
+      // Map the tech value to match the enum defined in the model.
+      const techMapping: Record<
+        string,
+        'blast' | 'hittrax' | 'trackman' | 'armcare' | 'forceplates'
+      > = {
+        'Blast Motion': 'blast',
+        Hittrax: 'hittrax',
+        Trackman: 'trackman',
+        Armcare: 'armcare',
+        Forceplates: 'forceplates',
+      };
+
+      tagData.tech = techMapping[newTagTech] || undefined;
+
+      // Set session: if tech is not armcare, determine based on the user's overview/session selection.
+      // if (newTagTech.toLowerCase() !== 'armcare') {
+      //   // Assuming newTagOverviewSession is either "Overview" or "Session"
+      //   tagData.session = newTagOverviewSession === 'Session';
+      // } else {
+      //   tagData.session = false;
       // }
+
+      // Include the metric.
       tagData.metric = newTagMetric;
-      tagData.mode = newTagMode;
+
+      // Handle the mode: Range or Threshold.
       if (newTagMode === 'Range') {
-        tagData.min = newTagMin;
-        tagData.max = newTagMax;
+        tagData.min = Number(newTagMin);
+        tagData.max = Number(newTagMax);
       } else if (newTagMode === 'Threshold') {
-        tagData.thresholdType = newTagThresholdType;
-        tagData.thresholdValue = newTagThresholdValue;
+        if (newTagThresholdType === 'Greater than') {
+          tagData.greaterThan = Number(newTagThresholdValue);
+        } else if (newTagThresholdType === 'Less than') {
+          tagData.lessThan = Number(newTagThresholdValue);
+        }
       }
+    } else {
+      // For the Standard form, the tag is not automatic and session defaults to false.
+      tagData.automatic = false;
+      tagData.session = false;
     }
 
     console.log('New Tag Data:', tagData);
@@ -165,9 +195,9 @@ const ManageTags = () => {
         setErrorMessage(data.error || 'Error creating tag');
         return;
       }
-      // Append new tag to local state
+      // Append new tag to local state.
       setTags((prev) => [...prev, data.tag]);
-      // Clear form and hide it
+      // Clear form and hide it.
       setNewTagName('');
       setNewTagDescription('');
       setNewTagNotes('');

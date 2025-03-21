@@ -7,6 +7,7 @@ import { randomUUID } from 'crypto';
 import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
 import Goal from '@/models/goal';
+import AthleteTag from '@/models/athleteTag';
 
 interface HittraxBlast {
   athlete: string;
@@ -402,6 +403,40 @@ export async function POST(req: NextRequest, context: any) {
     await prisma.hitTrax.createMany({
       data: rows,
     });
+
+    const tags = await AthleteTag.find({
+      tech: 'hittrax',
+      automatic: true,
+    });
+
+    if (tags.length !== 0) {
+      for (const tag of tags) {
+        const avgMetric = await prisma.hitTrax.aggregate({
+          _avg: {
+            [tag.metric]: true,
+          },
+          where: {
+            athlete: athleteId,
+          },
+        });
+        if (tag.lessThan) {
+          if (tag.lessThan > avgMetric._avg[tag.metric]) {
+            athlete.hitTags.push(tag._id);
+          }
+        } else if (tag.greaterThan) {
+          if (tag.greaterThan < avgMetric._avg[tag.metric]) {
+            athlete.hitTags.push(tag._id);
+          }
+        } else if (tag.min && tag.max) {
+          if (
+            tag.min < avgMetric._avg[tag.metric] &&
+            avgMetric._avg[tag.metric] < tag.max
+          ) {
+            athlete.hitTags.push(tag._id);
+          }
+        }
+      }
+    }
 
     athlete.hitTrax.push(sessionId);
     await athlete.save();
