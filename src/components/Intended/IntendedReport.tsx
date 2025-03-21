@@ -52,6 +52,12 @@ interface Session {
   date: string;
 }
 
+// --- New: Interface for Tag Management ---
+interface BlastTag {
+  _id: string;
+  name: string;
+}
+
 const IntendedReport: React.FC = () => {
   const { athleteId } = useParams();
   const { user } = useUser();
@@ -62,6 +68,10 @@ const IntendedReport: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // --- New: Tag Management States ---
+  const [blastTags, setBlastTags] = useState<BlastTag[]>([]);
+  const [availableTags, setAvailableTags] = useState<BlastTag[]>([]);
 
   const router = useRouter();
 
@@ -95,6 +105,38 @@ const IntendedReport: React.FC = () => {
 
     fetchIntendedReport();
   }, [athleteId]);
+
+  // --- New: Fetch athlete's Intended Zone tags ---
+  useEffect(() => {
+    const fetchIntendedTags = async () => {
+      try {
+        const res = await fetch(`/api/tags/${athleteId}/intended-zone`);
+        if (res.ok) {
+          const data = await res.json();
+          setBlastTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching intended-zone tags:', err);
+      }
+    };
+    if (athleteId) fetchIntendedTags();
+  }, [athleteId]);
+
+  // --- New: Fetch available tags ---
+  useEffect(() => {
+    const fetchAvailableTags = async () => {
+      try {
+        const res = await fetch(`/api/tags`);
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching available tags:', err);
+      }
+    };
+    fetchAvailableTags();
+  }, []);
 
   if (loading) return <Loader />;
   if (error) {
@@ -135,6 +177,48 @@ const IntendedReport: React.FC = () => {
     },
   };
 
+  // --- New: Handlers for Tag Management ---
+  const handleAddBlastTag = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const tagId = e.target.value;
+    if (!tagId) return;
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/intended-zone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagId }),
+      });
+      if (res.ok) {
+        const addedTag = availableTags.find((tag) => tag._id === tagId);
+        if (addedTag) {
+          setBlastTags((prev) => [...prev, addedTag]);
+        }
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Error adding tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Internal Server Error');
+    }
+  };
+
+  const handleRemoveBlastTag = async (tagId: string) => {
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/intended-zone/${tagId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setBlastTags((prev) => prev.filter((tag) => tag._id !== tagId));
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Error removing tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Internal Server Error');
+    }
+  };
+
   return (
     <div className="flex flex-col overflow-x-hidden md:flex-row min-h-screen">
       {/* Sidebar for mobile and desktop */}
@@ -154,7 +238,16 @@ const IntendedReport: React.FC = () => {
           >
             Profile
           </button>
-          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+          <button
+            key="assessments"
+            onClick={() =>
+              router.push(`/athlete/${athleteId}/reports/assessments`)
+            }
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Assessments
+          </button>
+          {['Pitching', 'Hitting', 'Goals'].map((tech) => (
             <button
               key={tech}
               onClick={() =>
@@ -168,9 +261,62 @@ const IntendedReport: React.FC = () => {
             </button>
           ))}
         </nav>
-        <h1 className="text-3xl font-bold text-gray-700 mb-6 flex justify-center">
-          Intended Overview
-        </h1>
+
+        {/* --- New: Intended Zone Tag Management Section --- */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-3xl font-bold text-gray-700">
+            Intended Overview
+          </h1>
+          <div className="flex items-center">
+            <span className="text-gray-900 mr-2 font-semibold">Tags:</span>
+            {blastTags.length > 0 ? (
+              blastTags.map((tag) => (
+                <span
+                  key={tag._id}
+                  className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
+                >
+                  {tag.name}
+                  <button
+                    onClick={() => handleRemoveBlastTag(tag._id)}
+                    className="ml-1 text-red-500"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 inline"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-500">None</span>
+            )}
+            <select
+              onChange={handleAddBlastTag}
+              defaultValue=""
+              className="ml-2 p-2 border rounded text-gray-900"
+            >
+              <option value="">Add Tag</option>
+              {availableTags
+                .filter((tag) => !blastTags.some((bt) => bt._id === tag._id))
+                .map((tag) => (
+                  <option key={tag._id} value={tag._id}>
+                    {tag.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
+        {/* End Tag Management Section */}
 
         {/* Global Averages by Pitch Type */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">

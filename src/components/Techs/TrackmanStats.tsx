@@ -49,11 +49,18 @@ interface TrackmanData {
   sessions: Session[];
 }
 
+// --- New Interface for Tag Handling ---
+interface BlastTag {
+  _id: string;
+  name: string;
+}
+
 /**
  * TrackmanStats Component
  *
  * Provides data visualization for pitching sessions using Trackman data,
- * now with inline editing for session names and delete confirmation popup.
+ * now with inline editing for session names, delete confirmation popup,
+ * and tag management (added exactly as in the other components).
  */
 const TrackmanStats: React.FC = () => {
   const [peakVelocities, setPeakVelocities] = useState<
@@ -80,6 +87,10 @@ const TrackmanStats: React.FC = () => {
     sessionId: '',
     confirmText: '',
   });
+
+  // --- New: Tag Management States ---
+  const [blastTags, setBlastTags] = useState<BlastTag[]>([]);
+  const [availableTags, setAvailableTags] = useState<BlastTag[]>([]);
 
   const { athleteId } = useParams();
   const { user, isLoaded } = useUser();
@@ -114,6 +125,38 @@ const TrackmanStats: React.FC = () => {
 
     fetchTrackmanData();
   }, [athleteId]);
+
+  // --- New: Fetch athlete's Trackman tags ---
+  useEffect(() => {
+    const fetchTrackmanTags = async () => {
+      try {
+        const res = await fetch(`/api/tags/${athleteId}/trackman`);
+        if (res.ok) {
+          const data = await res.json();
+          setBlastTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching trackman tags:', err);
+      }
+    };
+    if (athleteId) fetchTrackmanTags();
+  }, [athleteId]);
+
+  // --- New: Fetch available tags ---
+  useEffect(() => {
+    const fetchAvailableTags = async () => {
+      try {
+        const res = await fetch(`/api/tags`);
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching available tags:', err);
+      }
+    };
+    fetchAvailableTags();
+  }, []);
 
   if (!isLoaded || loading) return <Loader />;
   if (!role) return <SignInPrompt />;
@@ -209,6 +252,48 @@ const TrackmanStats: React.FC = () => {
     setDeletePopup({ show: false, sessionId: '', confirmText: '' });
   };
 
+  // --- New: Handlers for tag management ---
+  const handleAddBlastTag = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const tagId = e.target.value;
+    if (!tagId) return;
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/trackman`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagId }),
+      });
+      if (res.ok) {
+        const addedTag = availableTags.find((tag) => tag._id === tagId);
+        if (addedTag) {
+          setBlastTags((prev) => [...prev, addedTag]);
+        }
+      } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Error adding tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage('Internal Server Error');
+    }
+  };
+
+  const handleRemoveBlastTag = async (tagId: string) => {
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/trackman/${tagId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setBlastTags((prev) => prev.filter((tag) => tag._id !== tagId));
+      } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Error removing tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage('Internal Server Error');
+    }
+  };
+
   // Prepare chart data for average pitch speeds
   const colors = [
     '#FF6384',
@@ -272,7 +357,16 @@ const TrackmanStats: React.FC = () => {
           >
             Profile
           </button>
-          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+          <button
+            key="assessments"
+            onClick={() =>
+              router.push(`/athlete/${athleteId}/reports/assessments`)
+            }
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Assessments
+          </button>
+          {['Pitching', 'Hitting', 'Goals'].map((tech) => (
             <button
               key={tech}
               onClick={() =>
@@ -286,9 +380,49 @@ const TrackmanStats: React.FC = () => {
             </button>
           ))}
         </nav>
-        <h1 className="text-3xl font-bold text-gray-700 mb-4 flex justify-center">
-          Trackman Overview
-        </h1>
+
+        {/* --- New: Trackman Tag Management Section --- */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-3xl font-bold text-gray-700">
+            Trackman Overview
+          </h1>
+          <div className="flex items-center">
+            <span className="text-gray-900 mr-2 font-semibold">Tags:</span>
+            {blastTags.length > 0 ? (
+              blastTags.map((tag) => (
+                <span
+                  key={tag._id}
+                  className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
+                >
+                  {tag.name}
+                  <button
+                    onClick={() => handleRemoveBlastTag(tag._id)}
+                    className="ml-1 text-red-500"
+                  >
+                    <TrashIcon className="h-4 w-4 inline" />
+                  </button>
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-500">None</span>
+            )}
+            <select
+              onChange={handleAddBlastTag}
+              defaultValue=""
+              className="ml-2 p-2 border rounded text-gray-900"
+            >
+              <option value="">Add Tag</option>
+              {availableTags
+                .filter((tag) => !blastTags.some((bt) => bt._id === tag._id))
+                .map((tag) => (
+                  <option key={tag._id} value={tag._id}>
+                    {tag.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
+        {/* End Tag Management Section */}
 
         {/* Clickable Session List with inline editing */}
         <div className="mb-8">

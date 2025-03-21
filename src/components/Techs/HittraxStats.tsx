@@ -52,13 +52,12 @@ interface ZoneAverage {
   oppo: { avgExitVelo: number; avgLA: number };
 }
 
-/**
- * HitTraxStats Component
- *
- * Provides an in-depth view of an athlete's hitting performance using HitTrax data.
- * Includes global metrics (max exit velo, hard hit average, distance metrics),
- * overall session trends, and inline editing for session names.
- */
+// --- New Interface and States for Tag Handling ---
+interface BlastTag {
+  _id: string;
+  name: string;
+}
+
 const HitTraxStats: React.FC = () => {
   // Global metric states
   const [maxExitVelo, setMaxExitVelo] = useState<number>(0);
@@ -79,6 +78,10 @@ const HitTraxStats: React.FC = () => {
   // State for inline editing
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState<string>('');
+
+  // --- New States for Tag Handling ---
+  const [blastTags, setBlastTags] = useState<BlastTag[]>([]);
+  const [availableTags, setAvailableTags] = useState<BlastTag[]>([]);
 
   const router = useRouter();
 
@@ -133,6 +136,38 @@ const HitTraxStats: React.FC = () => {
 
     fetchHitTraxData();
   }, [athleteId]);
+
+  // --- New: Fetch athlete's hittrax tags ---
+  useEffect(() => {
+    const fetchBlastTags = async () => {
+      try {
+        const res = await fetch(`/api/tags/${athleteId}/hittrax`);
+        if (res.ok) {
+          const data = await res.json();
+          setBlastTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching hittrax tags:', err);
+      }
+    };
+    if (athleteId) fetchBlastTags();
+  }, [athleteId]);
+
+  // --- New: Fetch available tags ---
+  useEffect(() => {
+    const fetchAvailableTags = async () => {
+      try {
+        const res = await fetch(`/api/tags`);
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching available tags:', err);
+      }
+    };
+    fetchAvailableTags();
+  }, []);
 
   if (loading) return <Loader />;
   if (errorMessage)
@@ -203,6 +238,48 @@ const HitTraxStats: React.FC = () => {
 
   const showDeletePopup = (sessionId: string) => {
     setDeletePopup({ show: true, sessionId, confirmText: '' });
+  };
+
+  // --- New: Handlers for tag management ---
+  const handleAddBlastTag = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const tagId = e.target.value;
+    if (!tagId) return;
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/hittrax`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagId }),
+      });
+      if (res.ok) {
+        const addedTag = availableTags.find((tag) => tag._id === tagId);
+        if (addedTag) {
+          setBlastTags((prev) => [...prev, addedTag]);
+        }
+      } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Error adding tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage('Internal Server Error');
+    }
+  };
+
+  const handleRemoveBlastTag = async (tagId: string) => {
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/hittrax/${tagId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setBlastTags((prev) => prev.filter((tag) => tag._id !== tagId));
+      } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Error removing tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage('Internal Server Error');
+    }
   };
 
   // Chart options and data for overall trends
@@ -382,9 +459,47 @@ const HitTraxStats: React.FC = () => {
             </button>
           ))}
         </nav>
-        <h1 className="text-3xl font-bold text-gray-700 mb-6 flex justify-center">
-          HitTrax Overview
-        </h1>
+
+        {/* --- New: HitTrax Tag Management Section --- */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-3xl font-bold text-gray-700">HitTrax Overview</h1>
+          <div className="flex items-center">
+            <span className="text-gray-900 mr-2 font-semibold">Tags:</span>
+            {blastTags.length > 0 ? (
+              blastTags.map((tag) => (
+                <span
+                  key={tag._id}
+                  className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
+                >
+                  {tag.name}
+                  <button
+                    onClick={() => handleRemoveBlastTag(tag._id)}
+                    className="ml-1 text-red-500"
+                  >
+                    <TrashIcon className="h-4 w-4 inline" />
+                  </button>
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-500">None</span>
+            )}
+            <select
+              onChange={handleAddBlastTag}
+              defaultValue=""
+              className="ml-2 p-2 border rounded text-gray-900"
+            >
+              <option value="">Add Tag</option>
+              {availableTags
+                .filter((tag) => !blastTags.some((bt) => bt._id === tag._id))
+                .map((tag) => (
+                  <option key={tag._id} value={tag._id}>
+                    {tag.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
+        {/* End Tag Management Section */}
 
         {/* Clickable Session List with inline editing */}
         <div className="mb-8">

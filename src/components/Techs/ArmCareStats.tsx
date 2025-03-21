@@ -7,8 +7,7 @@ import CoachSidebar from '../Dash/CoachSidebar';
 import Sidebar from '../Dash/Sidebar';
 import Loader from '../Loader';
 import Link from 'next/link';
-
-// Chart Imports
+import SignInPrompt from '../SignInPrompt';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -21,7 +20,6 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
-import SignInPrompt from '../SignInPrompt';
 
 ChartJS.register(
   CategoryScale,
@@ -32,17 +30,7 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
-interface SessionScore {
-  date: string;
-  armScore: number;
-}
-
-interface Session {
-  sessionId: string;
-  date: string;
-}
-
+import { TrashIcon } from '@heroicons/react/24/solid';
 // --- COLOR HELPERS ---
 
 const NORMAL_CLASS = 'text-blue-600';
@@ -55,7 +43,7 @@ const WARNING_CLASS = 'text-pink-600';
  *  - Normal: >20% BW
  *  - Watch: 15-20% BW
  *  - Warning: <15% BW
- * For scaption: normal>15%, watch=10-15%, warning<10%
+ * For Scaption: Normal >15%, Watch: 10-15%, Warning: <10%
  */
 function getStrengthColor(
   percentBW: number,
@@ -70,7 +58,6 @@ function getStrengthColor(
     if (percentBW >= 10) return WATCH_CLASS;
     return WARNING_CLASS;
   } else if (type === 'Total') {
-    // E.g. normal>70%, watch=50-70%, warning<50%
     if (percentBW > 70) return NORMAL_CLASS;
     if (percentBW >= 50) return WATCH_CLASS;
     return WARNING_CLASS;
@@ -79,7 +66,8 @@ function getStrengthColor(
 }
 
 /**
- * Example for Shoulder Balance (ER:IR ratio):
+ * getShoulderBalanceColor
+ * For Shoulder Balance (ER:IR ratio):
  *  - Normal: 0.85-1.05
  *  - Watch: 0.70-0.84 or 1.06-1.20
  *  - Warning: <0.70 or >1.20
@@ -91,48 +79,29 @@ function getShoulderBalanceColor(ratio: number) {
   return WARNING_CLASS;
 }
 
+interface SessionScore {
+  date: string;
+  armScore: number;
+}
+
+interface Session {
+  sessionId: string;
+  date: string;
+}
+
+// --- New: Interface for Tag Management ---
+interface BlastTag {
+  _id: string;
+  name: string;
+}
+
 /**
  * ArmCareStats Component
  *
  * This component displays detailed arm care statistics for a specific athlete.
- * It includes strength metrics, range of motion (ROM) data, and arm score trends over time,
- * with color-coded indicators for performance assessment based on thresholds.
- *
- * Key Features:
- * - **Dynamic Data Fetching:**
- *   - Retrieves arm care data for the athlete using their ID from the URL parameters.
- *   - Displays all-time maximums, latest strength metrics, and session-wise data.
- *
- * - **Color-Coded Performance Indicators:**
- *   - Strength metrics (IR, ER, Scaption) are color-coded based on % of body weight:
- *     - **Blue:** Normal range
- *     - **Yellow:** Watch range
- *     - **Pink:** Warning range
- *   - Shoulder balance ratio (ER:IR) is similarly color-coded for quick assessment.
- *
- * - **Interactive Line Chart:**
- *   - Displays the trend of arm scores over time using Chart.js.
- *   - Allows coaches and athletes to monitor progress visually.
- *
- * - **Session Management:**
- *   - Lists all sessions with quick navigation links to detailed reports for each session.
- *
- * - **Authentication & Error Handling:**
- *   - Uses Clerk for user authentication and role management (Coach/Admin).
- *   - Displays error messages when data fetching fails or if the user is not authenticated.
- *
- * Technologies Used:
- * - React (with hooks for state and lifecycle management)
- * - Next.js (for routing and API integration)
- * - Clerk (for authentication)
- * - Chart.js (for data visualization)
- * - Tailwind CSS (for styling)
- *
- * Usage:
- * - Typically embedded in an athlete's dashboard or report section.
- * - Accessible to coaches and administrators for performance monitoring and data analysis.
+ * It includes strength metrics, range of motion (ROM) data, session data, and an interactive chart.
+ * Tag management (adding/removing tags) has been added below.
  */
-
 const ArmCareStats: React.FC = () => {
   // ===== STATE  =====
   // Body weight
@@ -162,6 +131,10 @@ const ArmCareStats: React.FC = () => {
   const [loading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // --- New: Tag Management States ---
+  const [blastTags, setBlastTags] = useState<BlastTag[]>([]);
+  const [availableTags, setAvailableTags] = useState<BlastTag[]>([]);
+
   // Auth
   const { athleteId } = useParams();
   const { user } = useUser();
@@ -170,7 +143,7 @@ const ArmCareStats: React.FC = () => {
   // Router
   const router = useRouter();
 
-  // Fetch
+  // Fetch arm care data
   useEffect(() => {
     const fetchArmData = async () => {
       try {
@@ -223,6 +196,38 @@ const ArmCareStats: React.FC = () => {
     fetchArmData();
   }, [athleteId]);
 
+  // --- New: Fetch athlete's Arm Care tags ---
+  useEffect(() => {
+    const fetchArmCareTags = async () => {
+      try {
+        const res = await fetch(`/api/tags/${athleteId}/arm-care`);
+        if (res.ok) {
+          const data = await res.json();
+          setBlastTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching arm care tags:', err);
+      }
+    };
+    if (athleteId) fetchArmCareTags();
+  }, [athleteId]);
+
+  // --- New: Fetch available tags ---
+  useEffect(() => {
+    const fetchAvailableTags = async () => {
+      try {
+        const res = await fetch(`/api/tags`);
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching available tags:', err);
+      }
+    };
+    fetchAvailableTags();
+  }, []);
+
   // If no role found, prompt sign-in
   if (!role) {
     return <SignInPrompt />;
@@ -257,13 +262,9 @@ const ArmCareStats: React.FC = () => {
   };
 
   // --- Compute % of BW for the LATEST strengths ---
-  // We'll color-code the LATEST values. (You could also do it for the max if you prefer.)
   const irPercent = bodyWeight ? (latestInternal / bodyWeight) * 100 : 0;
   const erPercent = bodyWeight ? (latestExternal / bodyWeight) * 100 : 0;
   const scapPercent = bodyWeight ? (latestScaption / bodyWeight) * 100 : 0;
-
-  // Example: if you also want total strength (some ArmCare records have totalStrength),
-  // you could do totalPercent = (totalStrength / bodyWeight)*100, color-coded as well.
 
   // Shoulder Balance example: ratio = ER / IR
   const ratio = latestInternal === 0 ? 0 : latestExternal / latestInternal;
@@ -287,7 +288,23 @@ const ArmCareStats: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
         <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
-          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+          <button
+            key="athletePage"
+            onClick={() => router.push(`/athlete/${athleteId}`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Profile
+          </button>
+          <button
+            key="assessments"
+            onClick={() =>
+              router.push(`/athlete/${athleteId}/reports/assessments`)
+            }
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Asessments
+          </button>
+          {['Pitching', 'Hitting', 'Goals'].map((tech) => (
             <button
               key={tech}
               onClick={() =>
@@ -300,17 +317,95 @@ const ArmCareStats: React.FC = () => {
               {tech}
             </button>
           ))}
-          <button
-            key="athletePage"
-            onClick={() => router.push(`/athlete/${athleteId}`)}
-            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
-          >
-            Profile
-          </button>
         </nav>
-        <h1 className="text-2xl font-bold text-gray-700 mb-6">
-          Arm Care Overview
-        </h1>
+
+        {/* --- New: Arm Care Tag Management Section --- */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-3xl font-bold text-gray-700">
+            Arm Care Overview
+          </h1>
+          <div className="flex items-center">
+            <span className="text-gray-900 mr-2 font-semibold">Tags:</span>
+            {blastTags.length > 0 ? (
+              blastTags.map((tag) => (
+                <span
+                  key={tag._id}
+                  className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
+                >
+                  {tag.name}
+                  <button
+                    onClick={() => {
+                      // --- New: Remove Tag Handler ---
+                      (async () => {
+                        try {
+                          const res = await fetch(
+                            `/api/tags/${athleteId}/arm-care/${tag._id}`,
+                            { method: 'DELETE' }
+                          );
+                          if (res.ok) {
+                            setBlastTags((prev) =>
+                              prev.filter((bt) => bt._id !== tag._id)
+                            );
+                          } else {
+                            const data = await res.json();
+                            setErrorMessage(data.error || 'Error removing tag');
+                          }
+                        } catch (err: any) {
+                          console.error(err);
+                          setErrorMessage('Internal Server Error');
+                        }
+                      })();
+                    }}
+                    className="ml-1 text-red-500"
+                  >
+                    <TrashIcon className="h-4 w-4 inline" />
+                  </button>
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-500">None</span>
+            )}
+            <select
+              onChange={async (e) => {
+                const tagId = e.target.value;
+                if (!tagId) return;
+                try {
+                  const res = await fetch(`/api/tags/${athleteId}/arm-care`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tagId }),
+                  });
+                  if (res.ok) {
+                    const addedTag = availableTags.find(
+                      (tag) => tag._id === tagId
+                    );
+                    if (addedTag) {
+                      setBlastTags((prev) => [...prev, addedTag]);
+                    }
+                  } else {
+                    const data = await res.json();
+                    setErrorMessage(data.error || 'Error adding tag');
+                  }
+                } catch (err: any) {
+                  console.error(err);
+                  setErrorMessage('Internal Server Error');
+                }
+              }}
+              defaultValue=""
+              className="ml-2 p-2 border rounded text-gray-900"
+            >
+              <option value="">Add Tag</option>
+              {availableTags
+                .filter((tag) => !blastTags.some((bt) => bt._id === tag._id))
+                .map((tag) => (
+                  <option key={tag._id} value={tag._id}>
+                    {tag.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
+        {/* End Tag Management Section */}
 
         {/* Session List */}
         <div className="mb-8">
@@ -350,15 +445,13 @@ const ArmCareStats: React.FC = () => {
             <div className={`text-xl ${scapClass}`}>
               Scaption: {scapPercent.toFixed(1)}% BW
             </div>
-
-            {/* Example shoulder balance ratio color-coded */}
             <div className={`text-xl ${sbClass}`}>
               Shoulder Balance (ER:IR): {ratio.toFixed(2)}
             </div>
           </div>
         </div>
 
-        {/* All-time Max + Latest (unchanged from earlier) */}
+        {/* All-time Max & Latest Scores */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             All-Time Max &amp; Latest
@@ -390,7 +483,6 @@ const ArmCareStats: React.FC = () => {
                 </div>
               </div>
             </div>
-
             {/* Latest */}
             <div className="bg-white p-6 rounded shadow flex-1">
               <h3 className="text-md font-bold text-gray-600 mb-4">

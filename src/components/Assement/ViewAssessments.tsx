@@ -7,6 +7,7 @@ import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Loader from '@/components/Loader';
 import ErrorMessage from '@/components/ErrorMessage';
 import { useUser } from '@clerk/nextjs';
+import { TrashIcon } from '@heroicons/react/24/solid';
 
 // Define the Assessment interface
 export interface Assessment {
@@ -14,6 +15,12 @@ export interface Assessment {
   templateId: string;
   title: string; // A title or name for the assessment
   createdAt?: string;
+}
+
+// --- New: Interface for Tag Management ---
+interface BlastTag {
+  _id: string;
+  name: string;
 }
 
 const ViewAssessments: React.FC = () => {
@@ -29,6 +36,10 @@ const ViewAssessments: React.FC = () => {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // --- New: Tag Management States ---
+  const [blastTags, setBlastTags] = useState<BlastTag[]>([]);
+  const [availableTags, setAvailableTags] = useState<BlastTag[]>([]);
 
   useEffect(() => {
     if (!athleteId) return;
@@ -58,6 +69,38 @@ const ViewAssessments: React.FC = () => {
     fetchAssessments();
   }, [athleteId]);
 
+  // --- New: Fetch athlete's Assessment Tags ---
+  useEffect(() => {
+    const fetchAssessmentTags = async () => {
+      try {
+        const res = await fetch(`/api/tags/${athleteId}/assessments`);
+        if (res.ok) {
+          const data = await res.json();
+          setBlastTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching assessment tags:', err);
+      }
+    };
+    if (athleteId) fetchAssessmentTags();
+  }, [athleteId]);
+
+  // --- New: Fetch available tags ---
+  useEffect(() => {
+    const fetchAvailableTags = async () => {
+      try {
+        const res = await fetch(`/api/tags`);
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableTags(data.tags);
+        }
+      } catch (err: any) {
+        console.error('Error fetching available tags:', err);
+      }
+    };
+    fetchAvailableTags();
+  }, []);
+
   if (!athleteId) {
     return <p className="p-4">No athleteId in the URL.</p>;
   }
@@ -73,6 +116,48 @@ const ViewAssessments: React.FC = () => {
       </div>
     );
   }
+
+  // --- New: Handlers for Tag Management ---
+  const handleAddBlastTag = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const tagId = e.target.value;
+    if (!tagId) return;
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/assessments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagId }),
+      });
+      if (res.ok) {
+        const addedTag = availableTags.find((tag) => tag._id === tagId);
+        if (addedTag) {
+          setBlastTags((prev) => [...prev, addedTag]);
+        }
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Error adding tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Internal Server Error');
+    }
+  };
+
+  const handleRemoveBlastTag = async (tagId: string) => {
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/assessments/${tagId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setBlastTags((prev) => prev.filter((tag) => tag._id !== tagId));
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Error removing tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Internal Server Error');
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -109,17 +194,58 @@ const ViewAssessments: React.FC = () => {
               onClick={() =>
                 router.push(`/athlete/${athleteId}/${tech.toLowerCase()}`)
               }
-              className={`text-gray-700 font-semibold hover:text-gray-900 transition`}
+              className="text-gray-700 font-semibold hover:text-gray-900 transition"
             >
               {tech}
             </button>
           ))}
         </nav>
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        {/* <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Assessments</h1>
           <p className="text-gray-600">Review your past assessments below.</p>
+        </div> */}
+
+        {/* --- New: Assessment Tag Management Section --- */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-3xl font-bold text-gray-700">Assessments</h1>
+          <div className="flex items-center">
+            <span className="text-gray-900 mr-2 font-semibold">Tags:</span>
+            {blastTags.length > 0 ? (
+              blastTags.map((tag) => (
+                <span
+                  key={tag._id}
+                  className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
+                >
+                  {tag.name}
+                  <button
+                    onClick={() => handleRemoveBlastTag(tag._id)}
+                    className="ml-1 text-red-500"
+                  >
+                    <TrashIcon className="h-4 w-4 inline" />
+                  </button>
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-500">None</span>
+            )}
+            <select
+              onChange={handleAddBlastTag}
+              defaultValue=""
+              className="ml-2 p-2 border rounded text-gray-900"
+            >
+              <option value="">Add Tag</option>
+              {availableTags
+                .filter((tag) => !blastTags.some((bt) => bt._id === tag._id))
+                .map((tag) => (
+                  <option key={tag._id} value={tag._id}>
+                    {tag.name}
+                  </option>
+                ))}
+            </select>
+          </div>
         </div>
+        {/* End Tag Management Section */}
 
         {/* List of Assessments */}
         <div className="grid grid-cols-1 gap-6">

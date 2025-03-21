@@ -317,7 +317,7 @@ import Goal from '@/models/goal';
 
 const CALCULATE_STUFF_PLUS_URL =
   process.env.CALCULATE_STUFF_PLUS_URL ||
-  'http://localhost:3000/api/calculate-stuff';
+  'https://asp-py-9gjt.onrender.com/calculate-stuff';
 
 export async function POST(
   req: NextRequest,
