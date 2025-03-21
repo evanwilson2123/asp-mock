@@ -10,6 +10,14 @@ export interface IAthleteTag {
   description?: string;
   notes: string;
   links?: string[];
+  automatic: boolean;
+  session: boolean;
+  sessionId?: string;
+  metric?: string;
+  min?: number;
+  max?: number;
+  greaterThan?: number;
+  lessThan: number;
 }
 
 const athleteTagSchema = new Schema<IAthleteTag>({
@@ -23,6 +31,14 @@ const athleteTagSchema = new Schema<IAthleteTag>({
   description: { type: String, required: false },
   notes: { type: String, required: true },
   links: [{ type: [String], required: false }],
+  automatic: { type: Boolean, required: true },
+  session: { type: Boolean, required: true },
+  sessionId: { type: String, required: false },
+  metric: { type: String, required: false },
+  min: { type: Number, required: false },
+  max: { type: Number, required: false },
+  greaterThan: { type: Number, required: false },
+  lessThan: { type: Number, required: false },
 });
 
 const AthleteTag =

@@ -14,6 +14,14 @@ interface TagData {
   description?: string;
   notes: string;
   links?: string[];
+  // Extra fields for automatic tags (optional)
+  overviewSession?: string;
+  metric?: string;
+  mode?: string;
+  min?: string;
+  max?: string;
+  thresholdType?: string;
+  thresholdValue?: string;
 }
 
 interface DeletePopupState {
@@ -27,12 +35,25 @@ const ManageTags = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createTag, setCreateTag] = useState<boolean>(false);
+  const [activeForm, setActiveForm] = useState<string>('Standard');
 
-  // New tag form state
+  // New tag form state (standard fields)
   const [newTagName, setNewTagName] = useState<string>('');
   const [newTagDescription, setNewTagDescription] = useState<string>('');
   const [newTagNotes, setNewTagNotes] = useState<string>('');
   const [newTagLinks, setNewTagLinks] = useState<string>(''); // comma-separated links
+
+  // Extra state for Automatic form
+  const [newTagTech, setNewTagTech] = useState<string>('');
+  // const [newTagOverviewSession, setNewTagOverviewSession] =
+  //   useState<string>('');
+  const [newTagMetric, setNewTagMetric] = useState<string>('');
+  const [newTagMode, setNewTagMode] = useState<string>('Range');
+  const [newTagMin, setNewTagMin] = useState<string>('');
+  const [newTagMax, setNewTagMax] = useState<string>('');
+  const [newTagThresholdType, setNewTagThresholdType] =
+    useState<string>('Greater than');
+  const [newTagThresholdValue, setNewTagThresholdValue] = useState<string>('');
 
   // Use a single state to track the open tag's id (for expanding details)
   const [openTagId, setOpenTagId] = useState<string | null>(null);
@@ -107,13 +128,29 @@ const ManageTags = () => {
     e.preventDefault();
     const tagData: TagData = {
       name: newTagName,
-      tech: '', // Set tech appropriately if needed
+      tech: activeForm === 'Automatic' ? newTagTech : '',
       description: newTagDescription || undefined,
       notes: newTagNotes,
       links: newTagLinks
         ? newTagLinks.split(',').map((link) => link.trim())
         : undefined,
     };
+
+    if (activeForm === 'Automatic') {
+      // // If tech is not Armcare, include overview/session selection.
+      // if (newTagTech && newTagTech.toLowerCase() !== 'armcare') {
+      //   tagData.overviewSession = newTagOverviewSession;
+      // }
+      tagData.metric = newTagMetric;
+      tagData.mode = newTagMode;
+      if (newTagMode === 'Range') {
+        tagData.min = newTagMin;
+        tagData.max = newTagMax;
+      } else if (newTagMode === 'Threshold') {
+        tagData.thresholdType = newTagThresholdType;
+        tagData.thresholdValue = newTagThresholdValue;
+      }
+    }
 
     console.log('New Tag Data:', tagData);
 
@@ -135,6 +172,16 @@ const ManageTags = () => {
       setNewTagDescription('');
       setNewTagNotes('');
       setNewTagLinks('');
+      if (activeForm === 'Automatic') {
+        setNewTagTech('');
+        // setNewTagOverviewSession('');
+        setNewTagMetric('');
+        setNewTagMode('Range');
+        setNewTagMin('');
+        setNewTagMax('');
+        setNewTagThresholdType('Greater than');
+        setNewTagThresholdValue('');
+      }
       setCreateTag(false);
     } catch (error: any) {
       console.error(error);
@@ -245,59 +292,318 @@ const ManageTags = () => {
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Create New Tag
             </h2>
-            <form onSubmit={handleCreateTag} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Tag Name
-                </label>
-                <input
-                  type="text"
-                  value={newTagName}
-                  onChange={(e) => setNewTagName(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={newTagDescription}
-                  onChange={(e) => setNewTagDescription(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Notes
-                </label>
-                <textarea
-                  value={newTagNotes}
-                  onChange={(e) => setNewTagNotes(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Links (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={newTagLinks}
-                  onChange={(e) => setNewTagLinks(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                />
-              </div>
+            <div className="flex justify-center mb-6">
               <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                className={`px-4 py-2 rounded-l-lg ${
+                  activeForm === 'Standard'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700'
+                } transition`}
+                onClick={() => setActiveForm('Standard')}
               >
-                Save Tag
+                Standard
               </button>
-            </form>
+              <button
+                className={`px-4 py-2 rounded-r-lg ${
+                  activeForm === 'Automatic'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700'
+                } transition`}
+                onClick={() => setActiveForm('Automatic')}
+              >
+                Automatic
+              </button>
+            </div>
+            {activeForm === 'Standard' && (
+              <form onSubmit={handleCreateTag} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tag Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    value={newTagDescription}
+                    onChange={(e) => setNewTagDescription(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Notes
+                  </label>
+                  <textarea
+                    value={newTagNotes}
+                    onChange={(e) => setNewTagNotes(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Links (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={newTagLinks}
+                    onChange={(e) => setNewTagLinks(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                >
+                  Save Tag
+                </button>
+              </form>
+            )}
+            {activeForm === 'Automatic' && (
+              <form onSubmit={handleCreateTag} className="space-y-4">
+                {/* Standard Fields */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tag Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    value={newTagDescription}
+                    onChange={(e) => setNewTagDescription(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Notes
+                  </label>
+                  <textarea
+                    value={newTagNotes}
+                    onChange={(e) => setNewTagNotes(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Links (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={newTagLinks}
+                    onChange={(e) => setNewTagLinks(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  />
+                </div>
+
+                {/* Extra Automatic Fields */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tech
+                  </label>
+                  <select
+                    value={newTagTech}
+                    onChange={(e) => setNewTagTech(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    required
+                  >
+                    <option value="">Select Tech</option>
+                    <option value="Blast Motion">Blast Motion</option>
+                    <option value="Hittrax">Hittrax</option>
+                    <option value="Armcare">Armcare</option>
+                    <option value="Trackman">Trackman</option>
+                    <option value="Forceplates">Forceplates</option>
+                    <option value="Assessments">Assessments</option>
+                  </select>
+                </div>
+                {/* {newTagTech && newTagTech.toLowerCase() !== 'armcare' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Overview or Session
+                    </label>
+                    <select
+                      value={newTagOverviewSession}
+                      onChange={(e) => setNewTagOverviewSession(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                      required
+                    >
+                      <option value="">Select Option</option>
+                      <option value="Overview">Overview</option>
+                      <option value="Session">Session</option>
+                    </select>
+                  </div>
+                )} */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Metric
+                  </label>
+                  <select
+                    value={newTagMetric}
+                    onChange={(e) => setNewTagMetric(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    required
+                  >
+                    <option value="">Select Metric</option>
+                    {newTagTech === 'Blast Motion' ? (
+                      <>
+                        <option value="onPlaneEfficiency">
+                          On Plane Efficiency
+                        </option>
+                        <option value="attackAngle">Attack Angle</option>
+                        <option value="batSpeed">Bat Speed</option>
+                        <option value="timeToContact">Time to Contact</option>
+                        <option value="earlyConnection">
+                          Early Connection
+                        </option>
+                        <option value="connectionAtImpact">
+                          Connection at Impact
+                        </option>
+                      </>
+                    ) : newTagTech === 'Hittrax' ? (
+                      <>
+                        <option value="velo">Exit Velocity</option>
+                        <option value="LA">Launch Angle</option>
+                        <option value="dist">Distance</option>
+                      </>
+                    ) : newTagTech === 'Armcare' ? (
+                      <>
+                        <option value="armcare_metric1">
+                          Armcare Metric 1
+                        </option>
+                        <option value="armcare_metric2">
+                          Armcare Metric 2
+                        </option>
+                      </>
+                    ) : newTagTech === 'Trackman' ? (
+                      <>
+                        <option value="pitchReleaseSpeed">
+                          Pitch Release Speed
+                        </option>
+                        <option value="spinEfficiency">Spin Efficiency</option>
+                        <option value="inducedVerticalBreak">
+                          Induced Vertical Break
+                        </option>
+                        <option value="horizontalBreak">
+                          Horizontal Break
+                        </option>
+                        <option value="spinRate">Spin Rate</option>
+                      </>
+                    ) : newTagTech === 'Forceplates' ? (
+                      <>
+                        <option value="forceplates_metric1">
+                          Forceplates Metric 1
+                        </option>
+                        <option value="forceplates_metric2">
+                          Forceplates Metric 2
+                        </option>
+                      </>
+                    ) : null}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Mode
+                  </label>
+                  <select
+                    value={newTagMode}
+                    onChange={(e) => setNewTagMode(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    required
+                  >
+                    <option value="Range">Range</option>
+                    <option value="Threshold">Threshold</option>
+                  </select>
+                </div>
+                {newTagMode === 'Range' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Minimum
+                      </label>
+                      <input
+                        type="number"
+                        value={newTagMin}
+                        onChange={(e) => setNewTagMin(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Maximum
+                      </label>
+                      <input
+                        type="number"
+                        value={newTagMax}
+                        onChange={(e) => setNewTagMax(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+                {newTagMode === 'Threshold' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Threshold Type
+                      </label>
+                      <select
+                        value={newTagThresholdType}
+                        onChange={(e) => setNewTagThresholdType(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                        required
+                      >
+                        <option value="Greater than">Greater than</option>
+                        <option value="Less than">Less than</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Threshold Value
+                      </label>
+                      <input
+                        type="number"
+                        value={newTagThresholdValue}
+                        onChange={(e) =>
+                          setNewTagThresholdValue(e.target.value)
+                        }
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+                <button
+                  type="submit"
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                >
+                  Save Tag
+                </button>
+              </form>
+            )}
           </div>
         )}
       </div>

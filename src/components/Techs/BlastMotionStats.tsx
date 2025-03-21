@@ -53,6 +53,7 @@ interface Session {
 interface BlastTag {
   _id: string;
   name: string;
+  session: boolean;
 }
 
 const BlastMotionStats: React.FC = () => {
@@ -137,6 +138,7 @@ const BlastMotionStats: React.FC = () => {
         const res = await fetch(`/api/tags/${athleteId}/blast`);
         if (res.ok) {
           const data = await res.json();
+          data.tags = data.tags.filter((tag: any) => !tag.session);
           setBlastTags(data.tags);
         }
       } catch (err: any) {

@@ -28,6 +28,7 @@ export interface IAthlete {
   trackTags: Types.ObjectId[];
   armTags: Types.ObjectId[];
   forceTags: Types.ObjectId[];
+  assessmentTags: Types.ObjectId[];
 }
 
 const athleteSchema = new Schema<IAthlete>({
@@ -65,6 +66,9 @@ const athleteSchema = new Schema<IAthlete>({
   ],
   forceTags: [
     { type: mongoose.Types.ObjectId, ref: 'AthleteTag', required: false },
+  ],
+  assessmentTags: [
+    { type: mongoose.Types.ObjectId, ref: 'Assessment', required: false },
   ],
 });
 
