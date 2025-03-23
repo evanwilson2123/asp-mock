@@ -93,6 +93,7 @@ interface Session {
 interface BlastTag {
   _id: string;
   name: string;
+  description: string;
 }
 
 /**
@@ -328,46 +329,56 @@ const ArmCareStats: React.FC = () => {
             <span className="text-gray-900 mr-2 font-semibold">Tags:</span>
             {blastTags.length > 0 ? (
               blastTags.map((tag) => (
-                <Link
+                <div
                   key={tag._id}
-                  href={`/athlete/${athleteId}/tags/armcare/${tag._id}`}
+                  className="relative inline-block group mr-2 mb-2"
                 >
-                  <span
+                  <Link
                     key={tag._id}
-                    className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
+                    href={`/athlete/${athleteId}/tags/blast/${tag._id}`}
                   >
-                    {tag.name}
-                    <button
-                      onClick={() => {
-                        // --- New: Remove Tag Handler ---
-                        (async () => {
-                          try {
-                            const res = await fetch(
-                              `/api/tags/${athleteId}/arm-care/${tag._id}`,
-                              { method: 'DELETE' }
-                            );
-                            if (res.ok) {
-                              setBlastTags((prev) =>
-                                prev.filter((bt) => bt._id !== tag._id)
-                              );
-                            } else {
-                              const data = await res.json();
-                              setErrorMessage(
-                                data.error || 'Error removing tag'
-                              );
-                            }
-                          } catch (err: any) {
-                            console.error(err);
-                            setErrorMessage('Internal Server Error');
-                          }
-                        })();
-                      }}
-                      className="ml-1 text-red-500"
+                    <span
+                      title={tag.description}
+                      key={tag._id}
+                      className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
                     >
-                      <TrashIcon className="h-4 w-4 inline" />
-                    </button>
-                  </span>
-                </Link>
+                      {tag.name}
+                      <button
+                        onClick={() => {
+                          // --- New: Remove Tag Handler ---
+                          (async () => {
+                            try {
+                              const res = await fetch(
+                                `/api/tags/${athleteId}/arm-care/${tag._id}`,
+                                { method: 'DELETE' }
+                              );
+                              if (res.ok) {
+                                setBlastTags((prev) =>
+                                  prev.filter((bt) => bt._id !== tag._id)
+                                );
+                              } else {
+                                const data = await res.json();
+                                setErrorMessage(
+                                  data.error || 'Error removing tag'
+                                );
+                              }
+                            } catch (err: any) {
+                              console.error(err);
+                              setErrorMessage('Internal Server Error');
+                            }
+                          })();
+                        }}
+                        className="ml-1 text-red-500"
+                      >
+                        <TrashIcon className="h-4 w-4 inline" />
+                      </button>
+                    </span>
+                  </Link>
+                  {/* Tooltip element
+                  <div className="absolute left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
+                    {tag.description}
+                  </div> */}
+                </div>
               ))
             ) : (
               <span className="text-gray-500">None</span>
