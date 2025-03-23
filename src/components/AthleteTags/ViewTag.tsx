@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { IAthleteTag } from '@/models/athleteTag';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
@@ -30,8 +30,10 @@ const ViewTag = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Get URL parameters.
+  // Next.js navigation hooks.
   const { tech, tagId } = useParams();
+  const router = useRouter();
+
   // Get user data and role.
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
@@ -85,8 +87,14 @@ const ViewTag = () => {
       {/* Main Content Area */}
       <div className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
-          {/* Header with gradient background */}
-          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-t-2xl p-6 shadow-lg">
+          {/* Header with gradient background and back button */}
+          <button
+            onClick={() => router.back()}
+            className="text-black mr-4 hover:underline text-2xl mb-4"
+          >
+            &larr; Back
+          </button>
+          <div className="bg-gray-900 rounded-t-2xl p-6 shadow-lg flex items-center">
             <h1 className="text-4xl font-extrabold text-white">{tag?.name}</h1>
           </div>
           {/* Content card */}
