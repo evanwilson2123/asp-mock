@@ -467,18 +467,23 @@ const HitTraxStats: React.FC = () => {
             <span className="text-gray-900 mr-2 font-semibold">Tags:</span>
             {blastTags.length > 0 ? (
               blastTags.map((tag) => (
-                <span
+                <Link
                   key={tag._id}
-                  className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
+                  href={`/athlete/${athleteId}/tags/hittrax/${tag._id}`}
                 >
-                  {tag.name}
-                  <button
-                    onClick={() => handleRemoveBlastTag(tag._id)}
-                    className="ml-1 text-red-500"
+                  <span
+                    key={tag._id}
+                    className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
                   >
-                    <TrashIcon className="h-4 w-4 inline" />
-                  </button>
-                </span>
+                    {tag.name}
+                    <button
+                      onClick={() => handleRemoveBlastTag(tag._id)}
+                      className="ml-1 text-red-500"
+                    >
+                      <TrashIcon className="h-4 w-4 inline" />
+                    </button>
+                  </span>
+                </Link>
               ))
             ) : (
               <span className="text-gray-500">None</span>

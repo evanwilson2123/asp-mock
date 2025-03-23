@@ -8,22 +8,6 @@ import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
 import { TrashIcon } from '@heroicons/react/24/solid';
 
-// interface TagData {
-//   name: string;
-//   tech: string;
-//   description?: string;
-//   notes: string;
-//   links?: string[];
-//   // Extra fields for automatic tags (optional)
-//   overviewSession?: string;
-//   metric?: string;
-//   mode?: string;
-//   min?: string;
-//   max?: string;
-//   thresholdType?: string;
-//   thresholdValue?: string;
-// }
-
 interface DeletePopupState {
   show: boolean;
   tagId: string;
@@ -45,8 +29,6 @@ const ManageTags = () => {
 
   // Extra state for Automatic form
   const [newTagTech, setNewTagTech] = useState<string>('');
-  // const [newTagOverviewSession, setNewTagOverviewSession] =
-  //   useState<string>('');
   const [newTagMetric, setNewTagMetric] = useState<string>('');
   const [newTagMode, setNewTagMode] = useState<string>('Range');
   const [newTagMin, setNewTagMin] = useState<string>('');
@@ -154,14 +136,6 @@ const ManageTags = () => {
 
       tagData.tech = techMapping[newTagTech] || undefined;
 
-      // Set session: if tech is not armcare, determine based on the user's overview/session selection.
-      // if (newTagTech.toLowerCase() !== 'armcare') {
-      //   // Assuming newTagOverviewSession is either "Overview" or "Session"
-      //   tagData.session = newTagOverviewSession === 'Session';
-      // } else {
-      //   tagData.session = false;
-      // }
-
       // Include the metric.
       tagData.metric = newTagMetric;
 
@@ -204,7 +178,6 @@ const ManageTags = () => {
       setNewTagLinks('');
       if (activeForm === 'Automatic') {
         setNewTagTech('');
-        // setNewTagOverviewSession('');
         setNewTagMetric('');
         setNewTagMode('Range');
         setNewTagMin('');

@@ -22,7 +22,7 @@ const ViewTag = () => {
   useEffect(() => {
     const fetchTag = async () => {
       try {
-        const res = await fetch(`/api/tags/tag/${tech}/${tagId}`);
+        const res = await fetch(`/api/tags/tag/${tagId}`);
         const data = await res.json();
         if (!res.ok) {
           setErrorMessage(data.error);
