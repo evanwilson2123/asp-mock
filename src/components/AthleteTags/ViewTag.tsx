@@ -8,6 +8,23 @@ import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '../Loader';
 import ErrorMessage from '../ErrorMessage';
 
+// Helper function to transform YouTube links to embed links.
+function getEmbedUrl(url: string): string {
+  if (url.includes('youtube.com/watch?v=')) {
+    const videoId = url.split('v=')[1].split('&')[0];
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  if (url.includes('youtu.be/')) {
+    let videoId = url.split('youtu.be/')[1];
+    // Remove any query parameters from the video ID.
+    if (videoId.includes('?')) {
+      videoId = videoId.split('?')[0];
+    }
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return url;
+}
+
 const ViewTag = () => {
   const [tag, setTag] = useState<IAthleteTag | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -44,48 +61,101 @@ const ViewTag = () => {
   if (errorMessage)
     return <ErrorMessage role={role as string} message={errorMessage} />;
 
+  // Flatten tag.links by one level:
+  const flattenedLinks = tag?.links?.flat() || [];
+  const videoLinks = flattenedLinks.filter((link) => {
+    const lowerLink = link.toLowerCase();
+    return (
+      lowerLink.includes('youtube.com') ||
+      lowerLink.includes('youtu.be') ||
+      lowerLink.endsWith('.mp4')
+    );
+  });
+
+  console.log(videoLinks);
+  console.log('All tag links:', tag?.links);
+
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar (visible on medium and larger screens) */}
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar for medium and larger screens */}
       <div className="hidden md:block w-64 bg-gray-900 text-white">
         {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-6 bg-gray-100">
-        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold mb-6 text-gray-800">{tag?.name}</h1>
-          {tag?.description && (
-            <p className="text-gray-700 mb-4">
-              <strong>Description: </strong>
-              {tag.description}
-            </p>
-          )}
-          <p className="text-gray-700 mb-4">
-            <strong>Notes: </strong>
-            {tag?.notes}
-          </p>
-          {tag?.links && tag.links.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold mb-2 text-gray-800">
-                Links
+      <div className="flex-1 p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header with gradient background */}
+          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-t-2xl p-6 shadow-lg">
+            <h1 className="text-4xl font-extrabold text-white">{tag?.name}</h1>
+          </div>
+          {/* Content card */}
+          <div className="bg-white rounded-b-2xl shadow-2xl p-8">
+            {tag?.description && (
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                  Description
+                </h2>
+                <p className="text-gray-700">{tag.description}</p>
+              </div>
+            )}
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                Notes
               </h2>
-              <ul className="list-disc list-inside">
-                {tag.links.map((link, index) => (
-                  <li key={index}>
-                    <a
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <p className="text-gray-700">{tag?.notes}</p>
             </div>
-          )}
+            {/* Video Embed Section */}
+            {videoLinks.length > 0 && (
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                  Videos
+                </h2>
+                {videoLinks.map((videoLink, index) => (
+                  <div key={index} className="mb-6">
+                    {videoLink.endsWith('.mp4') ? (
+                      <video controls className="w-full rounded-lg">
+                        <source src={videoLink} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : (
+                      <div className="relative pb-[56.25%] h-0">
+                        <iframe
+                          src={getEmbedUrl(videoLink)}
+                          title={`Video Player ${index + 1}`}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="absolute top-0 left-0 w-full h-full rounded-lg"
+                        ></iframe>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {tag?.links && tag.links.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                  Links
+                </h2>
+                <ul className="space-y-2">
+                  {tag.links.flat().map((link, index) => (
+                    <li key={index}>
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
