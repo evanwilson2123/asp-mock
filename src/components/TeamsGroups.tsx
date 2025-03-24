@@ -5,6 +5,8 @@ import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
 import { useRouter } from 'next/navigation';
+import ErrorMessage from './ErrorMessage';
+import { TrashIcon } from '@heroicons/react/24/solid';
 
 /**
  * TeamsGroups Component
@@ -72,20 +74,31 @@ import { useRouter } from 'next/navigation';
  */
 
 const TeamsGroups: React.FC = () => {
+  // make sure the user is signed in and gather essential info
   const { isSignedIn, user } = useUser();
   const role = user?.publicMetadata?.role;
+  // handle the state for the teams
   const [teams, setTeams] = useState([]);
+  // handle the state for loading and error
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // state for the delete pop up
+  const [deletePopup, setDeletePopup] = useState<{
+    show: boolean;
+    teamId: string;
+    confirmText: string;
+  }>({
+    show: false,
+    teamId: '',
+    confirmText: '',
+  });
+  // mount the router
   const router = useRouter();
 
   useEffect(() => {
     if (isSignedIn === false) {
       router.push('/sign-in');
-      return;
-    }
-
-    if (role !== 'ADMIN') {
-      router.push('/');
       return;
     }
 
@@ -101,6 +114,7 @@ const TeamsGroups: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching teams:', error);
+        setErrorMessage('There was an error, please try again.');
       } finally {
         setLoading(false);
       }
@@ -109,7 +123,37 @@ const TeamsGroups: React.FC = () => {
     fetchTeams();
   }, [isSignedIn, role, router]);
 
+  const handleDeleteTeam = async (teamId: string) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/team/${teamId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!res.ok) {
+        setErrorMessage('Error deleting team');
+        return;
+      }
+      setTeams(teams.filter((t: any) => t._id !== teamId));
+    } catch (error: any) {
+      console.log(error);
+      setErrorMessage('Internal Server Error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (errorMessage)
+    return <ErrorMessage role={role as string} message={errorMessage} />;
+
   if (!isSignedIn) return null;
+
+  if (role !== 'ADMIN' && role !== 'COACH') {
+    router.push('/');
+    return;
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
@@ -157,6 +201,19 @@ const TeamsGroups: React.FC = () => {
                       : 'N/A'}
                   </p>
                 </div>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDeletePopup({
+                      show: true,
+                      teamId: team._id,
+                      confirmText: '',
+                    });
+                  }}
+                >
+                  <TrashIcon className="h-5 w-5 text-red-600 hover:text-red-800" />
+                </button>
               </div>
             ))}
           </div>
@@ -166,6 +223,61 @@ const TeamsGroups: React.FC = () => {
           </p>
         )}
       </div>
+      {deletePopup.show && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-80">
+            <h3 className="text-lg font-bold mb-4 text-black">
+              Confirm Deletion
+            </h3>
+            <p className="mb-2 text-black">
+              Type <strong>DELETE</strong> to confirm deletion.
+            </p>
+            <input
+              type="text"
+              placeholder="DELETE"
+              value={deletePopup.confirmText}
+              onChange={(e) =>
+                setDeletePopup((prev) => ({
+                  ...prev,
+                  confirmText: e.target.value,
+                }))
+              }
+              className="border p-2 mb-4 w-full text-black"
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={() =>
+                  setDeletePopup({
+                    show: false,
+                    teamId: '',
+                    confirmText: '',
+                  })
+                }
+                className="mr-4 px-4 py-2 border rounded text-black"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (deletePopup.confirmText !== 'DELETE') {
+                    alert("Please type 'DELETE' to confirm deletion.");
+                    return;
+                  }
+                  await handleDeleteTeam(deletePopup.teamId);
+                  setDeletePopup({
+                    show: false,
+                    teamId: '',
+                    confirmText: '',
+                  });
+                }}
+                className="px-4 py-2 border rounded bg-red-500 text-white"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

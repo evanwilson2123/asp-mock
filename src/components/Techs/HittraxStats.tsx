@@ -474,7 +474,7 @@ const HitTraxStats: React.FC = () => {
                 >
                   <Link
                     key={tag._id}
-                    href={`/athlete/${athleteId}/tags/blast/${tag._id}`}
+                    href={`/athlete/${athleteId}/tags/hittrax/${tag._id}`}
                   >
                     <span
                       title={tag.description}
