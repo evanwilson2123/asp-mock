@@ -1,5 +1,5 @@
 import { connectDB } from '@/lib/db';
-import Athlete from '@/models/athlete';
+import Athlete, { IAthlete } from '@/models/athlete';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -89,13 +89,13 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
   const { searchParams } = new URL(req.url);
-  const u = searchParams.get('u');
+  const level = searchParams.get('level');
 
   if (!userId) {
     return NextResponse.json({ error: 'Auth failed' }, { status: 400 });
   }
 
-  if (!u) {
+  if (!level) {
     return NextResponse.json(
       { error: "Missing 'u' parameter" },
       { status: 400 }
@@ -104,7 +104,24 @@ export async function GET(req: NextRequest) {
 
   try {
     await connectDB();
-    const athletes = await Athlete.find({ u });
+    let athletes: IAthlete[] = [];
+    switch (level) {
+      case 'youth':
+        athletes = await Athlete.find({ level: 'Youth' });
+        break;
+      case 'highschool':
+        athletes = await Athlete.find({ level: 'High School' });
+        break;
+      case 'college':
+        athletes = await Athlete.find({ level: 'College' });
+        break;
+      case 'pro':
+        athletes = await Athlete.find({ level: 'Pro' });
+        break;
+      default:
+        athletes = await Athlete.find();
+    }
+
     return NextResponse.json({ athletes });
   } catch (error) {
     console.error(error);

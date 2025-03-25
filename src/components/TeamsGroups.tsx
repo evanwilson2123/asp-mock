@@ -11,79 +11,21 @@ import { TrashIcon } from '@heroicons/react/24/solid';
 /**
  * TeamsGroups Component
  *
- * The `TeamsGroups` component displays a list of teams or groups managed within the application.
- * It allows admins to view existing teams and create new ones. Each team is clickable, leading to
- * its detailed page.
+ * Displays a list of teams or groups with updated fields:
+ * - Team name
+ * - Playing Level (from team.level)
+ * - Head Coach (an array of head coaches, whose names are joined by commas)
  *
- * Features:
- * - **Authentication Check:** Redirects unauthenticated users to the sign-in page.
- * - **Role-Based Access Control:** Only users with the `ADMIN` role can access the page; others are redirected to the homepage.
- * - **Team List Display:** Dynamically fetches and displays a list of teams from the backend API.
- * - **Create Team Button:** Allows admins to navigate to the team creation page.
- * - **Responsive Sidebar:** Displays different sidebars based on user roles (Coach/Admin).
- *
- * Technologies Used:
- * - **React:** Functional component with hooks (`useEffect`, `useState`).
- * - **Next.js:** Uses `useRouter` for client-side routing and `useUser` from Clerk for authentication.
- * - **Clerk:** Handles user authentication and role management.
- * - **Tailwind CSS:** Provides utility-first styling for responsive design and layout.
- *
- * Folder Structure:
- * ```
- * components/
- * └── Dash/
- *     ├── CoachSidebar.tsx
- *     └── Sidebar.tsx
- * pages/
- * └── TeamsGroups.tsx
- * ```
- *
- * API Integration:
- * - Fetches team data from `/api/team`.
- * - Displays team name, age group, and coach information.
- *
- * Props:
- * - None (data fetched internally within the component).
- *
- * Usage Example:
- * ```tsx
- * import TeamsGroups from "@/components/TeamsGroups";
- *
- * export default function Dashboard() {
- *   return (
- *     <div>
- *       <TeamsGroups />
- *     </div>
- *   );
- * }
- * ```
- *
- * Customization:
- * - **Team Details:** Modify the `onClick` handler to navigate to custom team detail pages.
- * - **Create Button:** Adjust the `/create-team` route for different workflows.
- * - **Role Management:** Extend the role-based access logic if more roles are introduced.
- *
- * Edge Cases:
- * - **No Teams:** Displays a friendly message if no teams are available.
- * - **API Errors:** Logs errors in case of API failures for debugging.
- * - **Loading State:** Shows a loading indicator while fetching data.
- *
- * Accessibility:
- * - Fully keyboard-navigable with focusable buttons and clickable team cards.
- * - Semantic HTML with descriptive headings and text for screen readers.
+ * Only users with ADMIN or COACH roles can access this page.
  */
-
 const TeamsGroups: React.FC = () => {
-  // make sure the user is signed in and gather essential info
   const { isSignedIn, user } = useUser();
   const role = user?.publicMetadata?.role;
-  // handle the state for the teams
   const [teams, setTeams] = useState([]);
-  // handle the state for loading and error
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // state for the delete pop up
+  // State for delete confirmation popup
   const [deletePopup, setDeletePopup] = useState<{
     show: boolean;
     teamId: string;
@@ -93,7 +35,7 @@ const TeamsGroups: React.FC = () => {
     teamId: '',
     confirmText: '',
   });
-  // mount the router
+
   const router = useRouter();
 
   useEffect(() => {
@@ -102,7 +44,7 @@ const TeamsGroups: React.FC = () => {
       return;
     }
 
-    // Fetch teams from the backend
+    // Fetch teams from the backend API
     const fetchTeams = async () => {
       try {
         const response = await fetch('/api/team');
@@ -138,7 +80,7 @@ const TeamsGroups: React.FC = () => {
       }
       setTeams(teams.filter((t: any) => t._id !== teamId));
     } catch (error: any) {
-      console.log(error);
+      console.error(error);
       setErrorMessage('Internal Server Error');
     } finally {
       setLoading(false);
@@ -152,7 +94,7 @@ const TeamsGroups: React.FC = () => {
 
   if (role !== 'ADMIN' && role !== 'COACH') {
     router.push('/');
-    return;
+    return null;
   }
 
   return (
@@ -187,17 +129,24 @@ const TeamsGroups: React.FC = () => {
               <div
                 key={team._id}
                 className="bg-white p-4 rounded-lg shadow-md flex items-center justify-between cursor-pointer hover:bg-blue-50"
-                onClick={() => router.push(`/my-team/${team._id}`)} // Navigate to team details page
+                onClick={() => router.push(`/my-team/${team._id}`)}
               >
                 <div>
                   <h2 className="text-lg font-bold text-gray-700">
                     {team.name}
                   </h2>
-                  <p className="text-gray-600">Age Group: {team.u || 'N/A'}</p>
                   <p className="text-gray-600">
-                    Coach:{' '}
-                    {team.coach
-                      ? team.coach.firstName + ' ' + team.coach.lastName
+                    Playing Level: {team.level || 'N/A'}
+                  </p>
+                  <p className="text-gray-600">
+                    Head Coach:{' '}
+                    {team.headCoaches && team.headCoaches.length > 0
+                      ? team.headCoaches
+                          .map(
+                            (coach: any) =>
+                              coach.firstName + ' ' + coach.lastName
+                          )
+                          .join(', ')
                       : 'N/A'}
                   </p>
                 </div>

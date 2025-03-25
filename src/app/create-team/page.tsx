@@ -1,10 +1,12 @@
-import AddTeamForm from "@/components/Team/AddTeamForm";
-import React from "react";
+// import AddTeamForm from "@/components/Team/AddTeamForm";
+import AddGroupForm from '@/components/Team/AddGroupForm';
+import React from 'react';
 
 const page = () => {
   return (
     <div>
-      <AddTeamForm />
+      {/* <AddTeamForm /> */}
+      <AddGroupForm />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { connectDB } from '@/lib/db';
-import Team from '@/models/team';
+import Group from '@/models/group';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -102,21 +102,40 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const { name, coach, assistants, players, u } = await req.json();
+    const { name, coach, assistants, players, level } = await req.json();
 
-    if (!name || !coach || !players || !u) {
+    if (!name || !coach || !players || !level) {
       return NextResponse.json(
         { error: 'All required fields must be filled' },
         { status: 400 }
       );
     }
+    let updatedLevel = '';
 
-    const newTeam = new Team({
+    switch (level) {
+      case 'youth':
+        updatedLevel = 'Youth';
+        break;
+      case 'highschool':
+        updatedLevel = 'High School';
+        break;
+      case 'college':
+        updatedLevel = 'College';
+        break;
+      case 'pro':
+        updatedLevel = 'Pro';
+        break;
+      default:
+        updatedLevel = 'all';
+        break;
+    }
+
+    const newTeam = new Group({
       name,
-      coach,
+      headCoach: [coach],
       assistants: assistants || [],
-      players,
-      u,
+      athletes: players,
+      level: updatedLevel,
     });
 
     await newTeam.save();

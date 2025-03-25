@@ -1,5 +1,5 @@
 import { connectDB } from '@/lib/db';
-import Team from '@/models/team';
+import Group from '@/models/group';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -20,7 +20,7 @@ export async function DELETE(req: NextRequest, context: any) {
   try {
     await connectDB();
 
-    await Team.findByIdAndDelete(teamId).exec();
+    await Group.findByIdAndDelete(teamId).exec();
 
     // if (team._id !== teamId) {
     //   await team.save();

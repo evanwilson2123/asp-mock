@@ -1,18 +1,16 @@
 import { connectDB } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import Team from '@/models/team';
 import Coach from '@/models/coach';
 import { auth } from '@clerk/nextjs/server';
+import Group from '@/models/group';
 
 /**
  * GET /api/teams
  *
- * **Fetch All Teams with Coach Information**
+ * **Fetch All Teams with Head Coach Information**
  *
- * This endpoint retrieves all teams from the database, along with their respective coach information.
- * It authenticates the request using Clerk and ensures the user is authorized before accessing the data.
- *
- * ---
+ * This endpoint retrieves all teams (groups) from the database along with their associated head coach information.
+ * Each team now stores its head coaches in an array, so for each team the endpoint fetches all the coaches in that array.
  *
  * @returns {Promise<NextResponse>} JSON response:
  *
@@ -23,65 +21,39 @@ import { auth } from '@clerk/nextjs/server';
  *       {
  *         "_id": "team1",
  *         "name": "Team A",
- *         "coach": { "_id": "coach1", "firstName": "John", "lastName": "Doe" },
+ *         "headCoaches": [
+ *           { "_id": "coach1", "firstName": "John", "lastName": "Doe" },
+ *           { "_id": "coach2", "firstName": "Jane", "lastName": "Smith" }
+ *         ],
  *         "assistants": ["assistant1", "assistant2"],
- *         "players": ["player1", "player2"]
+ *         "athletes": ["player1", "player2"],
+ *         "level": "youth"
  *       },
  *       {
  *         "_id": "team2",
  *         "name": "Team B",
- *         "coach": null, // If no coach assigned
+ *         "headCoaches": [],
  *         "assistants": [],
- *         "players": []
+ *         "athletes": [],
+ *         "level": "college"
  *       }
  *     ]
  *   }
  *   ```
  *
  * - **Error Responses:**
- *   - **Unauthorized (400):** When authentication fails:
+ *   - **Unauthorized (400):**
  *     ```json
  *     {
  *       "error": "Auth failed"
  *     }
  *     ```
- *   - **Internal Server Error (500):** For unexpected server issues:
+ *   - **Internal Server Error (500):**
  *     ```json
  *     {
  *       "error": "Database connection error"
  *     }
  *     ```
- *
- * ---
- *
- * **Logic Flow:**
- * 1. Authenticates the request using Clerk to verify the user's identity.
- * 2. Connects to the MongoDB database using the `connectDB` function.
- * 3. Fetches all teams from the `Team` collection.
- * 4. For each team:
- *    - If a coach ID exists, fetches the corresponding coach from the `Coach` collection.
- *    - Attaches the coach's `firstName` and `lastName` to the team object.
- * 5. Returns the enriched list of teams with their coach information in the response.
- *
- * ---
- *
- * @example
- * // Example request using fetch:
- * fetch('/api/teams', {
- *   method: 'GET',
- *   headers: { 'Authorization': 'Bearer <token>' }
- * })
- *   .then(response => response.json())
- *   .then(data => console.log(data))
- *   .catch(error => console.error('Error:', error));
- *
- * ---
- *
- * @notes
- * - Requires user authentication via Clerk. Unauthenticated requests will be rejected.
- * - Handles potential database connection errors gracefully.
- * - Uses `Promise.all` to fetch coaches concurrently for better performance.
- * - The `coach` field will be `null` if no coach is assigned to the team.
  */
 export async function GET() {
   const { userId } = await auth();
@@ -93,19 +65,26 @@ export async function GET() {
     await connectDB();
     console.log('Connected to DB');
 
-    // Fetch teams
-    const teams = await Team.find().exec();
+    // Fetch all teams (groups)
+    const teams = await Group.find().exec();
 
-    // Manually fetch coaches for each team
+    // For each team, fetch all head coaches from the array
     const teamsWithCoaches = await Promise.all(
       teams.map(async (team) => {
-        const coach = team.coach
-          ? await Coach.findById(team.coach).select('firstName lastName').exec()
-          : null;
+        const headCoaches =
+          team.headCoach && team.headCoach.length > 0
+            ? await Promise.all(
+                team.headCoach.map(async (coachId: any) => {
+                  return await Coach.findById(coachId)
+                    .select('firstName lastName')
+                    .exec();
+                })
+              )
+            : [];
 
         return {
           ...team.toObject(), // Convert Mongoose document to plain JS object
-          coach, // Attach the coach data
+          headCoaches, // Attach the fetched head coaches data
         };
       })
     );
