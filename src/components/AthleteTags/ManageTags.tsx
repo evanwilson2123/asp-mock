@@ -14,12 +14,24 @@ interface DeletePopupState {
   confirmText: string;
 }
 
+interface TagFolder {
+  _id: string;
+  name: string;
+  tags: IAthleteTag[];
+}
+
 const ManageTags = () => {
   const [tags, setTags] = useState<IAthleteTag[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createTag, setCreateTag] = useState<boolean>(false);
+  const [createFolder, setCreateFolder] = useState<boolean>(false);
+  const [folderName, setFolderName] = useState<string>('');
   const [activeForm, setActiveForm] = useState<string>('Standard');
+  const [folders, setFolders] = useState<TagFolder[]>([]);
+  // const [selectedFolderIds, setSelectedFolderIds] = useState<string[]>([]);
+  // New state to track which folders are open
+  const [openFolderIds, setOpenFolderIds] = useState<string[]>([]);
 
   // New tag form state (standard fields)
   const [newTagName, setNewTagName] = useState<string>('');
@@ -61,6 +73,8 @@ const ManageTags = () => {
         }
         const data = await res.json();
         setTags(data.tags);
+        setFolders(data.folders);
+        console.log(`Folders: ${data.folders[0]?.name}`);
       } catch (error: any) {
         console.error(error);
         setErrorMessage('Internal Server Error');
@@ -74,6 +88,15 @@ const ManageTags = () => {
   // Toggle open state for a given tag.
   const toggleTagDetails = (tagId: string) => {
     setOpenTagId((prevId) => (prevId === tagId ? null : tagId));
+  };
+
+  // Toggle open/close for a folder
+  const toggleFolderDetails = (folderId: string) => {
+    setOpenFolderIds((prev) =>
+      prev.includes(folderId)
+        ? prev.filter((id) => id !== folderId)
+        : [...prev, folderId]
+    );
   };
 
   // Show delete confirmation popup for a given tag.
@@ -192,9 +215,44 @@ const ManageTags = () => {
     }
   };
 
+  const handleCreateFolder = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch('/api/tags/folder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ folderName }),
+      });
+      if (!res.ok) {
+        setErrorMessage('Error from server');
+        return;
+      }
+      // const data = await res.json();
+      // Optionally, update the folders state here (e.g., add the new folder)
+    } catch (error: any) {
+      console.error(error);
+      setErrorMessage('Error creating folder');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) return <Loader />;
   if (errorMessage)
     return <ErrorMessage role={role as string} message={errorMessage} />;
+
+  // Create a set of tag IDs that belong to any folder.
+  const folderTagIds = new Set<string>();
+  folders.forEach((folder) => {
+    folder.tags.forEach((tag) => folderTagIds.add(tag._id.toString()));
+  });
+  // Filter standalone tags (not assigned to any folder).
+  const standaloneTags = tags.filter(
+    (tag) => !folderTagIds.has(tag._id.toString())
+  );
 
   return (
     <div className="flex min-h-screen">
@@ -212,79 +270,181 @@ const ManageTags = () => {
         {/* Manage Tags Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6 flex justify-between items-center">
           <h1 className="text-3xl text-gray-900 font-bold">Manage Tags</h1>
-          <button
-            onClick={() => setCreateTag(!createTag)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-          >
-            {createTag ? 'Cancel' : 'Create New Tag'}
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setCreateTag(!createTag)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+              {createTag ? 'Cancel' : 'Create New Tag'}
+            </button>
+            <button
+              onClick={() => setCreateFolder(!createFolder)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+              {createFolder ? 'Cancel' : 'Create New Folder'}
+            </button>
+          </div>
         </div>
 
-        {/* Tag Listing - Stacked List */}
+        {/* Folder & Tag Listing */}
         <div className="space-y-6 mb-6">
-          {tags.length > 0 ? (
-            tags.map((tag) => (
+          {/* Render Folders with Their Tags (collapsible) */}
+          <h1 className="text-gray-800 text-2xl font-bold">Folders</h1>
+          {folders.length > 0 &&
+            folders.map((folder) => (
               <div
-                key={tag._id.toString()}
-                className="bg-white rounded-lg shadow-md p-4"
+                key={folder._id.toString()}
+                className="mb-6 border rounded-lg"
               >
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-bold text-gray-700">
-                    {tag.name}
+                <div
+                  className="rounded-md shadow-md flex justify-between items-center bg-white p-4 cursor-pointer"
+                  onClick={() => toggleFolderDetails(folder._id)}
+                >
+                  <h2 className="text-2xl font-bold text-gray-700">
+                    {folder.name}
                   </h2>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => toggleTagDetails(tag._id.toString())}
-                      className="text-gray-500 hover:text-gray-700 transition"
-                    >
-                      {openTagId === tag._id.toString() ? '▲' : '▼'}
-                    </button>
-                    <button
-                      onClick={() => showDeletePopup(tag._id.toString())}
-                      className="text-red-500 hover:text-red-700 transition"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </div>
+                  <span className="text-lg text-gray-500">
+                    {openFolderIds.includes(folder._id) ? '▲' : '▼'}
+                  </span>
                 </div>
-                {openTagId === tag._id.toString() && (
-                  <div className="mt-4 text-gray-600">
-                    {tag.description && (
-                      <p>
-                        <strong>Description:</strong> {tag.description}
-                      </p>
-                    )}
-                    <p>
-                      <strong>Notes:</strong> {tag.notes}
-                    </p>
-                    {tag.links && tag.links.length > 0 && (
-                      <div className="mt-2">
-                        <strong>Links:</strong>
-                        <ul className="list-disc list-inside">
-                          {tag.links.map((link, i) => (
-                            <li key={i}>
-                              <a
-                                href={link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
+                {openFolderIds.includes(folder._id) && (
+                  <div className="p-4">
+                    {folder.tags && folder.tags.length > 0 ? (
+                      folder.tags.map((tag) => (
+                        <div
+                          key={tag._id.toString()}
+                          className="bg-white rounded-lg shadow-md p-4 mb-4"
+                        >
+                          <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-gray-700">
+                              {tag.name}
+                            </h2>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() =>
+                                  toggleTagDetails(tag._id.toString())
+                                }
+                                className="text-gray-500 hover:text-gray-700 transition"
                               >
-                                {link}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
+                                {openTagId === tag._id.toString() ? '▲' : '▼'}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  showDeletePopup(tag._id.toString())
+                                }
+                                className="text-red-500 hover:text-red-700 transition"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                          {openTagId === tag._id.toString() && (
+                            <div className="mt-4 text-gray-600">
+                              {tag.description && (
+                                <p>
+                                  <strong>Description:</strong>{' '}
+                                  {tag.description}
+                                </p>
+                              )}
+                              <p>
+                                <strong>Notes:</strong> {tag.notes}
+                              </p>
+                              {tag.links && tag.links.length > 0 && (
+                                <div className="mt-2">
+                                  <strong>Links:</strong>
+                                  <ul className="list-disc list-inside">
+                                    {tag.links.map((link, i) => (
+                                      <li key={i}>
+                                        <a
+                                          href={link}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:underline"
+                                        >
+                                          {link}
+                                        </a>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="bg-white rounded-lg shadow-md p-4">
+                        <p className="text-gray-500">No tags in this folder.</p>
                       </div>
                     )}
                   </div>
                 )}
               </div>
-            ))
-          ) : (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <p className="text-gray-500">
-                No tags found. Create one to get started.
-              </p>
+            ))}
+
+          {/* Render Standalone Tags (Not in Any Folder) */}
+          {standaloneTags.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Other Tags
+              </h2>
+              {standaloneTags.map((tag) => (
+                <div
+                  key={tag._id.toString()}
+                  className="bg-white rounded-lg shadow-md p-4 mb-4"
+                >
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-gray-700">
+                      {tag.name}
+                    </h2>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => toggleTagDetails(tag._id.toString())}
+                        className="text-gray-500 hover:text-gray-700 transition"
+                      >
+                        {openTagId === tag._id.toString() ? '▲' : '▼'}
+                      </button>
+                      <button
+                        onClick={() => showDeletePopup(tag._id.toString())}
+                        className="text-red-500 hover:text-red-700 transition"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                  {openTagId === tag._id.toString() && (
+                    <div className="mt-4 text-gray-600">
+                      {tag.description && (
+                        <p>
+                          <strong>Description:</strong> {tag.description}
+                        </p>
+                      )}
+                      <p>
+                        <strong>Notes:</strong> {tag.notes}
+                      </p>
+                      {tag.links && tag.links.length > 0 && (
+                        <div className="mt-2">
+                          <strong>Links:</strong>
+                          <ul className="list-disc list-inside">
+                            {tag.links.map((link, i) => (
+                              <li key={i}>
+                                <a
+                                  href={link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  {link}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -364,6 +524,7 @@ const ManageTags = () => {
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                 </div>
+
                 <button
                   type="submit"
                   className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
@@ -441,23 +602,6 @@ const ManageTags = () => {
                     <option value="Assessments">Assessments</option>
                   </select>
                 </div>
-                {/* {newTagTech && newTagTech.toLowerCase() !== 'armcare' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Overview or Session
-                    </label>
-                    <select
-                      value={newTagOverviewSession}
-                      onChange={(e) => setNewTagOverviewSession(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                      required
-                    >
-                      <option value="">Select Option</option>
-                      <option value="Overview">Overview</option>
-                      <option value="Session">Session</option>
-                    </select>
-                  </div>
-                )} */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Metric
@@ -599,6 +743,7 @@ const ManageTags = () => {
                     </div>
                   </>
                 )}
+
                 <button
                   type="submit"
                   className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
@@ -607,6 +752,34 @@ const ManageTags = () => {
                 </button>
               </form>
             )}
+          </div>
+        )}
+        {createFolder && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Create New Folder
+            </h2>
+            <form onSubmit={handleCreateFolder} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Folder Name
+                </label>
+                <input
+                  type="text"
+                  value={folderName}
+                  onChange={(e) => setFolderName(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+              >
+                Save Folder
+              </button>
+            </form>
           </div>
         )}
       </div>

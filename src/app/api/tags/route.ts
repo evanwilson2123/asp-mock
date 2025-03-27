@@ -1,5 +1,6 @@
 import { connectDB } from '@/lib/db';
 import AthleteTag from '@/models/athleteTag';
+import TagFolder from '@/models/tagFolder';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -15,8 +16,9 @@ export async function GET() {
     await connectDB();
 
     const tags = await AthleteTag.find({}).exec();
+    const folders = await TagFolder.find().exec();
 
-    return NextResponse.json({ tags }, { status: 200 });
+    return NextResponse.json({ tags: tags, folders: folders }, { status: 200 });
   } catch (error: any) {
     console.error(error);
     return NextResponse.json(
