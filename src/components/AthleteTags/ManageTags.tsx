@@ -6,7 +6,7 @@ import ErrorMessage from '../ErrorMessage';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
-import { TrashIcon } from '@heroicons/react/24/solid';
+import { TrashIcon, FolderIcon } from '@heroicons/react/24/solid';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -160,10 +160,11 @@ export const FolderItem: React.FC<FolderItemProps> = ({
           </button>
         </div>
         <span
-          className="text-lg text-gray-500"
+          className={`text-lg ${openFolder ? 'text-gray-900' : 'text-gray-500'}`}
           onClick={() => onToggleFolder(folder._id)}
         >
-          {openFolder ? '▲' : '▼'}
+          {/* {openFolder ? '▲' : '▼'} */}
+          <FolderIcon className="h-5 w-5" />
         </span>
       </div>
       {openFolder && (
@@ -416,7 +417,7 @@ const ManageTags = () => {
   const handleDeleteFolder = async (folderId: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/tags/folders/${folderId}`, {
+      const res = await fetch(`/api/tags/folder/${folderId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
