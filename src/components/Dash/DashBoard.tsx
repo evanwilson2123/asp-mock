@@ -21,6 +21,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import NoData from './NoData';
+import AthleteDashboard from '../AthleteDash/AthleteDashboard';
 
 ChartJS.register(
   CategoryScale,
@@ -337,6 +338,10 @@ const Dashboard: React.FC = () => {
       },
     },
   };
+
+  if (role === 'ATHLETE') {
+    return <AthleteDashboard />;
+  }
 
   // ====================== JSX Output ======================
   return (

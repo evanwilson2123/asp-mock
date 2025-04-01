@@ -163,7 +163,6 @@ export const FolderItem: React.FC<FolderItemProps> = ({
           className={`text-lg ${openFolder ? 'text-gray-900' : 'text-gray-500'}`}
           onClick={() => onToggleFolder(folder._id)}
         >
-          {/* {openFolder ? '▲' : '▼'} */}
           <FolderIcon className="h-5 w-5" />
         </span>
       </div>
