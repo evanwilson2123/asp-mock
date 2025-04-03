@@ -479,54 +479,57 @@ const AthleteDetails = () => {
         </div>
 
         {/* Coach Notes Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-bold text-gray-700 mb-4">
-            Coach&apos;s Notes
-          </h2>
-          {/* Render Existing Notes with Delete Buttons */}
-          <div className="mb-4">
-            {coachNotes.length > 0 ? (
-              coachNotes.map((note, index) => (
-                <div
-                  key={index}
-                  className="mb-2 p-2 border rounded flex justify-between items-start"
-                >
-                  <div>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold">{note.coachName}</span> on{' '}
-                      {new Date(note.date).toLocaleDateString()}:
-                    </p>
-                    <p className="text-gray-800">{note.coachNote}</p>
-                  </div>
-                  <button
-                    onClick={() =>
-                      note._id && handleDeleteNote(note._id.toString())
-                    }
-                    className=""
+        <div></div>
+        {role !== 'ATHLETE' && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-lg font-bold text-gray-700 mb-4">
+              Coach&apos;s Notes
+            </h2>
+            {/* Render Existing Notes with Delete Buttons */}
+            <div className="mb-4">
+              {coachNotes.length > 0 ? (
+                coachNotes.map((note, index) => (
+                  <div
+                    key={index}
+                    className="mb-2 p-2 border rounded flex justify-between items-start"
                   >
-                    <TrashIcon className="h-5 w-5 text-gray-700" />
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500">No notes yet.</p>
-            )}
+                    <div>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-semibold">{note.coachName}</span>{' '}
+                        on {new Date(note.date).toLocaleDateString()}:
+                      </p>
+                      <p className="text-gray-800">{note.coachNote}</p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        note._id && handleDeleteNote(note._id.toString())
+                      }
+                      className=""
+                    >
+                      <TrashIcon className="h-5 w-5 text-gray-700" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No notes yet.</p>
+              )}
+            </div>
+            {/* New Note Input */}
+            <textarea
+              value={newNoteText}
+              onChange={(e) => setNewNoteText(e.target.value)}
+              className="text-black w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={4}
+              placeholder="Add a new note..."
+            ></textarea>
+            <button
+              onClick={handleNotesSave}
+              className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+              Save Note
+            </button>
           </div>
-          {/* New Note Input */}
-          <textarea
-            value={newNoteText}
-            onChange={(e) => setNewNoteText(e.target.value)}
-            className="text-black w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows={4}
-            placeholder="Add a new note..."
-          ></textarea>
-          <button
-            onClick={handleNotesSave}
-            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-          >
-            Save Note
-          </button>
-        </div>
+        )}
 
         {/* CSV Upload Section */}
         <div className="bg-white rounded-lg shadow-md p-6">

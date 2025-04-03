@@ -46,7 +46,7 @@ const AthleteDashboard = () => {
         setArmTags(data.armTags);
         setForceTags(data.forceTags);
         setAssessmentTags(data.assessmentTags);
-        setGoals(data.goals); // Set the goals from the API response
+        setGoals(data.goals);
       } catch (error: any) {
         setErrorMessage(
           error.message || 'Error fetching athlete dashboard data'
@@ -71,6 +71,7 @@ const AthleteDashboard = () => {
       <div className="hidden md:block w-64 bg-gray-900 text-white">
         <AthleteSidebar />
       </div>
+
       {/* Main Content */}
       <div className="flex-1 p-4 text-gray-800">
         <h1 className="text-3xl font-bold mb-6 text-center">
@@ -79,96 +80,107 @@ const AthleteDashboard = () => {
 
         {/* Counts Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white shadow rounded p-6">
-            <h2 className="text-xl font-semibold mb-2">Swing Count</h2>
-            <p className="text-4xl text-center">{swingCount}</p>
+          <div className="bg-white rounded-lg shadow p-6 border-2 border-gray-300">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">
+              Swing Count
+            </h2>
+            <p className="text-4xl font-semibold text-gray-800 text-center">
+              {swingCount}
+            </p>
           </div>
-          <div className="bg-white shadow rounded p-6">
-            <h2 className="text-xl font-semibold mb-2">Pitch Count</h2>
-            <p className="text-4xl text-center">{pitchCount}</p>
+          <div className="bg-white rounded-lg shadow p-6 border-2 border-gray-300">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">
+              Pitch Count
+            </h2>
+            <p className="text-4xl font-semibold text-gray-800 text-center">
+              {pitchCount}
+            </p>
           </div>
         </div>
 
         {/* Tags Section */}
-        <h2 className="text-2xl font-bold mb-4">Tags</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Tags</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white shadow rounded p-4">
-            <h3 className="font-semibold mb-2">Hit Tags</h3>
+          {/* Hit Tags Card */}
+          <div className="bg-white rounded-lg shadow p-4 border-2 border-gray-300">
+            <h3 className="font-semibold mb-2 text-gray-800">Hit Tags</h3>
             <ul>
               {hitTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0"
+                  className="py-1 border-b last:border-0 text-gray-700"
                 >
                   {tag.name}
                 </li>
               ))}
             </ul>
           </div>
-
-          <div className="bg-white shadow rounded p-4">
-            <h3 className="font-semibold mb-2">Blast Tags</h3>
+          {/* Blast Tags Card */}
+          <div className="bg-white rounded-lg shadow p-4 border-2 border-gray-300">
+            <h3 className="font-semibold mb-2 text-gray-800">Blast Tags</h3>
             <ul>
               {blastTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0"
+                  className="py-1 border-b last:border-0 text-gray-700"
                 >
                   {tag.name}
                 </li>
               ))}
             </ul>
           </div>
-
-          <div className="bg-white shadow rounded p-4">
-            <h3 className="font-semibold mb-2">Track Tags</h3>
+          {/* Track Tags Card */}
+          <div className="bg-white rounded-lg shadow p-4 border-2 border-gray-300">
+            <h3 className="font-semibold mb-2 text-gray-800">Track Tags</h3>
             <ul>
               {trackTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0"
+                  className="py-1 border-b last:border-0 text-gray-700"
                 >
                   {tag.name}
                 </li>
               ))}
             </ul>
           </div>
-
-          <div className="bg-white shadow rounded p-4">
-            <h3 className="font-semibold mb-2">Arm Tags</h3>
+          {/* Arm Tags Card */}
+          <div className="bg-white rounded-lg shadow p-4 border-2 border-gray-300">
+            <h3 className="font-semibold mb-2 text-gray-800">Arm Tags</h3>
             <ul>
               {armTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0"
+                  className="py-1 border-b last:border-0 text-gray-700"
                 >
                   {tag.name}
                 </li>
               ))}
             </ul>
           </div>
-
-          <div className="bg-white shadow rounded p-4">
-            <h3 className="font-semibold mb-2">Force Tags</h3>
+          {/* Force Tags Card */}
+          <div className="bg-white rounded-lg shadow p-4 border-2 border-gray-300">
+            <h3 className="font-semibold mb-2 text-gray-800">Force Tags</h3>
             <ul>
               {forceTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0"
+                  className="py-1 border-b last:border-0 text-gray-700"
                 >
                   {tag.name}
                 </li>
               ))}
             </ul>
           </div>
-
-          <div className="bg-white shadow rounded p-4">
-            <h3 className="font-semibold mb-2">Assessment Tags</h3>
+          {/* Assessment Tags Card */}
+          <div className="bg-white rounded-lg shadow p-4 border-2 border-gray-300">
+            <h3 className="font-semibold mb-2 text-gray-800">
+              Assessment Tags
+            </h3>
             <ul>
               {assessmentTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0"
+                  className="py-1 border-b last:border-0 text-gray-700"
                 >
                   {tag.name}
                 </li>
@@ -178,14 +190,14 @@ const AthleteDashboard = () => {
         </div>
 
         {/* Goals Section */}
-        <h2 className="text-2xl font-bold mb-4">Goals</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Goals</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {goals.map((goal) => (
             <div
               key={goal._id.toString()}
-              className="bg-white shadow rounded p-4"
+              className="bg-white rounded-lg shadow p-6 border-2 border-gray-300"
             >
-              <h3 className="font-semibold mb-2 text-gray-800">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
                 {goal.goalName}
               </h3>
               <p className="text-gray-700">{goal.tech}</p>
