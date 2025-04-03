@@ -19,6 +19,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 ChartJS.register(
   CategoryScale,
@@ -223,10 +224,22 @@ const IntendedReport: React.FC = () => {
     <div className="flex flex-col overflow-x-hidden md:flex-row min-h-screen">
       {/* Sidebar for mobile and desktop */}
       <div className="md:hidden bg-gray-100">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
 
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">

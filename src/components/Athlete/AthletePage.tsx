@@ -11,6 +11,7 @@ import ErrorMessage from '../ErrorMessage';
 import { ICoachNote } from '@/models/coachesNote';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { CameraIcon } from '@heroicons/react/24/outline'; // Added for photo upload overlay
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 interface Athlete {
   _id: string;
@@ -254,10 +255,22 @@ const AthleteDetails = () => {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
 
       {/* Main Content Area */}

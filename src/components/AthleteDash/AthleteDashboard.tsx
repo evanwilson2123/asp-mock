@@ -1,7 +1,11 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 import { IAthleteTag } from '@/models/athleteTag';
 import { IGoal } from '@/models/goal';
-import { useUser } from '@clerk/nextjs';
-import React, { useEffect, useState } from 'react';
+import Loader from '../Loader';
 
 const AthleteDashboard = () => {
   // State for error and loading
@@ -44,7 +48,9 @@ const AthleteDashboard = () => {
         setAssessmentTags(data.assessmentTags);
         setGoals(data.goals); // Set the goals from the API response
       } catch (error: any) {
-        setErrorMessage(error);
+        setErrorMessage(
+          error.message || 'Error fetching athlete dashboard data'
+        );
       } finally {
         setLoading(false);
       }
@@ -52,128 +58,140 @@ const AthleteDashboard = () => {
     fetchDashData();
   }, [athleteId]);
 
-  if (loading) return <div className="text-gray-800">Loading...</div>;
+  if (loading) return <Loader />;
   if (errorMessage) return <div className="text-gray-800">{errorMessage}</div>;
 
   return (
-    <div className="container mx-auto p-4 text-gray-800">
-      <h1 className="text-3xl font-bold mb-6 text-center">Athlete Dashboard</h1>
-
-      {/* Counts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white shadow rounded p-6">
-          <h2 className="text-xl font-semibold mb-2">Swing Count</h2>
-          <p className="text-4xl text-center">{swingCount}</p>
-        </div>
-        <div className="bg-white shadow rounded p-6">
-          <h2 className="text-xl font-semibold mb-2">Pitch Count</h2>
-          <p className="text-4xl text-center">{pitchCount}</p>
-        </div>
+    <div className="flex min-h-screen bg-gray-100 overflow-y-auto">
+      {/* Mobile Sidebar */}
+      <div className="md:hidden bg-gray-100">
+        <AthleteSidebar />
       </div>
-
-      {/* Tags Section */}
-      <h2 className="text-2xl font-bold mb-4">Tags</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white shadow rounded p-4">
-          <h3 className="font-semibold mb-2">Hit Tags</h3>
-          <ul>
-            {hitTags.map((tag) => (
-              <li
-                key={tag._id.toString()}
-                className="py-1 border-b last:border-0"
-              >
-                {tag.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="bg-white shadow rounded p-4">
-          <h3 className="font-semibold mb-2">Blast Tags</h3>
-          <ul>
-            {blastTags.map((tag) => (
-              <li
-                key={tag._id.toString()}
-                className="py-1 border-b last:border-0"
-              >
-                {tag.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="bg-white shadow rounded p-4">
-          <h3 className="font-semibold mb-2">Track Tags</h3>
-          <ul>
-            {trackTags.map((tag) => (
-              <li
-                key={tag._id.toString()}
-                className="py-1 border-b last:border-0"
-              >
-                {tag.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="bg-white shadow rounded p-4">
-          <h3 className="font-semibold mb-2">Arm Tags</h3>
-          <ul>
-            {armTags.map((tag) => (
-              <li
-                key={tag._id.toString()}
-                className="py-1 border-b last:border-0"
-              >
-                {tag.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="bg-white shadow rounded p-4">
-          <h3 className="font-semibold mb-2">Force Tags</h3>
-          <ul>
-            {forceTags.map((tag) => (
-              <li
-                key={tag._id.toString()}
-                className="py-1 border-b last:border-0"
-              >
-                {tag.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="bg-white shadow rounded p-4">
-          <h3 className="font-semibold mb-2">Assessment Tags</h3>
-          <ul>
-            {assessmentTags.map((tag) => (
-              <li
-                key={tag._id.toString()}
-                className="py-1 border-b last:border-0"
-              >
-                {tag.name}
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block w-64 bg-gray-900 text-white">
+        <AthleteSidebar />
       </div>
+      {/* Main Content */}
+      <div className="flex-1 p-4 text-gray-800">
+        <h1 className="text-3xl font-bold mb-6 text-center">
+          Athlete Dashboard
+        </h1>
 
-      {/* Goals Section */}
-      <h2 className="text-2xl font-bold mb-4">Goals</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {goals.map((goal) => (
-          <div
-            key={goal._id.toString()}
-            className="bg-white shadow rounded p-4"
-          >
-            <h3 className="font-semibold mb-2 text-gray-800">
-              {goal.goalName}
-            </h3>
-            <p className="text-gray-700">{goal.tech}</p>
-            {/* Add any additional goal fields here */}
+        {/* Counts Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white shadow rounded p-6">
+            <h2 className="text-xl font-semibold mb-2">Swing Count</h2>
+            <p className="text-4xl text-center">{swingCount}</p>
           </div>
-        ))}
+          <div className="bg-white shadow rounded p-6">
+            <h2 className="text-xl font-semibold mb-2">Pitch Count</h2>
+            <p className="text-4xl text-center">{pitchCount}</p>
+          </div>
+        </div>
+
+        {/* Tags Section */}
+        <h2 className="text-2xl font-bold mb-4">Tags</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white shadow rounded p-4">
+            <h3 className="font-semibold mb-2">Hit Tags</h3>
+            <ul>
+              {hitTags.map((tag) => (
+                <li
+                  key={tag._id.toString()}
+                  className="py-1 border-b last:border-0"
+                >
+                  {tag.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white shadow rounded p-4">
+            <h3 className="font-semibold mb-2">Blast Tags</h3>
+            <ul>
+              {blastTags.map((tag) => (
+                <li
+                  key={tag._id.toString()}
+                  className="py-1 border-b last:border-0"
+                >
+                  {tag.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white shadow rounded p-4">
+            <h3 className="font-semibold mb-2">Track Tags</h3>
+            <ul>
+              {trackTags.map((tag) => (
+                <li
+                  key={tag._id.toString()}
+                  className="py-1 border-b last:border-0"
+                >
+                  {tag.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white shadow rounded p-4">
+            <h3 className="font-semibold mb-2">Arm Tags</h3>
+            <ul>
+              {armTags.map((tag) => (
+                <li
+                  key={tag._id.toString()}
+                  className="py-1 border-b last:border-0"
+                >
+                  {tag.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white shadow rounded p-4">
+            <h3 className="font-semibold mb-2">Force Tags</h3>
+            <ul>
+              {forceTags.map((tag) => (
+                <li
+                  key={tag._id.toString()}
+                  className="py-1 border-b last:border-0"
+                >
+                  {tag.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white shadow rounded p-4">
+            <h3 className="font-semibold mb-2">Assessment Tags</h3>
+            <ul>
+              {assessmentTags.map((tag) => (
+                <li
+                  key={tag._id.toString()}
+                  className="py-1 border-b last:border-0"
+                >
+                  {tag.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Goals Section */}
+        <h2 className="text-2xl font-bold mb-4">Goals</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {goals.map((goal) => (
+            <div
+              key={goal._id.toString()}
+              className="bg-white shadow rounded p-4"
+            >
+              <h3 className="font-semibold mb-2 text-gray-800">
+                {goal.goalName}
+              </h3>
+              <p className="text-gray-700">{goal.tech}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

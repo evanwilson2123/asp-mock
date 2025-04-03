@@ -24,6 +24,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 ChartJS.register(
   CategoryScale,
@@ -132,10 +133,22 @@ const HittraxBlastReport: React.FC = () => {
     <div className="flex flex-col md:flex-row min-h-screen">
       {/* Sidebar for mobile and desktop */}
       <div className="md:hidden bg-gray-100">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
 
       <div className="flex-1 p-6 bg-gray-100 overflow-auto">

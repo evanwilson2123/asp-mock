@@ -20,6 +20,7 @@ import {
 import { Line } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
 import annotationPlugin from 'chartjs-plugin-annotation';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 // Register Chart.js modules and the annotation plugin
 ChartJS.register(
@@ -380,11 +381,23 @@ const BlastMotionStats: React.FC = () => {
     <div className="flex min-h-screen">
       {/* Mobile Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
 
       {/* Main Content Area */}

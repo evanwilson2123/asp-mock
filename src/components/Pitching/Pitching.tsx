@@ -11,6 +11,7 @@ import Sidebar from '../Dash/Sidebar';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 /**
  * This is the 'Pitching' page, a page user's are directed to from their profile page after selecting 'Pitching' from their technology nav.
@@ -86,6 +87,8 @@ const Pitching = () => {
           <CoachSidebar />
         ) : role === 'ADMIN' ? (
           <Sidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
         ) : (
           <SignInPrompt />
         )}
@@ -95,6 +98,8 @@ const Pitching = () => {
           <CoachSidebar />
         ) : role === 'ADMIN' ? (
           <Sidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
         ) : (
           <SignInPrompt />
         )}

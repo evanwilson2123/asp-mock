@@ -31,6 +31,7 @@ ChartJS.register(
   Legend
 );
 import { TrashIcon } from '@heroicons/react/24/solid';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 // --- COLOR HELPERS ---
 
 const NORMAL_CLASS = 'text-blue-600';
@@ -280,10 +281,22 @@ const ArmCareStats: React.FC = () => {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
 
       {/* Main Content */}

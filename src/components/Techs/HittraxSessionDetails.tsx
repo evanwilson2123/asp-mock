@@ -21,6 +21,7 @@ import {
 import { Line, Bar } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
 import StrikeZone from '@/components/StrikeZone'; // <-- Imported StrikeZone
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 ChartJS.register(
   CategoryScale,
@@ -309,10 +310,22 @@ const HitTraxSessionDetails: React.FC = () => {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
 
       {/* Main Content */}

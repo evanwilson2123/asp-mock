@@ -5,6 +5,7 @@ import React, { useState, FormEvent } from 'react';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 interface StuffPlusResponse {
   stuff_plus: number;
@@ -71,10 +72,22 @@ const StuffPlus: React.FC = () => {
     <div className="flex min-h-screen">
       {/* Conditional Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
 
       {/* Main Content Area */}

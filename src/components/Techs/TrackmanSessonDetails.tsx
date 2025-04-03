@@ -19,6 +19,7 @@ import Sidebar from '@/components/Dash/Sidebar';
 import CoachSidebar from '../Dash/CoachSidebar';
 import ErrorMessage from '../ErrorMessage';
 import { useUser } from '@clerk/nextjs';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 ChartJS.register(
   CategoryScale,
@@ -155,10 +156,22 @@ const TrackmanSessionDetails: React.FC = () => {
       {/* Sidebar */}
       {/* Conditional Sidebar */}
       <div className="md:hidden bg-gray-100">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
 
       {/* Main Content */}

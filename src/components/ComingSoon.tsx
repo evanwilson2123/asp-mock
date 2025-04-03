@@ -3,6 +3,7 @@ import React from 'react';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from './Dash/CoachSidebar';
 import Sidebar from './Dash/Sidebar';
+import AthleteSidebar from './Dash/AthleteSidebar';
 
 interface ComingSoonProps {
   description: string;
@@ -58,10 +59,22 @@ const ComingSoon: React.FC<ComingSoonProps> = ({ description }) => {
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
       <div className="hidden md:block w-64 bg-gray-900 text-white min-h-screen">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
       <div className="md:hidden bg-gray-100">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
 
       {/* Main Content */}

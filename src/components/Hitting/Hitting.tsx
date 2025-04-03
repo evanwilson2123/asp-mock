@@ -10,6 +10,7 @@ import CoachSidebar from '../Dash/CoachSidebar';
 import Sidebar from '../Dash/Sidebar';
 import Link from 'next/link';
 import Image from 'next/image';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 /**
  *
@@ -86,6 +87,8 @@ const Hitting = () => {
           <CoachSidebar />
         ) : role === 'ADMIN' ? (
           <Sidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
         ) : (
           <SignInPrompt />
         )}
@@ -95,6 +98,8 @@ const Hitting = () => {
           <CoachSidebar />
         ) : role === 'ADMIN' ? (
           <Sidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
         ) : (
           <SignInPrompt />
         )}

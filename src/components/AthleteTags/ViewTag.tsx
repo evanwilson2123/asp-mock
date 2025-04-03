@@ -7,6 +7,7 @@ import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '../Loader';
 import ErrorMessage from '../ErrorMessage';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 // Helper function to transform YouTube links to embed links.
 function getEmbedUrl(url: string): string {
@@ -81,7 +82,13 @@ const ViewTag = () => {
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar for medium and larger screens */}
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
 
       {/* Main Content Area */}
