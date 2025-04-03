@@ -107,6 +107,9 @@ const ManageAthletes: React.FC = () => {
   // -- Fetch athletes once, on mount
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
+    if (role === 'ATHLETE') {
+      router.push('/');
+    }
     const fetchAthletes = async () => {
       try {
         const res = await fetch('/api/manage-athletes');
@@ -123,7 +126,7 @@ const ManageAthletes: React.FC = () => {
     };
 
     fetchAthletes();
-  }, []);
+  }, [role, router]);
 
   // -- Filter logic
   const filteredAthletes = athletes.filter((athlete) => {

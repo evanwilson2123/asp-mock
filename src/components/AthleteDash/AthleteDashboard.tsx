@@ -6,6 +6,7 @@ import AthleteSidebar from '../Dash/AthleteSidebar';
 import { IAthleteTag } from '@/models/athleteTag';
 import { IGoal } from '@/models/goal';
 import Loader from '../Loader';
+import { useRouter } from 'next/navigation';
 
 const AthleteDashboard = () => {
   // State for error and loading
@@ -23,6 +24,9 @@ const AthleteDashboard = () => {
   const [assessmentTags, setAssessmentTags] = useState<IAthleteTag[]>([]);
   // State for the goals
   const [goals, setGoals] = useState<IGoal[]>([]);
+
+  // Mount the router
+  const router = useRouter();
 
   // Get athlete ID from clerk public metadata
   const { user } = useUser();
@@ -74,9 +78,7 @@ const AthleteDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-4 text-gray-800">
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          Athlete Dashboard
-        </h1>
+        <h1 className="text-3xl font-bold mb-6 text-center">My Stats</h1>
 
         {/* Counts Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -108,7 +110,10 @@ const AthleteDashboard = () => {
               {hitTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0 text-gray-700"
+                  className="py-1 border-b last:border-0 text-white outline flex justify-center items-center rounded-md  bg-gray-700 hover:bg-gray-600 cursor-auto"
+                  onClick={() =>
+                    router.push(`/athlete/${athleteId}/tags/hittrax/${tag._id}`)
+                  }
                 >
                   {tag.name}
                 </li>
@@ -120,12 +125,15 @@ const AthleteDashboard = () => {
             <h3 className="font-semibold mb-2 text-gray-800">Blast Tags</h3>
             <ul>
               {blastTags.map((tag) => (
-                <li
+                <div
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0 text-gray-700"
+                  className="py-1 border-b last:border-0 text-white outline flex justify-center items-center rounded-md  bg-gray-700 hover:bg-gray-600 cursor-auto"
+                  onClick={() =>
+                    router.push(`/athlete/${athleteId}/tags/blast/${tag._id}`)
+                  }
                 >
                   {tag.name}
-                </li>
+                </div>
               ))}
             </ul>
           </div>
@@ -136,7 +144,12 @@ const AthleteDashboard = () => {
               {trackTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0 text-gray-700"
+                  className="py-1 border-b last:border-0 text-white outline flex justify-center items-center rounded-md  bg-gray-700 hover:bg-gray-600 cursor-auto"
+                  onClick={() =>
+                    router.push(
+                      `/athlete/${athleteId}/tags/trackman/${tag._id}`
+                    )
+                  }
                 >
                   {tag.name}
                 </li>
@@ -150,7 +163,10 @@ const AthleteDashboard = () => {
               {armTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0 text-gray-700"
+                  className="py-1 border-b last:border-0 text-white outline flex justify-center items-center rounded-md  bg-gray-700 hover:bg-gray-600 cursor-auto"
+                  onClick={() =>
+                    router.push(`/athlete/${athleteId}/tags/armcare/${tag._id}`)
+                  }
                 >
                   {tag.name}
                 </li>
@@ -164,7 +180,12 @@ const AthleteDashboard = () => {
               {forceTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0 text-gray-700"
+                  className="py-1 border-b last:border-0 text-white outline flex justify-center items-center rounded-md  bg-gray-700 hover:bg-gray-600 cursor-auto"
+                  onClick={() =>
+                    router.push(
+                      `/athlete/${athleteId}/tags/forceplates/${tag._id}`
+                    )
+                  }
                 >
                   {tag.name}
                 </li>
@@ -180,7 +201,12 @@ const AthleteDashboard = () => {
               {assessmentTags.map((tag) => (
                 <li
                   key={tag._id.toString()}
-                  className="py-1 border-b last:border-0 text-gray-700"
+                  className="py-1 border-b last:border-0 text-white outline flex justify-center items-center rounded-md  bg-gray-700 hover:bg-gray-600 cursor-auto"
+                  onClick={() =>
+                    router.push(
+                      `/athlete/${athleteId}/tags/assessment/${tag._id}`
+                    )
+                  }
                 >
                   {tag.name}
                 </li>
@@ -196,6 +222,9 @@ const AthleteDashboard = () => {
             <div
               key={goal._id.toString()}
               className="bg-white rounded-lg shadow p-6 border-2 border-gray-300"
+              onClick={() =>
+                router.push(`/athlete/${athleteId}/goals/${goal._id}`)
+              }
             >
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
                 {goal.goalName}
