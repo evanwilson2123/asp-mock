@@ -41,6 +41,13 @@ export async function GET(req: NextRequest, context: any) {
   }
 }
 
+/**
+ * This is the endpoint to create an athlete Goal
+ *
+ * @param req
+ * @param context
+ * @returns
+ */
 export async function POST(req: NextRequest, context: any) {
   const { userId } = await auth();
   if (!userId) {
@@ -83,6 +90,16 @@ export async function POST(req: NextRequest, context: any) {
     });
 
     await goal.save();
+
+    await prisma.goalEntry.create({
+      data: {
+        athlete: athleteId,
+        goalId: goal._id,
+        value: current.current,
+        date: new Date(Date.now()),
+      },
+    });
+
     return NextResponse.json({ goal }, { status: 200 });
   } catch (error: any) {
     console.error(error);

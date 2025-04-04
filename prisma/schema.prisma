@@ -372,3 +372,12 @@ model HittraxBlast {
   vertBatAngle            Float
   date                    DateTime
 }
+
+
+model GoalEntry {
+  id                      Int @id @default(autoincrement())
+  athlete                 String
+  goalId                  String
+  value                   Float
+  date                    DateTime
+}

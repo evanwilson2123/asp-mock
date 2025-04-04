@@ -1,4 +1,5 @@
 import { connectDB } from '@/lib/db';
+import prisma from '@/lib/prismaDb';
 import Goal from '@/models/goal';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
@@ -30,7 +31,17 @@ export async function GET(req: NextRequest, context: any) {
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ goal: goal }, { status: 200 });
+    const goalEntries = await prisma.goalEntry.findMany({
+      where: {
+        athlete: athleteId,
+        goalId: goalId,
+      },
+    });
+
+    return NextResponse.json(
+      { goal: goal, goalEntries: goalEntries },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error(error);
     return NextResponse.json(

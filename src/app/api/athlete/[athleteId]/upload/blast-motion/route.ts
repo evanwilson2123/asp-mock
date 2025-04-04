@@ -53,6 +53,14 @@ interface SquaredUpResult {
   squaredUpRate: number;
   potentialVelo: number;
 }
+
+// Interface to create and store the goal entry
+interface GoalEntry {
+  athlete: string;
+  goalId: string;
+  value: number;
+  date: Date;
+}
 /**
  * Helper function to calculate the squared up rate for the swing
  */
@@ -439,6 +447,22 @@ export async function POST(req: NextRequest, context: any) {
         console.log(
           `Updated goal: ${goal.goalName} - New Value: ${updatedValue}`
         );
+
+        const goalEntry: GoalEntry = {
+          athlete: athleteId,
+          goalId: goal._id,
+          value: updatedValue,
+          date: new Date(Date.now()),
+        };
+
+        await prisma.goalEntry.create({
+          data: {
+            athlete: goalEntry.athlete,
+            goalId: goalEntry.goalId,
+            value: updatedValue,
+            date: goalEntry.date,
+          },
+        });
       }
 
       console.log('Goal updates complete.');
