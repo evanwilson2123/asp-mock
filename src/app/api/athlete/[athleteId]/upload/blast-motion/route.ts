@@ -433,6 +433,7 @@ export async function POST(req: NextRequest, context: any) {
           currentValue: updatedValue,
           sum: goal.avgMax === 'avg' ? sum : 0,
           length: goal.avgMax === 'avg' ? length : 0,
+          complete: updatedValue >= goal.goalValue ? true : false,
         });
 
         console.log(

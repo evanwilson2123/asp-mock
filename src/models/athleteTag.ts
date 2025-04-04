@@ -1,6 +1,6 @@
 import { Schema, model, models, Types } from 'mongoose';
 
-export type Tech = 'blast' | 'hittrax' | 'trackman' | 'armcare' | 'forceplates';
+export type Tech = 'blast' | 'hittrax' | 'trackman' | 'armcare' | 'forceplates' | 'assessment';
 
 export interface IAthleteTag {
   _id: Types.ObjectId;

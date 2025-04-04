@@ -19,6 +19,7 @@ export interface IGoal {
   goalValue: number;
   currentValue: number;
   avgMax?: string;
+  complete: boolean;
 }
 
 /**
@@ -330,7 +331,7 @@ const Goals = () => {
           {goals.length > 0 ? (
             goals.map((goal) => {
               // Determine completion status based on current vs. target value
-              const isCompleted = goal.currentValue >= goal.goalValue;
+              const isCompleted = goal.complete;
               return (
                 <div
                   key={goal._id}

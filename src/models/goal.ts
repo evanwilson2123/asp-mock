@@ -22,6 +22,7 @@ export interface IGoal {
   avgMax: string;
   sum: number;
   length: number;
+  complete: boolean;
 }
 
 const goalSchema = new Schema<IGoal>({
@@ -34,6 +35,7 @@ const goalSchema = new Schema<IGoal>({
   avgMax: { type: String, required: false },
   sum: { type: Number, required: false },
   length: { type: Number, required: false },
+  complete: { type: Boolean, required: true, default: false },
 });
 
 const Goal = models.Goal || model<IGoal>('Goal', goalSchema);
