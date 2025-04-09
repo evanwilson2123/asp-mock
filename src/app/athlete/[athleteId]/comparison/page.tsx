@@ -1,10 +1,10 @@
-import Compare from '@/components/Comparison/Compare';
+import AthleteComparisons from '@/components/Athlete/AthleteComparisons';
 import React from 'react';
 
 const page = () => {
   return (
     <div>
-      <Compare />
+      <AthleteComparisons />
     </div>
   );
 };

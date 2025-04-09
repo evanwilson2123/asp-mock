@@ -318,6 +318,13 @@ const AthleteDetails = () => {
           >
             Goals
           </button>
+          <button
+            key="comparison"
+            onClick={() => router.push(`/athlete/${athleteId}/comparison`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Comparison
+          </button>
           {/* <button
             key="reports"
             onClick={() => router.push(`/athlete/${athleteId}/reports`)}
