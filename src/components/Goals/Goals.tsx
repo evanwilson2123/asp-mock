@@ -368,6 +368,15 @@ const Goals = () => {
                       <strong>Type:</strong> {goal.avgMax}
                     </p>
                   )}
+                  {/* New "View Goal" button */}
+                  <button
+                    onClick={() =>
+                      router.push(`/athlete/${athleteId}/goals/${goal._id}`)
+                    }
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition mt-4"
+                  >
+                    View Goal
+                  </button>
                 </div>
               );
             })

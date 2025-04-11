@@ -1,5 +1,5 @@
 'use client';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import Loader from '../Loader';
 import ErrorMessage from '../ErrorMessage';
@@ -17,6 +17,9 @@ import {
   Legend,
 } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation'; // Import the annotation plugin
+import CoachSidebar from '@/components/Dash/CoachSidebar';
+import Sidebar from '@/components/Dash/Sidebar';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 // Register Chart.js components and the annotation plugin
 ChartJS.register(
@@ -27,7 +30,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  annotationPlugin // Add this line to register the plugin
+  annotationPlugin // Register the annotation plugin
 );
 
 interface GoalEntry {
@@ -37,17 +40,18 @@ interface GoalEntry {
 
 const ViewGoal = () => {
   const { athleteId, goalId } = useParams();
+  const router = useRouter();
 
-  // Handle state for error and loading
+  // State for error and loading
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Manage the state for the goal
+  // State for the goal object
   const [goal, setGoal] = useState<IGoal | null>(null);
-  // Manage state for the goal entries graph
+  // State for the goal entries (chart data)
   const [goalEntries, setGoalEntries] = useState<GoalEntry[]>([]);
 
-  // Get user and role
+  // Get the current user and role
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
@@ -62,10 +66,10 @@ const ViewGoal = () => {
         }
         console.log(data.goal);
         setGoal(data.goal[0]);
-        // Ensure dates are Date objects
+        // Convert entry dates to Date objects if needed
         const entries = data.goalEntries.map((entry: GoalEntry) => ({
           ...entry,
-          date: new Date(entry.date), // Convert to Date object if it's a string
+          date: new Date(entry.date),
         }));
         setGoalEntries(entries);
       } catch (error: any) {
@@ -98,12 +102,11 @@ const ViewGoal = () => {
     ],
   };
 
+  // Chart configuration options, including the annotation for the goal line
   const chartOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'top' as const,
-      },
+      legend: { position: 'top' as const },
       title: {
         display: true,
         text: 'Goal Progress Over Time',
@@ -112,19 +115,16 @@ const ViewGoal = () => {
         annotations: {
           goalLine: {
             type: 'line' as const,
-            yMin: goal?.goalValue, // Y-axis value for the line (goalValue)
-            yMax: goal?.goalValue, // Same as yMin for a horizontal line
+            yMin: goal?.goalValue, // Horizontal line at the goal value
+            yMax: goal?.goalValue,
             borderColor: 'rgba(0, 128, 0, 1)', // Green line
             borderWidth: 2,
             label: {
               display: true,
-              // content: `Goal Value: ${goal?.goalValue}`, // Label text
-              position: 'end' as const, // Position the label at the end of the line
+              position: 'end' as const,
               backgroundColor: 'rgba(0, 128, 0, 0.8)',
               color: 'white',
-              font: {
-                size: 12,
-              },
+              font: { size: 12 },
             },
           },
         },
@@ -132,71 +132,92 @@ const ViewGoal = () => {
     },
     scales: {
       x: {
-        title: {
-          display: true,
-          text: 'Date',
-        },
+        title: { display: true, text: 'Date' },
       },
       y: {
-        title: {
-          display: true,
-          text: goal?.metricToTrack,
-        },
+        title: { display: true, text: goal?.metricToTrack },
         beginAtZero: true,
       },
     },
   };
 
-  // Handle loading state
+  // Render loader or error message when necessary
   if (isLoading) return <Loader />;
-  // Handle the error state
   if (error) return <ErrorMessage role={role as string} message={error} />;
   if (!goal) return <div>No goal found.</div>;
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold mb-4 text-gray-700">Goal Details</h1>
-      <div className="bg-white shadow-md rounded p-4 text-gray-700">
-        <p>
-          <strong>Name:</strong> {goal.goalName}
-        </p>
-        <p>
-          <strong>Technology:</strong> {goal.tech}
-        </p>
-        <p>
-          <strong>Metric to Track:</strong> {goal.metricToTrack}
-        </p>
-        <p>
-          <strong>Goal Value:</strong> {goal.goalValue}
-        </p>
-        <p>
-          <strong>Current Value:</strong> {goal.currentValue}
-        </p>
-        <p>
-          <strong>Average/Max Type:</strong> {goal.avgMax}
-        </p>
-        <p>
-          <strong>Status:</strong> {goal.complete ? 'Complete' : 'Incomplete'}
-        </p>
+    <div className="flex min-h-screen">
+      {/* Mobile Sidebar */}
+      <div className="md:hidden bg-gray-100">
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
       </div>
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block w-64 bg-gray-900 text-white">
+        {role === 'COACH' ? (
+          <CoachSidebar />
+        ) : role === 'ATHLETE' ? (
+          <AthleteSidebar />
+        ) : (
+          <Sidebar />
+        )}
+      </div>
+      {/* Main Content */}
+      <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
+        {/* Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="mb-4 bg-gray-300 text-gray-900 px-4 py-2 rounded hover:bg-gray-400 transition"
+        >
+          Back
+        </button>
+        <h1 className="text-4xl font-bold mb-4 text-gray-700">Goal Details</h1>
+        <div className="bg-white shadow-md rounded p-4 text-gray-700">
+          <p>
+            <strong>Name:</strong> {goal.goalName}
+          </p>
+          <p>
+            <strong>Technology:</strong> {goal.tech}
+          </p>
+          <p>
+            <strong>Metric to Track:</strong> {goal.metricToTrack}
+          </p>
+          <p>
+            <strong>Goal Value:</strong> {goal.goalValue}
+          </p>
+          <p>
+            <strong>Current Value:</strong> {goal.currentValue}
+          </p>
+          <p>
+            <strong>Average/Max Type:</strong> {goal.avgMax}
+          </p>
+          <p>
+            <strong>Status:</strong> {goal.complete ? 'Complete' : 'Incomplete'}
+          </p>
+        </div>
 
-      {/* Add the line chart */}
-      {goalEntries.length > 0 ? (
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4 text-gray-700">
-            Goal Progress Chart
-          </h2>
-          <div className="bg-white shadow-md rounded p-4">
-            <div className="w-full h-64 sm:h-80 md:h-96">
-              {' '}
-              {/* Responsive height */}
-              <Line data={chartData} options={chartOptions} />
+        {/* Goal Progress Chart */}
+        {goalEntries.length > 0 ? (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4 text-gray-700">
+              Goal Progress Chart
+            </h2>
+            <div className="bg-white shadow-md rounded p-4">
+              <div className="w-full h-64 sm:h-80 md:h-96">
+                <Line data={chartData} options={chartOptions} />
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="mt-8 text-gray-700">No goal entries to display.</div>
-      )}
+        ) : (
+          <div className="mt-8 text-gray-700">No goal entries to display.</div>
+        )}
+      </div>
     </div>
   );
 };
