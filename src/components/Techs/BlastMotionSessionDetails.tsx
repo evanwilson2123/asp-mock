@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
@@ -82,6 +82,7 @@ const BlastMotionSessionDetails: React.FC = () => {
   const swingsPerPage = 10;
 
   const { sessionId } = useParams();
+  const router = useRouter();
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
@@ -366,12 +367,11 @@ const BlastMotionSessionDetails: React.FC = () => {
   };
 
   const polarOptions = {
-    // maintainAspectRatio: true,
     responsive: true,
     scales: {
       r: {
         min: 0,
-        max: 80, // This fixes the outer ring at 80 regardless of the data values
+        max: 80,
         ticks: {
           beginAtZero: true,
           stepSize: 20,
@@ -413,6 +413,13 @@ const BlastMotionSessionDetails: React.FC = () => {
       </div>
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
+        {/* Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="mb-4 px-4 py-2 bg-gray-300 text-gray-900 rounded hover:bg-gray-400 transition"
+        >
+          Back
+        </button>
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Session Details for {swings[0].sessionName}
         </h1>
@@ -476,7 +483,6 @@ const BlastMotionSessionDetails: React.FC = () => {
           )}
         </div>
         {/* Polar Area Chart for Average Scores */}
-        {/* Polar Area Chart for Average Scores */}
         <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Average Scores
@@ -485,7 +491,6 @@ const BlastMotionSessionDetails: React.FC = () => {
             <PolarArea data={polarData} options={polarOptions} />
           </div>
         </div>
-
         {/* Paginated Table for Swing Details */}
         <div className="bg-white p-4 rounded shadow overflow-x-auto border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-2">

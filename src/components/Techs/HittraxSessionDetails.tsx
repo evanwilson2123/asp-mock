@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
@@ -16,7 +16,6 @@ import {
   Title,
   Tooltip,
   Legend,
-  // Plugin,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
@@ -86,6 +85,7 @@ const HitTraxSessionDetails: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { sessionId } = useParams();
+  const router = useRouter();
   const { user } = useUser();
   const role = user?.publicMetadata?.role as string | undefined;
 
@@ -330,6 +330,13 @@ const HitTraxSessionDetails: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 flex-col overflow-x-hidden">
+        {/* Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="mb-4 px-4 py-2 bg-gray-300 text-gray-900 rounded hover:bg-gray-400 transition"
+        >
+          Back
+        </button>
         <div className="rounded border-2 border-gray-300 bg-white mb-4">
           <h1 className="text-3xl font-bold text-gray-700 justify-center flex">
             Session Totals
@@ -461,22 +468,6 @@ const HitTraxSessionDetails: React.FC = () => {
             <p className="text-gray-500">No spray zone data available.</p>
           )}
         </div>
-
-        {/* Scatter Chart (Spray Chart) with Field Background
-        <div className="bg-white p-6 rounded shadow border-2 border-gray-300">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Spray Chart
-          </h2>
-          {scatterPoints.length > 0 ? (
-            <Scatter
-              data={scatterData}
-              options={scatterOptions}
-              plugins={[fieldBackgroundPlugin]}
-            />
-          ) : (
-            <p className="text-gray-500">No spray chart data available.</p>
-          )}
-        </div> */}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
@@ -35,7 +35,6 @@ const Reports: React.FC = () => {
   const [showPdfModal, setShowPdfModal] = useState<boolean>(false);
 
   const { athleteId } = useParams();
-  const router = useRouter();
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
@@ -153,7 +152,7 @@ const Reports: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 flex flex-col overflow-x-hidden">
         {/* Navigation Bar */}
-        <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
+        {/* <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
           <button
             onClick={() => router.push(`/athlete/${athleteId}`)}
             className="text-gray-700 font-semibold hover:text-gray-900 transition"
@@ -181,7 +180,7 @@ const Reports: React.FC = () => {
               {tech}
             </button>
           ))}
-        </nav>
+        </nav> */}
 
         {/* Form */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">

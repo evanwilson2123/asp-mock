@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Scatter } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -39,52 +39,7 @@ ChartJS.register(
  * using Trackman data. It allows coaches and athletes to analyze pitch characteristics,
  * including speed, spin rate, movement, and pitch location, offering valuable insights
  * into performance trends and pitch effectiveness.
- *
- * Key Features:
- * - **Dynamic Data Fetching:**
- *   - Retrieves detailed pitch data categorized by pitch type (e.g., fastball, curveball).
- *   - Displays metrics such as speed, spin rate, break (horizontal & vertical), and pitch location.
- *   - Handles API errors gracefully with descriptive feedback.
- *
- * - **Visual Analytics:**
- *   1. **Speed vs. Spin Rate Scatter Plot:**
- *      - Visualizes the relationship between pitch speed and spin rate for different pitch types.
- *      - Useful for identifying spin efficiency and pitch performance.
- *
- *   2. **Horizontal vs. Vertical Break Scatter Plot:**
- *      - Highlights the movement profile of pitches, comparing horizontal and vertical breaks.
- *      - Ideal for evaluating pitch movement effectiveness and deception.
- *
- *   3. **Pitch Location Visualization (Strike Zone Plot):**
- *      - Displays pitch locations with overlays for the strike zone (inner & outer).
- *      - Provides clear visual feedback on pitch accuracy and strike consistency.
- *
- * - **Responsive Layout:**
- *   - Optimized for both mobile and desktop devices using Tailwind CSS.
- *   - Charts adjust dynamically to maintain readability across screen sizes.
- *
- * - **Role-Based Sidebar:**
- *   - Displays either the **CoachSidebar** or **Sidebar** based on the user's role.
- *   - Enhances the user experience with context-specific navigation.
- *
- * Technologies Used:
- * - **React** with hooks (`useState`, `useEffect`) for state management and lifecycle control.
- * - **Next.js** for routing and API integration.
- * - **Clerk** for authentication and user role management.
- * - **Chart.js** with `react-chartjs-2` for data visualization.
- * - **Chart.js Annotations Plugin** for highlighting the strike zone in pitch location plots.
- * - **Tailwind CSS** for responsive UI design.
- *
- * Use Cases:
- * - **For Coaches:**
- *   - Evaluate pitcher performance, analyze pitch effectiveness, and identify areas for improvement.
- *   - Compare different pitch types based on speed, movement, and location accuracy.
- *
- * - **For Athletes:**
- *   - Gain insights into pitching mechanics and trends over time.
- *   - Adjust training routines based on data-driven feedback from pitching sessions.
  */
-
 const TrackmanSessionDetails: React.FC = () => {
   const [dataByPitchType, setDataByPitchType] = useState<{
     [key: string]: {
@@ -99,6 +54,7 @@ const TrackmanSessionDetails: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { sessionId } = useParams();
+  const router = useRouter();
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
@@ -154,7 +110,6 @@ const TrackmanSessionDetails: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      {/* Conditional Sidebar */}
       <div className="md:hidden bg-gray-100">
         {role === 'COACH' ? (
           <CoachSidebar />
@@ -176,6 +131,13 @@ const TrackmanSessionDetails: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-6">
+        {/* Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="mb-4 px-4 py-2 bg-gray-300 text-gray-900 rounded hover:bg-gray-400 transition"
+        >
+          Back
+        </button>
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Trackman Session Details
         </h1>
@@ -200,7 +162,7 @@ const TrackmanSessionDetails: React.FC = () => {
               }}
               options={{
                 responsive: true,
-                aspectRatio: 1, // Makes it a square plot
+                aspectRatio: 1,
                 plugins: {
                   legend: { position: 'top' },
                 },
@@ -237,7 +199,7 @@ const TrackmanSessionDetails: React.FC = () => {
               }}
               options={{
                 responsive: true,
-                aspectRatio: 1, // Makes it a square plot
+                aspectRatio: 1,
                 plugins: {
                   legend: { position: 'top' },
                 },
@@ -247,13 +209,11 @@ const TrackmanSessionDetails: React.FC = () => {
                     min: -30,
                     max: 30,
                     grid: {
-                      //   drawBorder: true, // Ensures the axis line is drawn
-                      //   borderWidth: 2, // Line thickness
                       color: (ctx) =>
-                        ctx.tick.value === 0 ? '#000000' : '#CCCCCC', // Black line at 0, light grid elsewhere
+                        ctx.tick.value === 0 ? '#000000' : '#CCCCCC',
                     },
                     ticks: {
-                      color: '#000000', // Ensures tick labels are visible
+                      color: '#000000',
                     },
                   },
                   y: {
@@ -261,13 +221,11 @@ const TrackmanSessionDetails: React.FC = () => {
                     min: -30,
                     max: 30,
                     grid: {
-                      //   drawBorder: true, // Ensures the axis line is drawn
-                      //   borderWidth: 2, // Line thickness
                       color: (ctx) =>
-                        ctx.tick.value === 0 ? '#000000' : '#CCCCCC', // Black line at 0, light grid elsewhere
+                        ctx.tick.value === 0 ? '#000000' : '#CCCCCC',
                     },
                     ticks: {
-                      color: '#000000', // Ensures tick labels are visible
+                      color: '#000000',
                     },
                   },
                 },
@@ -275,59 +233,7 @@ const TrackmanSessionDetails: React.FC = () => {
             />
           </div>
 
-          {/* Location Scatter Plot with Strike Zone */}
-          {/* <div className="lg:col-span-2 bg-white p-6 rounded shadow">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">
-              Pitch Location (Strike Zone)
-            </h2>
-            <Scatter
-              data={{
-                datasets: pitchTypes.map((pitchType, index) => ({
-                  label: pitchType,
-                  data: dataByPitchType[pitchType].locations.map(
-                    ({ x, y }) => ({
-                      x,
-                      y,
-                    })
-                  ),
-                  backgroundColor: softColors[index % softColors.length],
-                  pointRadius: 6,
-                })),
-              }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: "top" },
-                  annotation: {
-                    annotations: {
-                      strikeZone: {
-                        type: "box",
-                        xMin: -0.708, // Adjusted for plate width
-                        xMax: 0.708,
-                        yMin: 1.548, // Bottom of the strike zone
-                        yMax: 3.452, // Top of the strike zone
-                        borderWidth: 2,
-                        borderColor: "black",
-                        backgroundColor: "rgba(0, 0, 0, 0.05)",
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  x: {
-                    title: { display: true, text: "Horizontal Location (ft)" },
-                    min: -3,
-                    max: 3,
-                  },
-                  y: {
-                    title: { display: true, text: "Vertical Location (ft)" },
-                    min: 0,
-                    max: 5,
-                  },
-                },
-              }}
-            />
-          </div> */}
+          {/* Pitch Location Scatter Plot with Strike Zone */}
           <div className="flex justify-center items-center lg:col-span-2 bg-white p-6 rounded shadow">
             <div>
               <h2 className="text-lg font-semibold text-gray-700 mb-4 text-center">
@@ -386,9 +292,7 @@ const TrackmanSessionDetails: React.FC = () => {
                         },
                         min: -3,
                         max: 3,
-                        ticks: {
-                          stepSize: 1,
-                        },
+                        ticks: { stepSize: 1 },
                       },
                       y: {
                         title: {
@@ -397,9 +301,7 @@ const TrackmanSessionDetails: React.FC = () => {
                         },
                         min: 0,
                         max: 5,
-                        ticks: {
-                          stepSize: 1,
-                        },
+                        ticks: { stepSize: 1 },
                       },
                     },
                     layout: {
