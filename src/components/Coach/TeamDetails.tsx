@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
+import Loader from '../Loader';
 
 interface Athlete {
   _id: string;
@@ -71,7 +72,7 @@ const TeamDetails = () => {
     }
   };
 
-  if (loading) return <div>Loading athletes...</div>;
+  if (loading) return <Loader />;
   if (error) return <div>Error: {error}</div>;
 
   return (
