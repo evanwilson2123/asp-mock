@@ -1,6 +1,6 @@
 import mongoose, { Schema, model, models, Types } from 'mongoose';
 import { coachNoteSchema, ICoachNote } from './coachesNote';
-
+import mediaSchema from './media';
 export interface IAthlete {
   _id: Types.ObjectId;
   firstName: string;
@@ -29,6 +29,8 @@ export interface IAthlete {
   armTags: Types.ObjectId[];
   forceTags: Types.ObjectId[];
   assessmentTags: Types.ObjectId[];
+  images: { name: string; link: string; date: Date }[];
+  videos: { name: string; link: string; date: Date }[];
 }
 
 const athleteSchema = new Schema<IAthlete>({
@@ -70,6 +72,8 @@ const athleteSchema = new Schema<IAthlete>({
   assessmentTags: [
     { type: mongoose.Types.ObjectId, ref: 'Assessment', required: false },
   ],
+  images: { type: [mediaSchema], default: [] },
+  videos: { type: [mediaSchema], default: [] },
 });
 
 const Athlete = models.Athlete || model<IAthlete>('Athlete', athleteSchema);

@@ -193,6 +193,9 @@ const Sidebar: React.FC = () => {
                   <Link href="/manage-tags">Manage Athlete Tags</Link>
                 </li>
                 {/* <li className="p-2 rounded hover:bg-gray-700">
+                  <Link href="/radar-plot">Radar Plot Creator</Link>
+                </li> */}
+                {/* <li className="p-2 rounded hover:bg-gray-700">
                 <Link href="/program-planner">Program Planner</Link>
               </li> */}
               </ul>
