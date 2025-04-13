@@ -136,6 +136,13 @@ const Pitching = () => {
               {tech}
             </button>
           ))}
+          <button
+            key="media"
+            onClick={() => router.push(`/athlete/${athleteId}/media`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Media
+          </button>
         </nav>
         <div className="flex justify-center text-gray-900 text-3xl font-bold py-5">
           <h1>Pitch Tracking Technologies</h1>

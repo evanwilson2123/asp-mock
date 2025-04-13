@@ -423,6 +423,13 @@ const BlastMotionStats: React.FC = () => {
               {tech}
             </button>
           ))}
+          <button
+            key="media"
+            onClick={() => router.push(`/athlete/${athleteId}/media`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Media
+          </button>
         </nav>
         {/* Blast Motion Overview and Inline Tag Management */}
         <div className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white rounded-lg shadow-md p-6">
