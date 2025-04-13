@@ -8,6 +8,7 @@ import Sidebar from '@/components/Dash/Sidebar';
 import AthleteSidebar from '@/components/Dash/AthleteSidebar';
 import Loader from '../Loader';
 import ErrorMessage from '../ErrorMessage';
+import { upload } from '@vercel/blob/client';
 
 interface IMedia {
   _id: string; // Unique identifier (from Mongoose subdocument _id)
@@ -25,9 +26,10 @@ const Media = () => {
   const [error, setError] = useState<string | null>(null);
   // Upload form states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [mediaType, setMediaType] = useState<string>('');
-  const [mediaName, setMediaName] = useState<string>(''); // New state for custom media name
+  const [mediaType, setMediaType] = useState<string>(''); // 'photo' or 'video'
+  const [mediaName, setMediaName] = useState<string>(''); // Custom media name
   const [showUploadForm, setShowUploadForm] = useState<boolean>(false);
+  const [uploading, setUploading] = useState<boolean>(false);
 
   // Get athleteId, router, and user role
   const { athleteId } = useParams();
@@ -51,7 +53,6 @@ const Media = () => {
           return;
         }
         const data = await res.json();
-        // Expect arrays of media objects
         setVideos(data.videos || []);
         setImages(data.images || []);
       } catch (error: any) {
@@ -67,52 +68,91 @@ const Media = () => {
   // Handle the media upload
   const handleUploadMedia = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!selectedFile || !mediaType) {
       setError('Please select a file and a media type before uploading.');
       return;
     }
-    const formData = new FormData();
-    formData.append('media', selectedFile);
-    formData.append('mediaType', mediaType);
-    // Append the mediaName to the form data
-    formData.append('mediaName', mediaName);
-
-    try {
-      const res = await fetch(`/api/athlete/${athleteId}/media`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Failed to upload media');
-      } else {
-        const data = await res.json();
-        // data.media contains the media object with _id, name, link, and date
-        if (mediaType === 'photo') {
+    setUploading(true);
+    if (mediaType === 'photo') {
+      // Use the existing strategy for photos (multipart upload)
+      const formData = new FormData();
+      formData.append('media', selectedFile);
+      formData.append('mediaType', mediaType);
+      formData.append('mediaName', mediaName);
+      try {
+        const res = await fetch(`/api/athlete/${athleteId}/media`, {
+          method: 'POST',
+          body: formData,
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error || 'Failed to upload media');
+        } else {
+          const data = await res.json();
           setImages((prev) => [...prev, data.media]);
-        } else if (mediaType === 'video') {
-          setVideos((prev) => [...prev, data.media]);
+          // Reset form state
+          setSelectedFile(null);
+          setMediaType('');
+          setMediaName('');
+          setShowUploadForm(false);
         }
-        // Reset the upload form state
-        setSelectedFile(null);
-        setMediaType('');
-        setMediaName('');
-        setShowUploadForm(false);
-        setError(null);
+      } catch (error: any) {
+        console.error(error);
+        setError('An error occurred while uploading media.');
+      } finally {
+        setUploading(false);
       }
-    } catch (error: any) {
-      console.error(error);
-      setError('An error occurred while uploading media.');
+    } else if (mediaType === 'video') {
+      // Use client upload for videos.
+      try {
+        // Dynamically import the upload function from @vercel/blob/client
+
+        // Upload directly from the browser.
+        const blobResult = await upload(selectedFile.name, selectedFile, {
+          access: 'public',
+          contentType: selectedFile.type,
+          // The handleUploadUrl should point to your secure client upload route.
+          handleUploadUrl: '/api/video/upload',
+        });
+        // Now send the video metadata to our POST endpoint in JSON.
+        const payload = {
+          media: blobResult.url,
+          mediaType: 'video',
+          mediaName: mediaName || selectedFile.name,
+        };
+        const res = await fetch(`/api/athlete/${athleteId}/media`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error || 'Failed to upload video metadata');
+        } else {
+          const data = await res.json();
+          setVideos((prev) => [...prev, data.media]);
+          // Reset form state
+          setSelectedFile(null);
+          setMediaType('');
+          setMediaName('');
+          setShowUploadForm(false);
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || 'Video upload failed');
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
-  // Handle deletion of media
+  // Handle deletion of media (unchanged)
   const handleDeleteMedia = async (
     _id: string,
     mediaCategory: 'photo' | 'video'
   ) => {
     try {
-      // Assuming your DELETE endpoint accepts mediaId and mediaType as query parameters
       const res = await fetch(
         `/api/athlete/${athleteId}/media?mediaId=${_id}&mediaType=${mediaCategory}`,
         {
@@ -123,7 +163,6 @@ const Media = () => {
         setError('Failed to delete media');
         return;
       }
-      // Remove the deleted media from state
       if (mediaCategory === 'photo') {
         setImages((prev) => prev.filter((item) => item._id !== _id));
       } else if (mediaCategory === 'video') {
@@ -260,8 +299,9 @@ const Media = () => {
               <button
                 type="submit"
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                disabled={uploading}
               >
-                Upload
+                {uploading ? 'Uploading...' : 'Upload'}
               </button>
             </form>
           </div>

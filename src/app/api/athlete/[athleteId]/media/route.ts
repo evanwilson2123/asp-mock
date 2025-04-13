@@ -47,11 +47,12 @@ export async function GET(req: NextRequest, context: any) {
 /**
  * POST endpoint for uploading media for the athlete.
  *
- * This includes:
- *  - Photos of mechanical analysis
- *  - Videos of mechanical analysis for side-by-side comparisons
+ * For photos: Expects a multipart/form-data request and uploads via server (using put()).
+ * For videos: Expects an application/json request containing { media, mediaType, mediaName }
+ *            where "media" is the Vercel Blob URL (obtained via a client upload).
  */
 export async function POST(req: NextRequest, context: any) {
+  console.log('Endpoint hit');
   const { userId } = await auth();
   if (!userId) {
     console.log('Unauthenticated Request');
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest, context: any) {
       { status: 400 }
     );
   }
-  const athleteId = context.params.athleteId; // Remove unnecessary await
+  const athleteId = context.params.athleteId; // access directly
   if (!athleteId) {
     console.log('Missing athleteId');
     return NextResponse.json({ error: 'Missing athleteId' }, { status: 400 });
@@ -76,60 +77,81 @@ export async function POST(req: NextRequest, context: any) {
       );
     }
 
-    const formData = await req.formData();
-    const mediaFile = formData.get('media');
-    if (!mediaFile) {
-      console.log('Missing media');
-      return NextResponse.json(
-        { error: 'Missing media in upload' },
-        { status: 400 }
-      );
-    }
-    const mediaType = formData.get('mediaType');
-    if (!mediaType) {
-      console.log('Missing media type specification');
-      return NextResponse.json(
-        { error: 'Missing media type specification' },
-        { status: 400 }
-      );
-    }
-    // New field for media name
-    const mediaName = formData.get('mediaName');
-
-    let blob: any;
-    let mediaData: { name: string; link: string; date: Date };
-
-    if (mediaType === 'photo') {
-      blob = await put(athlete._id + '_imageMedia', mediaFile, {
-        access: 'public',
-      });
-      mediaData = {
-        name:
-          (mediaName as string) || (mediaFile as File).name || 'Uploaded Image',
-        link: blob.url,
+    const contentType = req.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      // Client upload for videos sends a JSON payload.
+      const json = await req.json();
+      const { media, mediaType, mediaName } = json;
+      if (mediaType !== 'video') {
+        return NextResponse.json(
+          { error: 'Invalid media type for this flow.' },
+          { status: 400 }
+        );
+      }
+      const mediaData = {
+        name: mediaName || 'Uploaded Video',
+        link: media,
         date: new Date(),
-      };
-      athlete.images.push(mediaData);
-    } else if (mediaType === 'video') {
-      blob = await put(athlete._id + '_videoMedia', mediaFile, {
-        access: 'public',
-      });
-      mediaData = {
-        name:
-          (mediaName as string) || (mediaFile as File).name || 'Uploaded Video',
-        link: blob.url,
-        date: new Date(),
+        // Optionally, add blobName if you want to support deletion via blob key.
       };
       athlete.videos.push(mediaData);
+      await athlete.save();
+      return NextResponse.json({ media: mediaData }, { status: 200 });
     } else {
-      console.log('Invalid media type');
-      return NextResponse.json(
-        { error: 'Invalid media type' },
-        { status: 400 }
-      );
+      // Otherwise, assume multipart form (for photos).
+      const formData = await req.formData();
+      const mediaFile = formData.get('media');
+      if (!mediaFile) {
+        console.log('Missing media');
+        return NextResponse.json(
+          { error: 'Missing media in upload' },
+          { status: 400 }
+        );
+      }
+      const mediaType = formData.get('mediaType');
+      if (!mediaType) {
+        console.log('Missing media type specification');
+        return NextResponse.json(
+          { error: 'Missing media type specification' },
+          { status: 400 }
+        );
+      }
+      // New field for media name
+      const mediaName = formData.get('mediaName');
+
+      let blob: any;
+      let mediaData: {
+        name: string;
+        link: string;
+        date: Date;
+        blobName?: string;
+      };
+
+      if (mediaType === 'photo') {
+        // Generate a unique blob key if desired
+        const blobKey =
+          athlete._id.toString() + '_' + Date.now() + '_imageMedia';
+        blob = await put(blobKey, mediaFile, { access: 'public' });
+        mediaData = {
+          name:
+            (mediaName as string) ||
+            (mediaFile as File).name ||
+            'Uploaded Image',
+          link: blob.url,
+          date: new Date(),
+          blobName: blobKey,
+        };
+        athlete.images.push(mediaData);
+      } else {
+        // For videos in this branch, you do nothing—videos should be uploaded via the client.
+        return NextResponse.json(
+          { error: 'For videos, please use the client upload flow.' },
+          { status: 400 }
+        );
+      }
+      await athlete.save();
+      return NextResponse.json({ media: mediaData }, { status: 200 });
     }
-    await athlete.save();
-    return NextResponse.json({ media: mediaData }, { status: 200 });
   } catch (error: any) {
     console.error(error);
     return NextResponse.json(
@@ -138,7 +160,6 @@ export async function POST(req: NextRequest, context: any) {
     );
   }
 }
-
 export async function DELETE(req: NextRequest, context: any) {
   const { userId } = await auth();
   if (!userId) {
