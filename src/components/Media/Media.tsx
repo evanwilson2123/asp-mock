@@ -223,7 +223,7 @@ const Media = () => {
                   value={mediaName}
                   onChange={(e) => setMediaName(e.target.value)}
                   placeholder="Enter a custom name for your media"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-black w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -238,7 +238,7 @@ const Media = () => {
                       setSelectedFile(e.target.files[0]);
                     }
                   }}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-black w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -249,7 +249,7 @@ const Media = () => {
                 <select
                   value={mediaType}
                   onChange={(e) => setMediaType(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-black w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value="">-- Select Media Type --</option>

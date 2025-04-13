@@ -1,7 +1,7 @@
 import { connectDB } from '@/lib/db';
 import Athlete from '@/models/athlete';
 import { auth } from '@clerk/nextjs/server';
-import { put } from '@vercel/blob';
+import { put, del } from '@vercel/blob';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -171,11 +171,21 @@ export async function DELETE(req: NextRequest, context: any) {
     }
     switch (mediaType) {
       case 'photo':
+        for (const image of athlete.images) {
+          if (image._id.toString() === mediaId) {
+            await del(image.link);
+          }
+        }
         athlete.images = athlete.images.filter(
           (i: any) => i._id.toString() !== mediaId
         );
         break;
       case 'video':
+        for (const video of athlete.videos) {
+          if (video._id.toString() === mediaId) {
+            await del(video.link);
+          }
+        }
         athlete.videos = athlete.videos.filter(
           (i: any) => i._id.toString() !== mediaId
         );
@@ -188,6 +198,7 @@ export async function DELETE(req: NextRequest, context: any) {
         );
     }
     await athlete.save();
+
     return NextResponse.json({ message: 'success' }, { status: 200 });
   } catch (error: any) {
     console.error(error);
