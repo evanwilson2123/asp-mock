@@ -1,8 +1,8 @@
 // File: src/app/api/video/upload/route.ts
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
   console.log('Endpoint hit');
   try {
