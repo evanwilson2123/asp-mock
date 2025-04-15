@@ -46,7 +46,7 @@ export async function GET(
 
     if (isAthlete === 'true') {
       athlete.coachesNotes = athlete.coachesNotes.filter(
-        (n: any) => n.isAthlete
+        (n: any) => n.isAthlete && n.section === 'profile'
       );
     }
 

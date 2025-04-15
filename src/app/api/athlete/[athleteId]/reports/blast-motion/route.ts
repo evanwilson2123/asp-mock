@@ -245,6 +245,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
 import { auth } from '@clerk/nextjs/server';
+import Athlete from '@/models/athlete';
 
 /**
  * GET /api/blastmotion/:athleteId
@@ -289,6 +290,15 @@ export async function GET(req: NextRequest, context: any) {
   const athleteId = context.params.athleteId;
 
   try {
+    const { searchParams } = req.nextUrl;
+    const isAthlete = searchParams.get('isAthlete');
+    if (!isAthlete) {
+      console.log('Missing isAthlete param');
+      return NextResponse.json(
+        { error: 'Missing isAthlete param' },
+        { status: 400 }
+      );
+    }
     // Fetch BlastMotion records for the athlete, ordered by the actual CSV date descending.
     const records = await prisma.blastMotion.findMany({
       where: { athlete: athleteId },
@@ -425,6 +435,20 @@ export async function GET(req: NextRequest, context: any) {
       allRotationalAccels.length > 0 ? Math.max(...allRotationalAccels) : 0;
     const maxPower = allPowers.length > 0 ? Math.max(...allPowers) : 0;
 
+    const athlete = await Athlete.findById(athleteId);
+    if (!athlete) {
+      return NextResponse.json(
+        { error: 'Could not find athlete by ID' },
+        { status: 404 }
+      );
+    }
+
+    const coachesNotes = athlete.coachesNotes.filter((n: any) =>
+      isAthlete === 'true'
+        ? n.isAthlete && n.section === 'blast'
+        : n.section === 'blast'
+    );
+
     return NextResponse.json({
       maxBatSpeed,
       maxHandSpeed,
@@ -436,6 +460,7 @@ export async function GET(req: NextRequest, context: any) {
         sessionName,
         date,
       })),
+      coachesNotes: coachesNotes,
     });
   } catch (error: any) {
     console.error('Error fetching BlastMotion data:', error);

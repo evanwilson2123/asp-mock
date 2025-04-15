@@ -21,6 +21,7 @@ import { Line } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import AthleteSidebar from '../Dash/AthleteSidebar';
+import { ICoachNote } from '@/models/coachesNote';
 
 // Register Chart.js modules and the annotation plugin
 ChartJS.register(
@@ -59,6 +60,7 @@ interface BlastTag {
 }
 
 const BlastMotionStats: React.FC = () => {
+  // State for Blast Motion stats
   const [maxBatSpeed, setMaxBatSpeed] = useState<number>(0);
   const [maxHandSpeed, setMaxHandSpeed] = useState<number>(0);
   const [maxRotationalAccel, setMaxRotationalAccel] = useState<number>(0);
@@ -67,21 +69,14 @@ const BlastMotionStats: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const router = useRouter();
-  const { athleteId } = useParams();
-  const { user } = useUser();
-  const role = user?.publicMetadata?.role;
 
-  // State for blast tags associated with the athlete (for BlastMotion)
+  // States for inline tag management
   const [blastTags, setBlastTags] = useState<BlastTag[]>([]);
-  // State for all available tags (for dropdown)
   const [availableTags, setAvailableTags] = useState<BlastTag[]>([]);
 
-  // State for inline editing sessions (existing code)
+  // States for session editing
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState<string>('');
-
-  // Delete confirmation popup state (for sessions)
   const [deletePopup, setDeletePopup] = useState<{
     show: boolean;
     sessionId: string;
@@ -92,12 +87,24 @@ const BlastMotionStats: React.FC = () => {
     confirmText: '',
   });
 
-  // Fetch blast motion data (sessions, charts, etc.)
+  // ----- New Coach's Notes States -----
+  const [coachNotes, setCoachNotes] = useState<ICoachNote[]>([]);
+  const [newNoteText, setNewNoteText] = useState<string>('');
+  const [visibleToAthlete, setVisibleToAthlete] = useState<boolean>(false);
+  // ------------------------------------
+
+  const router = useRouter();
+  const { athleteId } = useParams();
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role;
+
+  // Fetch Blast Motion Data (sessions, charts, etc.)
   useEffect(() => {
     const fetchBlastData = async () => {
       try {
+        const isAthleteParam = role === 'ATHLETE' ? 'true' : 'false';
         const res = await fetch(
-          `/api/athlete/${athleteId}/reports/blast-motion`
+          `/api/athlete/${athleteId}/reports/blast-motion?isAthlete=${isAthleteParam}`
         );
         if (!res.ok) {
           const errorMsg =
@@ -124,6 +131,7 @@ const BlastMotionStats: React.FC = () => {
         setMaxPower(data.maxPower || 0);
         setSessionData(sortedSessionAverages);
         setSessions(data.sessions);
+        setCoachNotes(data.coachesNotes);
       } catch (err: any) {
         setErrorMessage(err.message);
       } finally {
@@ -133,13 +141,14 @@ const BlastMotionStats: React.FC = () => {
     fetchBlastData();
   }, [athleteId]);
 
-  // Fetch athlete's blast tags from '/api/tags/[athleteId]/blast'
+  // Fetch athlete's blast tags
   useEffect(() => {
     const fetchBlastTags = async () => {
       try {
         const res = await fetch(`/api/tags/${athleteId}/blast`);
         if (res.ok) {
           const data = await res.json();
+          // Filter out tags that are session-related
           data.tags = data.tags.filter((tag: any) => !tag.session);
           setBlastTags(data.tags);
         }
@@ -150,7 +159,7 @@ const BlastMotionStats: React.FC = () => {
     if (athleteId) fetchBlastTags();
   }, [athleteId]);
 
-  // Fetch available tags from '/api/tags'
+  // Fetch available tags for dropdown
   useEffect(() => {
     const fetchAvailableTags = async () => {
       try {
@@ -165,6 +174,29 @@ const BlastMotionStats: React.FC = () => {
     };
     fetchAvailableTags();
   }, []);
+
+  // ----- New: Fetch Coach's Notes -----
+  // useEffect(() => {
+  //   const fetchCoachNotes = async () => {
+  //     try {
+  //       // Append isAthlete param based on role (true for athletes)
+
+  //       const response = await fetch(
+  //         `/api/athlete/${athleteId}?isAthlete=${isAthleteParam}`
+  //       );
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         setCoachNotes(data.athlete?.coachesNotes || []);
+  //       } else {
+  //         console.error('Failed to fetch coach notes');
+  //       }
+  //     } catch (err) {
+  //       console.error(err);
+  //     }
+  //   };
+  //   if (athleteId) fetchCoachNotes();
+  // }, [athleteId, role]);
+  // ------------------------------------
 
   // Handler to add a blast tag association
   const handleAddBlastTag = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -262,6 +294,52 @@ const BlastMotionStats: React.FC = () => {
       console.error(error);
     }
   };
+
+  // ----- New: Coach's Notes Handlers -----
+  const handleNotesSave = async () => {
+    const newNote: ICoachNote = {
+      coachName:
+        `${user?.publicMetadata?.firstName || 'Coach'} ${user?.publicMetadata?.lastName || ''}`.trim(),
+      coachNote: newNoteText,
+      isAthlete: visibleToAthlete, // set based on toggle
+      section: 'blast',
+      date: new Date(),
+    };
+
+    try {
+      const response = await fetch(`/api/athlete/${athleteId}/notes`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: newNote }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save note');
+      }
+      setCoachNotes((prevNotes) => [...prevNotes, newNote]);
+      setNewNoteText('');
+      setVisibleToAthlete(false);
+    } catch (error) {
+      console.error('Error saving note:', error);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      const response = await fetch(
+        `/api/athlete/${athleteId}/notes?noteId=${noteId}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        throw new Error('Failed to delete note');
+      }
+      setCoachNotes((prevNotes) =>
+        prevNotes.filter((note) => note._id?.toString() !== noteId)
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  // -------------------------------------
 
   // Prepare chart data for the main chart (speeds, acceleration, power)
   const labels = sessionData.map((s) => s.date);
@@ -416,9 +494,7 @@ const BlastMotionStats: React.FC = () => {
               onClick={() =>
                 router.push(`/athlete/${athleteId}/${tech.toLowerCase()}`)
               }
-              className={`text-gray-700 font-semibold hover:text-gray-900 transition ${
-                tech === 'Hitting' ? 'underline' : ''
-              }`}
+              className={`text-gray-700 font-semibold hover:text-gray-900 transition ${tech === 'Hitting' ? 'underline' : ''}`}
             >
               {tech}
             </button>
@@ -444,13 +520,9 @@ const BlastMotionStats: React.FC = () => {
                   key={tag._id}
                   className="relative inline-block group mr-2 mb-2"
                 >
-                  <Link
-                    key={tag._id}
-                    href={`/athlete/${athleteId}/tags/blast/${tag._id}`}
-                  >
+                  <Link href={`/athlete/${athleteId}/tags/blast/${tag._id}`}>
                     <span
                       title={tag.description}
-                      key={tag._id}
                       className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
                     >
                       {tag.name}
@@ -466,10 +538,6 @@ const BlastMotionStats: React.FC = () => {
                       </button>
                     </span>
                   </Link>
-                  {/* Tooltip element
-                  <div className="absolute left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
-                    {tag.description}
-                  </div> */}
                 </div>
               ))
             ) : (
@@ -640,6 +708,80 @@ const BlastMotionStats: React.FC = () => {
             </div>
           ) : (
             <p className="text-gray-500">No connection data available.</p>
+          )}
+        </div>
+
+        {/* Coach's Notes Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-lg font-bold text-gray-700 mb-4">
+            Coach&apos;s Notes
+          </h2>
+          <div className="mb-4">
+            {coachNotes.length > 0 ? (
+              coachNotes.map((note, index) => (
+                <div
+                  key={index}
+                  className="mb-2 p-2 border rounded flex justify-between items-start"
+                >
+                  <div>
+                    <p className="text-sm text-gray-600">
+                      <span className="font-semibold">{note.coachName}</span> on{' '}
+                      {new Date(note.date).toLocaleDateString()}:
+                    </p>
+                    <p className="text-gray-800">{note.coachNote}</p>
+                    {note.isAthlete && role !== 'ATHLETE' && (
+                      <p className="text-xs text-green-600 font-semibold">
+                        Visible to Athlete
+                      </p>
+                    )}
+                  </div>
+                  {role !== 'ATHLETE' && (
+                    <button
+                      onClick={() =>
+                        note._id && handleDeleteNote(note._id.toString())
+                      }
+                      className=""
+                    >
+                      <TrashIcon className="h-5 w-5 text-gray-700" />
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No notes yet.</p>
+            )}
+          </div>
+          {role !== 'ATHLETE' && (
+            <>
+              <textarea
+                value={newNoteText}
+                onChange={(e) => setNewNoteText(e.target.value)}
+                className="text-black w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={4}
+                placeholder="Add a new note..."
+              ></textarea>
+              <div className="flex items-center mt-2">
+                <input
+                  type="checkbox"
+                  id="visibleToAthlete"
+                  checked={visibleToAthlete}
+                  onChange={(e) => setVisibleToAthlete(e.target.checked)}
+                  className="mr-2"
+                />
+                <label
+                  htmlFor="visibleToAthlete"
+                  className="text-gray-700 text-sm"
+                >
+                  Visible to Athlete
+                </label>
+              </div>
+              <button
+                onClick={handleNotesSave}
+                className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              >
+                Save Note
+              </button>
+            </>
           )}
         </div>
       </div>
