@@ -23,12 +23,30 @@ export async function GET(
       );
     }
 
+    const { searchParams } = req.nextUrl;
+    const isAthlete = searchParams.get('isAthlete');
+    if (!isAthlete) {
+      console.log('Missing search param');
+      return NextResponse.json(
+        { error: 'Missing is athlete search param' },
+        { status: 400 }
+      );
+    }
+
     const athlete = await Athlete.findById(athleteId).exec();
+
+    console.log('Athlete: ', JSON.stringify(athlete));
 
     if (!athlete) {
       return NextResponse.json(
         { error: 'Athlete not found in database' },
         { status: 404 }
+      );
+    }
+
+    if (isAthlete === 'true') {
+      athlete.coachesNotes = athlete.coachesNotes.filter(
+        (n: any) => n.isAthlete
       );
     }
 

@@ -37,10 +37,9 @@ interface Athlete {
 const AthleteDetails = () => {
   // ========== State Management ==========
   const [athlete, setAthlete] = useState<Athlete | null>(null);
-  // Store the array of coach notes
   const [coachNotes, setCoachNotes] = useState<ICoachNote[]>([]);
-  // Separate state for the new note text input
   const [newNoteText, setNewNoteText] = useState<string>('');
+  const [visibleToAthlete, setVisibleToAthlete] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hoveredTile, setHoveredTile] = useState<string | null>(null);
@@ -53,7 +52,6 @@ const AthleteDetails = () => {
     season: '',
     programType: '',
   });
-  // New state for handling profile photo upload
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // ========== Authentication ==========
@@ -69,7 +67,12 @@ const AthleteDetails = () => {
   useEffect(() => {
     const fetchAthlete = async () => {
       try {
-        const response = await fetch(`/api/athlete/${athleteId}`);
+        // Append the search param "isAthlete" based on the user role.
+        // If the user is an athlete, set to 'true'; otherwise 'false'
+        const isAthleteParam = role === 'ATHLETE' ? 'true' : 'false';
+        const response = await fetch(
+          `/api/athlete/${athleteId}?isAthlete=${isAthleteParam}`
+        );
         if (!response.ok) {
           const errorMessage =
             response.status === 404
@@ -83,7 +86,6 @@ const AthleteDetails = () => {
         setErrorMessage(null);
         const data = await response.json();
         setAthlete(data.athlete || null);
-        // Ensure coachesNotes is an array
         setCoachNotes(data.athlete?.coachesNotes || []);
         setUpdatedFields({
           active: data.athlete?.active || false,
@@ -98,7 +100,7 @@ const AthleteDetails = () => {
       }
     };
     fetchAthlete();
-  }, [athleteId]);
+  }, [athleteId, role]);
 
   // ========== Save New Coach Note ==========
   const handleNotesSave = async () => {
@@ -106,6 +108,7 @@ const AthleteDetails = () => {
       coachName:
         `${user?.publicMetadata?.firstName || 'Coach'} ${user?.publicMetadata?.lastName || ''}`.trim(),
       coachNote: newNoteText,
+      isAthlete: visibleToAthlete, // Set note visibility based on toggle value
       date: new Date(),
     };
 
@@ -113,15 +116,15 @@ const AthleteDetails = () => {
       const response = await fetch(`/api/athlete/${athleteId}/notes`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        // Send the note wrapped in an object; adjust if needed
         body: JSON.stringify({ note: newNote }),
       });
       if (!response.ok) {
         throw new Error('Failed to save note');
       }
-      // Update local state by appending the new note
+      // Append the new note to the local state
       setCoachNotes((prevNotes) => [...prevNotes, newNote]);
       setNewNoteText('');
+      setVisibleToAthlete(false);
       setUploadStatus('Note saved successfully');
     } catch (error) {
       console.error('Error saving note:', error);
@@ -232,9 +235,8 @@ const AthleteDetails = () => {
 
       // Assuming the API returns the updated athlete data with a new photo URL
       const data = await response.json();
-      // Update the athlete state with the new profile photo URL
       setAthlete((prev) =>
-        prev ? { ...prev, profilePhotoUrl: data.profilePhotoUrl } : prev
+        prev ? { ...prev, pPhotoUrl: data.profilePhotoUrl } : prev
       );
     } catch (error: any) {
       console.error('Error uploading photo:', error);
@@ -325,13 +327,6 @@ const AthleteDetails = () => {
           >
             Comparison
           </button>
-          {/* <button
-            key="reports"
-            onClick={() => router.push(`/athlete/${athleteId}/reports`)}
-            className="text-gray-700 font-semibold hover:text-gray-900 transition"
-          >
-            Reports
-          </button> */}
           <button
             key="media"
             onClick={() => router.push(`/athlete/${athleteId}/media`)}
@@ -360,7 +355,7 @@ const AthleteDetails = () => {
                     No Photo
                   </div>
                 )}
-                {/* Overlay button for uploading a new photo */}
+                {/* Overlay for photo upload */}
                 <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                   <CameraIcon className="h-8 w-8 text-white" />
                   <input
@@ -492,28 +487,33 @@ const AthleteDetails = () => {
           </div>
         </div>
 
-        {/* Coach Notes Section */}
-        <div></div>
-        {role !== 'ATHLETE' && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-lg font-bold text-gray-700 mb-4">
-              Coach&apos;s Notes
-            </h2>
-            {/* Render Existing Notes with Delete Buttons */}
-            <div className="mb-4">
-              {coachNotes.length > 0 ? (
-                coachNotes.map((note, index) => (
-                  <div
-                    key={index}
-                    className="mb-2 p-2 border rounded flex justify-between items-start"
-                  >
-                    <div>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-semibold">{note.coachName}</span>{' '}
-                        on {new Date(note.date).toLocaleDateString()}:
+        {/* Coach's Notes Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-lg font-bold text-gray-700 mb-4">
+            Coach&apos;s Notes
+          </h2>
+          {/* Display the list of notes */}
+          <div className="mb-4">
+            {coachNotes.length > 0 ? (
+              coachNotes.map((note, index) => (
+                <div
+                  key={index}
+                  className="mb-2 p-2 border rounded flex justify-between items-start"
+                >
+                  <div>
+                    <p className="text-sm text-gray-600">
+                      <span className="font-semibold">{note.coachName}</span> on{' '}
+                      {new Date(note.date).toLocaleDateString()}:
+                    </p>
+                    <p className="text-gray-800">{note.coachNote}</p>
+                    {note.isAthlete && role !== 'ATHLETE' && (
+                      <p className="text-xs text-green-600 font-semibold">
+                        Visible to Athlete
                       </p>
-                      <p className="text-gray-800">{note.coachNote}</p>
-                    </div>
+                    )}
+                  </div>
+                  {/* Allow deletion only when not an athlete */}
+                  {role !== 'ATHLETE' && (
                     <button
                       onClick={() =>
                         note._id && handleDeleteNote(note._id.toString())
@@ -522,28 +522,47 @@ const AthleteDetails = () => {
                     >
                       <TrashIcon className="h-5 w-5 text-gray-700" />
                     </button>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500">No notes yet.</p>
-              )}
-            </div>
-            {/* New Note Input */}
-            <textarea
-              value={newNoteText}
-              onChange={(e) => setNewNoteText(e.target.value)}
-              className="text-black w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-              placeholder="Add a new note..."
-            ></textarea>
-            <button
-              onClick={handleNotesSave}
-              className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-            >
-              Save Note
-            </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No notes yet.</p>
+            )}
           </div>
-        )}
+          {/* Only non-athletes can add or toggle new notes */}
+          {role !== 'ATHLETE' && (
+            <>
+              <textarea
+                value={newNoteText}
+                onChange={(e) => setNewNoteText(e.target.value)}
+                className="text-black w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={4}
+                placeholder="Add a new note..."
+              ></textarea>
+              <div className="flex items-center mt-2">
+                <input
+                  type="checkbox"
+                  id="visibleToAthlete"
+                  checked={visibleToAthlete}
+                  onChange={(e) => setVisibleToAthlete(e.target.checked)}
+                  className="mr-2"
+                />
+                <label
+                  htmlFor="visibleToAthlete"
+                  className="text-gray-700 text-sm"
+                >
+                  Visible to Athlete
+                </label>
+              </div>
+              <button
+                onClick={handleNotesSave}
+                className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              >
+                Save Note
+              </button>
+            </>
+          )}
+        </div>
 
         {/* CSV Upload Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
