@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
 import { auth } from '@clerk/nextjs/server';
+import Athlete from '@/models/athlete';
 
 /**
  * GET /api/trackman/:athleteId
@@ -77,6 +78,9 @@ export async function GET(req: NextRequest, context: any) {
   console.log(req);
 
   try {
+    // find out if the user is an athlete or not
+    const { searchParams } = req.nextUrl;
+    const isAthlete = searchParams.get('isAthlete');
     // Fetch all Trackman data for the athlete
     const sessionsData = await prisma.trackman.findMany({
       where: { athleteId },
@@ -170,10 +174,30 @@ export async function GET(req: NextRequest, context: any) {
     // Convert session map to array for clickable sessions
     const clickableSessions = Object.values(sessionMap);
 
+    const athlete = await Athlete.findById(athleteId).exec();
+    if (!athlete) {
+      console.log('Athlete not found with ID');
+      return NextResponse.json(
+        { error: 'Could not find athlete by ID' },
+        { status: 404 }
+      );
+    }
+
+    if (isAthlete === 'true') {
+      athlete.coachesNotes = athlete.coachesNotes.filter(
+        (n: any) => n.isAthlete
+      );
+    }
+
+    athlete.coachesNotes = athlete.coachesNotes.filter(
+      (n: any) => n.section === 'trackman'
+    );
+
     return NextResponse.json({
       pitchStats: formattedPitchStats,
       avgPitchSpeeds,
       sessions: clickableSessions, // Now includes sessionName
+      coachesNotes: athlete.coachesNotes,
     });
   } catch (error: any) {
     console.error('Error fetching Trackman data:', error);
