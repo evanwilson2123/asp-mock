@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
 import { auth } from '@clerk/nextjs/server';
+import Athlete from '@/models/athlete';
 
 export async function GET(req: NextRequest, context: any) {
   const { userId } = await auth();
@@ -11,6 +12,9 @@ export async function GET(req: NextRequest, context: any) {
   const athleteId = context.params.athleteId;
 
   try {
+    const { searchParams } = req.nextUrl;
+    const isAthlete = searchParams.get('isAthlete');
+
     const records = await prisma.hitTrax.findMany({
       where: { athlete: athleteId },
       orderBy: { date: 'desc' },
@@ -190,6 +194,24 @@ export async function GET(req: NextRequest, context: any) {
 
     const hardHitAverage = totalEntries > 0 ? totalHardHits / totalEntries : 0;
 
+    const athlete = await Athlete.findById(athleteId).exec();
+    if (!athlete) {
+      return NextResponse.json(
+        { error: 'Could not find athlete by ID' },
+        { status: 404 }
+      );
+    }
+
+    if (isAthlete === 'true') {
+      athlete.coachesNotes = athlete.coachesNotes.filter(
+        (n: any) => n.isAthlete
+      );
+    }
+
+    athlete.coachesNotes = athlete.coachesNotes.filter(
+      (n: any) => n.section === 'hittrax'
+    );
+
     return NextResponse.json({
       maxExitVelo,
       maxDistance,
@@ -204,6 +226,7 @@ export async function GET(req: NextRequest, context: any) {
       maxCenterDistance,
       maxOppoDistance,
       zoneAverages: sessionZoneAverages,
+      coachesNotes: athlete.coachesNotes,
     });
   } catch (error: any) {
     console.error('Error fetching HitTrax data:', error);

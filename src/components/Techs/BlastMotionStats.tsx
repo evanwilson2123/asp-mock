@@ -175,29 +175,6 @@ const BlastMotionStats: React.FC = () => {
     fetchAvailableTags();
   }, []);
 
-  // ----- New: Fetch Coach's Notes -----
-  // useEffect(() => {
-  //   const fetchCoachNotes = async () => {
-  //     try {
-  //       // Append isAthlete param based on role (true for athletes)
-
-  //       const response = await fetch(
-  //         `/api/athlete/${athleteId}?isAthlete=${isAthleteParam}`
-  //       );
-  //       if (response.ok) {
-  //         const data = await response.json();
-  //         setCoachNotes(data.athlete?.coachesNotes || []);
-  //       } else {
-  //         console.error('Failed to fetch coach notes');
-  //       }
-  //     } catch (err) {
-  //       console.error(err);
-  //     }
-  //   };
-  //   if (athleteId) fetchCoachNotes();
-  // }, [athleteId, role]);
-  // ------------------------------------
-
   // Handler to add a blast tag association
   const handleAddBlastTag = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const tagId = e.target.value;

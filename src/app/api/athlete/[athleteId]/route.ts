@@ -46,9 +46,13 @@ export async function GET(
 
     if (isAthlete === 'true') {
       athlete.coachesNotes = athlete.coachesNotes.filter(
-        (n: any) => n.isAthlete && n.section === 'profile'
+        (n: any) => n.isAthlete
       );
     }
+
+    athlete.coachesNotes = athlete.coachesNotes.filter(
+      (n: any) => n.section === 'profile'
+    );
 
     return NextResponse.json({ athlete }, { status: 200 });
   } catch (error: any) {
