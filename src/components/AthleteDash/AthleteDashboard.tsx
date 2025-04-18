@@ -222,74 +222,76 @@ const AthleteDashboard = () => {
           ))}
         </div>
 
-        {/* Coaches Notes */}
-        <h2 className="text-2xl font-bold mb-6">Coaches Notes</h2>
+        <div className="rounded-lg ring-2 ring-offset-2 p-6 ring-offset-white ring-gray-300 bg-white">
+          {/* Coaches Notes */}
+          <h2 className="text-2xl font-bold mb-6">Coaches Notes</h2>
 
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {noteTabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 rounded-md font-semibold transition-colors duration-150 ${
-                activeTab === tab.key
-                  ? 'bg-gray-800 text-white'
-                  : 'bg-gray-300 text-gray-800 hover:bg-gray-400'
-              }`}
-            >
-              {tab.title}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content */}
-        <div className="overflow-x-auto border border-gray-300 rounded-md">
-          {noteTabs.map((tab) => {
-            if (tab.key !== activeTab) return null;
-
-            if (tab.notes.length === 0) {
-              return (
-                <p key={tab.key} className="p-4 text-gray-600 italic">
-                  No notes for {tab.title}.
-                </p>
-              );
-            }
-
-            return (
-              <table
+          {/* Tabs */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {noteTabs.map((tab) => (
+              <button
                 key={tab.key}
-                className="min-w-full divide-y divide-gray-300 bg-white"
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-2 rounded-md font-semibold transition-colors duration-150 ${
+                  activeTab === tab.key
+                    ? 'bg-gray-800 text-white'
+                    : 'bg-gray-300 text-gray-800 hover:bg-gray-400'
+                }`}
               >
-                <thead className="bg-gray-200">
-                  <tr>
-                    <th className="px-4 py-2 text-left whitespace-nowrap">
-                      Date
-                    </th>
-                    <th className="px-4 py-2 text-left whitespace-nowrap">
-                      Coach
-                    </th>
-                    <th className="px-4 py-2 text-left">Note</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {tab.notes.map((note) => (
-                    <tr
-                      key={note._id?.toString()}
-                      className="odd:bg-white even:bg-gray-50"
-                    >
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {formatDate(note.date.toString())}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {note.coachName}
-                      </td>
-                      <td className="px-4 py-2">{note.coachNote}</td>
+                {tab.title}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Content */}
+          <div className="overflow-x-auto border border-gray-300 rounded-md">
+            {noteTabs.map((tab) => {
+              if (tab.key !== activeTab) return null;
+
+              if (tab.notes.length === 0) {
+                return (
+                  <p key={tab.key} className="p-4 text-gray-600 italic">
+                    No notes for {tab.title}.
+                  </p>
+                );
+              }
+
+              return (
+                <table
+                  key={tab.key}
+                  className="min-w-full divide-y divide-gray-300 bg-white"
+                >
+                  <thead className="bg-gray-200">
+                    <tr>
+                      <th className="px-4 py-2 text-left whitespace-nowrap">
+                        Date
+                      </th>
+                      <th className="px-4 py-2 text-left whitespace-nowrap">
+                        Coach
+                      </th>
+                      <th className="px-4 py-2 text-left">Note</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            );
-          })}
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {tab.notes.map((note) => (
+                      <tr
+                        key={note._id?.toString()}
+                        className="odd:bg-white even:bg-gray-50"
+                      >
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          {formatDate(note.date.toString())}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          {note.coachName}
+                        </td>
+                        <td className="px-4 py-2">{note.coachNote}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
