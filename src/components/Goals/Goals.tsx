@@ -223,6 +223,13 @@ const Goals = () => {
           >
             Media
           </button>
+          <button
+            key="dash-view"
+            onClick={() => router.push(`/athlete/${athleteId}/dash-view`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Dash-View
+          </button>
         </nav>
 
         {/* Goals Header */}

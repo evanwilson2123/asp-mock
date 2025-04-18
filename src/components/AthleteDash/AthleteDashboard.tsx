@@ -3,20 +3,41 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import AthleteSidebar from '../Dash/AthleteSidebar';
+import CoachSidebar from '@/components/Dash/CoachSidebar';
+import Sidebar from '@/components/Dash/Sidebar';
 import { IAthleteTag } from '@/models/athleteTag';
 import { IGoal } from '@/models/goal';
 import Loader from '../Loader';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ICoachNote } from '@/models/coachesNote';
 
 /**
  * AthleteDashboard
  * ----------------------------------------------------
  * Displays summary statistics, tags, goals, and coaches' notes
- * for an individual athlete.
+ * for an individual athlete. Sidebar adapts to viewer role:
+ *  - ATHLETE → AthleteSidebar
+ *  - COACH   → CoachSidebar
+ *  - others  → Sidebar
  */
 const AthleteDashboard = () => {
-  /* ------------------------------- state ----------------------------------- */
+  /* ----------------------------- hooks / auth ----------------------------- */
+  const router = useRouter();
+  const params = useParams();
+  const { user } = useUser();
+  const role = user?.publicMetadata?.role as string | undefined;
+
+  // If viewer is the athlete themself, use their own objectId.
+  // Otherwise (coach/admin), use the `[athleteId]` route param.
+  const resolvedAthleteId: string | undefined =
+    role === 'ATHLETE'
+      ? (user?.publicMetadata?.objectId as string)
+      : (() => {
+          const id = (params as Record<string, string | string[]>).athleteId;
+          return Array.isArray(id) ? id[0] : id;
+        })();
+
+  /* ------------------------------ state ----------------------------------- */
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -35,22 +56,17 @@ const AthleteDashboard = () => {
   // Goals
   const [goals, setGoals] = useState<IGoal[]>([]);
 
-  // Coach notes
+  // Notes
   const [blastNotes, setBlastNotes] = useState<ICoachNote[]>([]);
   const [hittraxNotes, setHittraxNotes] = useState<ICoachNote[]>([]);
   const [trackmanNotes, setTrackmanNotes] = useState<ICoachNote[]>([]);
   const [profileNotes, setProfileNotes] = useState<ICoachNote[]>([]);
 
-  // Active tech tab for notes (added profile)
   const [activeTab, setActiveTab] = useState<
     'blast' | 'hittrax' | 'trackman' | 'profile'
   >('blast');
 
-  /* ------------------------------- helpers --------------------------------- */
-  const router = useRouter();
-  const { user } = useUser();
-  const athleteId = user?.publicMetadata?.objectId as string | undefined;
-
+  /* ------------------------------ helpers --------------------------------- */
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -58,22 +74,20 @@ const AthleteDashboard = () => {
       day: 'numeric',
     });
 
-  /* ------------------------------- effects --------------------------------- */
+  /* ------------------------------ effects --------------------------------- */
   useEffect(() => {
-    if (!athleteId) return;
+    if (!resolvedAthleteId) return;
 
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/athlete/${athleteId}/dash`);
+        const res = await fetch(`/api/athlete/${resolvedAthleteId}/dash`);
         if (!res.ok) throw new Error('Error fetching athlete dashboard data');
         const data = await res.json();
 
-        // counts
         setSwingCount(data.swingCount);
         setPitchCount(data.pitchCount);
 
-        // tags
         setHitTags(data.hitTags);
         setBlastTags(data.blastTags);
         setTrackTags(data.trackTags);
@@ -81,10 +95,8 @@ const AthleteDashboard = () => {
         setForceTags(data.forceTags);
         setAssessmentTags(data.assessmentTags);
 
-        // goals
         setGoals(data.goals);
 
-        // notes
         setBlastNotes(data.blastNotes);
         setHittraxNotes(data.hittraxNotes);
         setTrackmanNotes(data.trackmanNotes);
@@ -95,13 +107,13 @@ const AthleteDashboard = () => {
         setLoading(false);
       }
     })();
-  }, [athleteId]);
+  }, [resolvedAthleteId]);
 
-  /* ----------------------------- early return ------------------------------ */
+  /* --------------------------- early returns ------------------------------ */
   if (loading) return <Loader />;
   if (errorMessage) return <div className="text-gray-800">{errorMessage}</div>;
 
-  /* ----------------------------- render start ------------------------------ */
+  /* ----------------------------- render ----------------------------------- */
   const noteTabs = [
     { key: 'blast', title: 'Blast', notes: blastNotes },
     { key: 'hittrax', title: 'HitTrax', notes: hittraxNotes },
@@ -109,18 +121,33 @@ const AthleteDashboard = () => {
     { key: 'profile', title: 'Profile', notes: profileNotes },
   ] as const;
 
+  const SidebarComponent =
+    role === 'COACH'
+      ? CoachSidebar
+      : role === 'ATHLETE'
+        ? AthleteSidebar
+        : Sidebar;
+
   return (
     <div className="flex min-h-screen bg-gray-100 overflow-y-auto">
-      {/* Sidebar */}
+      {/* Sidebar (mobile & desktop) */}
       <div className="md:hidden bg-gray-100">
-        <AthleteSidebar />
+        <SidebarComponent />
       </div>
       <div className="hidden md:block w-64 bg-gray-900 text-white">
-        <AthleteSidebar />
+        <SidebarComponent />
       </div>
 
-      {/* Main content */}
+      {/* Main Content */}
       <div className="flex-1 p-4 pb-24 text-gray-800">
+        {role !== 'ATHLETE' && (
+          <button
+            onClick={() => router.back()}
+            className="mb-4 px-4 py-2 bg-gray-300 text-gray-900 rounded hover:bg-gray-400 transition"
+          >
+            Back
+          </button>
+        )}
         <h1 className="text-3xl font-bold mb-6 text-center">My Stats</h1>
 
         {/* Counts */}
@@ -128,13 +155,13 @@ const AthleteDashboard = () => {
           {[
             { label: 'Swing Count', value: swingCount },
             { label: 'Pitch Count', value: pitchCount },
-          ].map((c) => (
+          ].map(({ label, value }) => (
             <div
-              key={c.label}
+              key={label}
               className="bg-white rounded-lg shadow p-6 border-2 border-gray-300"
             >
-              <h2 className="text-xl font-bold mb-4">{c.label}</h2>
-              <p className="text-4xl font-semibold text-center">{c.value}</p>
+              <h2 className="text-xl font-bold mb-4">{label}</h2>
+              <p className="text-4xl font-semibold text-center">{value}</p>
             </div>
           ))}
         </div>
@@ -166,7 +193,7 @@ const AthleteDashboard = () => {
                     className="py-1 border-b last:border-0 text-white bg-gray-700 hover:bg-gray-600 rounded-md cursor-pointer flex justify-center"
                     onClick={() =>
                       router.push(
-                        `/athlete/${athleteId}/tags/${path}/${tag._id}`
+                        `/athlete/${resolvedAthleteId}/tags/${path}/${tag._id}`
                       )
                     }
                   >
@@ -186,7 +213,7 @@ const AthleteDashboard = () => {
               key={goal._id.toString()}
               className="bg-white rounded-lg shadow p-6 border-2 border-gray-300 cursor-pointer"
               onClick={() =>
-                router.push(`/athlete/${athleteId}/goals/${goal._id}`)
+                router.push(`/athlete/${resolvedAthleteId}/goals/${goal._id}`)
               }
             >
               <h3 className="text-lg font-semibold mb-2">{goal.goalName}</h3>
@@ -215,7 +242,7 @@ const AthleteDashboard = () => {
           ))}
         </div>
 
-        {/* Tab content */}
+        {/* Tab Content */}
         <div className="overflow-x-auto border border-gray-300 rounded-md">
           {noteTabs.map((tab) => {
             if (tab.key !== activeTab) return null;
