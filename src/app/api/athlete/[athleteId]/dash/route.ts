@@ -87,6 +87,20 @@ export async function GET(req: NextRequest, context: any) {
       assessmentTags.push(tag);
     }
 
+    const blastNotes = athlete.coachesNotes.filter(
+      (n: any) => n.isAthlete && n.section === 'blast'
+    );
+    const hittraxNotes = athlete.coachesNotes.filter(
+      (n: any) => n.isAthlete && n.section === 'hittrax'
+    );
+    const trackmanNotes = athlete.coachesNotes.filter(
+      (n: any) => n.isAthlete && n.section === 'trackman'
+    );
+
+    const profileNotes = athlete.coachesNotes.filter(
+      (n: any) => n.isAthlete && n.section === 'profile'
+    );
+
     // fetch the goals
     const goals = await Goal.find({ athlete: athleteId }).exec();
     return NextResponse.json(
@@ -100,6 +114,10 @@ export async function GET(req: NextRequest, context: any) {
         forceTags,
         assessmentTags,
         goals,
+        blastNotes: blastNotes,
+        hittraxNotes: hittraxNotes,
+        trackmanNotes: trackmanNotes,
+        profileNotes: profileNotes,
       },
       { status: 200 }
     );
