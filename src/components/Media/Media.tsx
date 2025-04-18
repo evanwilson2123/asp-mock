@@ -234,6 +234,13 @@ const Media = () => {
             </button>
           ))}
         </nav>
+        <button
+          key="dash-view"
+          onClick={() => router.push(`/athlete/${athleteId}/dash-view`)}
+          className="text-gray-700 font-semibold hover:text-gray-900 transition"
+        >
+          Dash-View
+        </button>
 
         {/* Media Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6 flex justify-between items-center">
