@@ -187,7 +187,7 @@ const AthleteDashboard = () => {
             >
               <h3 className="font-semibold mb-2">{title}</h3>
               <ul>
-                {tags.map((tag) => (
+                {tags.filter(Boolean).map((tag) => (
                   <li
                     key={tag._id.toString()}
                     className="py-1 border-b last:border-0 text-white bg-gray-700 hover:bg-gray-600 rounded-md cursor-pointer flex justify-center"
