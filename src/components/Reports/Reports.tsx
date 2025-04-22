@@ -42,8 +42,11 @@ const Reports: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     const fetchAthlete = async () => {
+      const isAthleteParam = role === 'ATHLETE' ? 'true' : 'false';
       try {
-        const response = await fetch(`/api/athlete/${athleteId}`);
+        const response = await fetch(
+          `/api/athlete/${athleteId}?isAthlete=${isAthleteParam}`
+        );
         if (!response.ok) {
           throw new Error('Error fetching athlete');
         }
