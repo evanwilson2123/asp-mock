@@ -41,6 +41,7 @@ interface Hit {
   LA: number | null;
   sprayChartX?: number | null;
   sprayChartZ?: number | null;
+  type?: string;
 }
 
 interface SessionData {
@@ -389,6 +390,9 @@ const HitTraxSessionDetails: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Launch&nbsp;Angle&nbsp;(°)
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Result
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200 text-black">
@@ -405,6 +409,9 @@ const HitTraxSessionDetails: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {hit.LA !== null ? hit.LA.toFixed(1) : '—'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {hit.type !== null ? hit.type : '-'}
                         </td>
                       </tr>
                     ))}
