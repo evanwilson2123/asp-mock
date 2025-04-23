@@ -330,16 +330,16 @@ const HitTraxSessionDetails: React.FC = () => {
         </div>
 
         {/* Positive Outcome Zone */}
-        <div className="rounded border-2 border-gray-300 bg-white mb-4">
+        {/* <div className="rounded border-2 border-gray-300 bg-white mb-4">
           <h1 className="text-3xl font-bold text-gray-700 justify-center flex">
             Positive Outcome By Zone
           </h1>
-        </div>
+        </div> */}
 
         {/* Top 12.5% Section */}
         <div className="rounded border-2 border-gray-300 bg-white mb-4">
           <h1 className="text-3xl font-bold text-gray-700 justify-center flex">
-            Top&nbsp;12.5%
+            Top&nbsp;12.5%&nbsp;Swing&nbsp;Averages
           </h1>
         </div>
         <div className="flex flex-col md:flex-row gap-8 mb-8">
