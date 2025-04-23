@@ -13,11 +13,12 @@ import {
   PointElement,
   LineElement,
   BarElement,
+  ArcElement, // for Pie chart
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
 import StrikeZone from '@/components/StrikeZone';
 import AthleteSidebar from '../Dash/AthleteSidebar';
@@ -28,6 +29,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend
@@ -65,31 +67,24 @@ interface SessionData {
     bottomCenter: number;
     bottomRight: number;
   };
+  LDpercent: number | string;
+  FBpercent: number | string;
+  GBpercent: number | string;
 }
 
-/* -------------------- CONSTANTS & TOP-LEVEL HOOKS -------------------- */
-const hitsPerPage = 10; // pagination size – must live outside conditional logic
+const hitsPerPage = 10;
 
-/**
- * HitTraxSessionDetails Component
- *
- * Displays hit session details along with charts, stats, and a paginated
- * table of individual hit data.
- */
 const HitTraxSessionDetails: React.FC = () => {
-  /* -------------------- top-level state hooks (run every render) -------------------- */
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<number>(1); // <-- moved here (unconditional)
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
-  /* -------------------- other hooks -------------------- */
   const { sessionId } = useParams();
   const router = useRouter();
   const { user } = useUser();
   const role = user?.publicMetadata?.role as string | undefined;
 
-  /* -------------------- fetch session data -------------------- */
   useEffect(() => {
     const fetchSessionData = async () => {
       try {
@@ -120,13 +115,10 @@ const HitTraxSessionDetails: React.FC = () => {
     fetchSessionData();
   }, [sessionId]);
 
-  /* -------------------- reset page on new data -------------------- */
   useEffect(() => {
-    // whenever we load a new session, jump back to page 1
     if (sessionData) setCurrentPage(1);
   }, [sessionData]);
 
-  /* -------------------- early-return renders -------------------- */
   if (loading) return <Loader />;
   if (errorMessage)
     return (
@@ -136,7 +128,6 @@ const HitTraxSessionDetails: React.FC = () => {
     );
   if (!sessionData) return null;
 
-  /* -------------------- destructuring & derived values -------------------- */
   const {
     hits,
     maxExitVelo,
@@ -147,6 +138,9 @@ const HitTraxSessionDetails: React.FC = () => {
     top12_5PercentStats,
     percentOptimalLA,
     percentByZone,
+    LDpercent,
+    FBpercent,
+    GBpercent,
   } = sessionData;
 
   const totalPages = Math.max(1, Math.ceil(hits.length / hitsPerPage));
@@ -158,7 +152,6 @@ const HitTraxSessionDetails: React.FC = () => {
   const handleNextPage = () =>
     setCurrentPage((p) => Math.min(p + 1, totalPages));
 
-  /* -------------------- chart data (unchanged) -------------------- */
   const heightBarChartData = {
     labels: ['Low', 'Middle', 'Top'],
     datasets: [
@@ -235,7 +228,33 @@ const HitTraxSessionDetails: React.FC = () => {
     percentByZone.bottomRight || 0,
   ];
 
-  /* -------------------- component render -------------------- */
+  /* ------- Pie chart (smaller size) ------- */
+  const pieChartData = {
+    labels: ['Line Drive', 'Ground Ball', 'Fly Ball'],
+    datasets: [
+      {
+        data: [Number(LDpercent), Number(GBpercent), Number(FBpercent)],
+        backgroundColor: [
+          'rgba(75, 192, 192, 0.6)',
+          'rgba(255, 205, 86, 0.6)',
+          'rgba(255, 99, 132, 0.6)',
+        ],
+        borderColor: [
+          'rgba(75, 192, 192, 1)',
+          'rgba(255, 205, 86, 1)',
+          'rgba(255, 99, 132, 1)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const pieChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' as const } },
+  };
+
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
@@ -443,6 +462,16 @@ const HitTraxSessionDetails: React.FC = () => {
             sections={orderedSections}
             fillColor="blue"
           />
+        </div>
+
+        {/* Pie Chart for LD/GB/FB distribution (smaller container) */}
+        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Hit Result Distribution
+          </h2>
+          <div className="mx-auto" style={{ width: 300, height: 300 }}>
+            <Pie data={pieChartData} options={pieChartOptions} />
+          </div>
         </div>
 
         {/* Bar Chart for Average Velocities by Height Zone */}

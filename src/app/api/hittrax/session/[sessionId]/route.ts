@@ -277,6 +277,37 @@ export async function GET(req: NextRequest, context: any) {
     ).toFixed(2);
     console.log(`Percent optimal LA ${percentOptimalLA}%`);
 
+    let LDcount = 0;
+    let FBcount = 0;
+    let GBcount = 0;
+    for (const hit of filteredHits) {
+      if (hit.type === 'FB') {
+        FBcount++;
+      } else if (hit.type === 'LD') {
+        LDcount++;
+      } else if (hit.type === 'GB') {
+        GBcount++;
+      } else {
+        return NextResponse.json(
+          { error: 'Invalid hit type, need debugging' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const LDpercent =
+      filteredHits.length === 0
+        ? 0
+        : (LDcount / filteredHits.length).toFixed(2);
+    const FBpercent =
+      filteredHits.length === 0
+        ? 0
+        : (FBcount / filteredHits.length).toFixed(2);
+    const GBpercent =
+      filteredHits.length === 0
+        ? 0
+        : (GBcount / filteredHits.length).toFixed(2);
+
     // Calculate top 12.5% statistics.
     if (exitVelocities.length > 0) {
       const sortedVelocities = [...exitVelocities].sort((a, b) => b - a);
@@ -316,6 +347,9 @@ export async function GET(req: NextRequest, context: any) {
           avgDistance: avgTopDist,
           avgLaunchAngle: avgTopLA,
         },
+        LDpercent: LDpercent,
+        FBpercent: FBpercent,
+        GBpercent: GBpercent,
       });
     }
     console.log(percentByZone);
@@ -333,6 +367,9 @@ export async function GET(req: NextRequest, context: any) {
         avgDistance: 0,
         avgLaunchAngle: 0,
       },
+      LDpercent: LDpercent,
+      FBpercent: FBpercent,
+      GBpercent: GBpercent,
     });
   } catch (error: any) {
     console.error('Error fetching HitTrax session data:', error);
