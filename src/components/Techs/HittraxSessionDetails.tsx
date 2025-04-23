@@ -349,24 +349,6 @@ const HitTraxSessionDetails: React.FC = () => {
           </div>
         </div>
 
-        {/* Strike Zone visualization */}
-        <div className="mb-8 flex justify-center">
-          <StrikeZone
-            width={300}
-            height={400}
-            x={10}
-            y={10}
-            redColor="red"
-            orangeColor="orange"
-            yellowColor="yellow"
-            greenColor="green"
-            strokeColorBorder="black"
-            strokeWidth={2}
-            sections={orderedSections}
-            fillColor="blue"
-          />
-        </div>
-
         {/* Paginated Table for Hit Data */}
         <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">Hit Data</h2>
@@ -443,6 +425,24 @@ const HitTraxSessionDetails: React.FC = () => {
           ) : (
             <p className="text-gray-500">No hit data available.</p>
           )}
+        </div>
+
+        {/* Strike Zone visualization */}
+        <div className="mb-8 flex justify-center">
+          <StrikeZone
+            width={300}
+            height={400}
+            x={10}
+            y={10}
+            redColor="red"
+            orangeColor="orange"
+            yellowColor="yellow"
+            greenColor="green"
+            strokeColorBorder="black"
+            strokeWidth={2}
+            sections={orderedSections}
+            fillColor="blue"
+          />
         </div>
 
         {/* Bar Chart for Average Velocities by Height Zone */}
