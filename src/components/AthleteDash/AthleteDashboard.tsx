@@ -62,6 +62,10 @@ const AthleteDashboard = () => {
   const [trackmanNotes, setTrackmanNotes] = useState<ICoachNote[]>([]);
   const [profileNotes, setProfileNotes] = useState<ICoachNote[]>([]);
 
+  // Height and Weight
+  const [height, setHeight] = useState<string>('');
+  const [weight, setWeight] = useState<number | null>(null);
+
   const [activeTab, setActiveTab] = useState<
     'blast' | 'hittrax' | 'trackman' | 'profile'
   >('blast');
@@ -101,6 +105,8 @@ const AthleteDashboard = () => {
         setHittraxNotes(data.hittraxNotes);
         setTrackmanNotes(data.trackmanNotes);
         setProfileNotes(data.profileNotes);
+        setHeight(data.height);
+        setWeight(data.weight);
       } catch (err: any) {
         setErrorMessage(err.message ?? 'Error fetching athlete dashboard data');
       } finally {
@@ -153,6 +159,8 @@ const AthleteDashboard = () => {
         {/* Counts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {[
+            { label: 'Height', value: height },
+            { label: 'Weight', value: weight },
             { label: 'Swing Count', value: swingCount },
             { label: 'Pitch Count', value: pitchCount },
           ].map(({ label, value }) => (

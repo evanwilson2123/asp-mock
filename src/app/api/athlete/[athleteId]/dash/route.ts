@@ -118,6 +118,8 @@ export async function GET(req: NextRequest, context: any) {
         hittraxNotes: hittraxNotes,
         trackmanNotes: trackmanNotes,
         profileNotes: profileNotes,
+        height: athlete.height,
+        weight: athlete.weight,
       },
       { status: 200 }
     );
