@@ -124,15 +124,13 @@ const AthleteDashboard = () => {
   /* -------------------------- weight update handlers ---------------------- */
   const handleWeightEdit = () => {
     setIsEditingWeight(true);
+    setNewWeight(weight?.toString() ?? '');
   };
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // strip everything except digits and a single optional decimal point
-    const raw = e.target.value.replace(/[^0-9.]/g, '');
-    const parts = raw.split('.');
-    const sanitized =
-      parts.length <= 2 ? raw : `${parts[0]}.${parts.slice(1).join('')}`;
-    setNewWeight(sanitized);
+    // Only allow digits or an optional single decimal point
+    const value = e.target.value;
+    if (/^[0-9]*\.?[0-9]*$/.test(value)) setNewWeight(value);
   };
 
   const handleWeightSave = async () => {
@@ -212,47 +210,43 @@ const AthleteDashboard = () => {
             <p className="text-4xl font-semibold text-center">{height}</p>
           </div>
 
-          {/* Weight with editable UI for athletes */}
+          {/* Weight – editable by any viewer */}
           <div className="bg-white rounded-lg shadow p-6 border-2 border-gray-300">
-            <h2 className="text-xl font-bold mb-4">Weight (lbs)</h2>
-            {role === 'ATHLETE' ? (
-              isEditingWeight ? (
-                <div className="flex items-center space-x-2 justify-center">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    pattern="[0-9]*"
-                    value={newWeight}
-                    onChange={handleWeightChange}
-                    placeholder="lbs"
-                    className="border p-2 rounded w-24 appearance-none text-center"
-                  />
-                  <button
-                    onClick={handleWeightSave}
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={handleWeightCancel}
-                    className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500 transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center space-y-2">
-                  <p className="text-4xl font-semibold text-center">{weight}</p>
-                  <button
-                    onClick={handleWeightEdit}
-                    className="px-3 py-1 text-sm bg-gray-800 text-white rounded hover:bg-gray-900 transition"
-                  >
-                    Edit
-                  </button>
-                </div>
-              )
+            <h2 className="text-xl font-bold mb-4">Weight&nbsp;(lbs)</h2>
+            {isEditingWeight ? (
+              <div className="flex items-center space-x-2 justify-center">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*"
+                  value={newWeight}
+                  onChange={handleWeightChange}
+                  placeholder="lbs"
+                  className="border p-2 rounded w-24 appearance-none text-center"
+                />
+                <button
+                  onClick={handleWeightSave}
+                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={handleWeightCancel}
+                  className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500 transition"
+                >
+                  Cancel
+                </button>
+              </div>
             ) : (
-              <p className="text-4xl font-semibold text-center">{weight}</p>
+              <div className="flex flex-col items-center space-y-2">
+                <p className="text-4xl font-semibold text-center">{weight}</p>
+                <button
+                  onClick={handleWeightEdit}
+                  className="px-3 py-1 text-sm bg-gray-800 text-white rounded hover:bg-gray-900 transition"
+                >
+                  Edit
+                </button>
+              </div>
             )}
           </div>
 
