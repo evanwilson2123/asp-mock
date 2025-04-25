@@ -14,20 +14,16 @@ import { ICoachNote } from '@/models/coachesNote';
 /**
  * AthleteDashboard
  * ----------------------------------------------------
- * Displays summary statistics, tags, goals, and coaches' notes
- * for an individual athlete. Sidebar adapts to viewer role:
- *  - ATHLETE → AthleteSidebar
- *  - COACH   → CoachSidebar
- *  - others  → Sidebar
+ * Displays summary stats, tags, goals, and coaches' notes
+ * for an individual athlete. Sidebar adapts to viewer role.
  */
 const AthleteDashboard = () => {
-  /* ----------------------------- hooks / auth ----------------------------- */
+  /* ----------------------------- hooks / auth --------------------------- */
   const router = useRouter();
   const params = useParams();
   const { user } = useUser();
   const role = user?.publicMetadata?.role as string | undefined;
 
-  // Determine athlete ID
   const resolvedAthleteId: string | undefined =
     role === 'ATHLETE'
       ? (user?.publicMetadata?.objectId as string)
@@ -36,15 +32,13 @@ const AthleteDashboard = () => {
           return Array.isArray(id) ? id[0] : id;
         })();
 
-  /* ------------------------------ state ----------------------------------- */
+  /* ------------------------------ state --------------------------------- */
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Counts
   const [swingCount, setSwingCount] = useState(0);
   const [pitchCount, setPitchCount] = useState(0);
 
-  // Tags
   const [hitTags, setHitTags] = useState<IAthleteTag[]>([]);
   const [blastTags, setBlastTags] = useState<IAthleteTag[]>([]);
   const [trackTags, setTrackTags] = useState<IAthleteTag[]>([]);
@@ -52,29 +46,24 @@ const AthleteDashboard = () => {
   const [forceTags, setForceTags] = useState<IAthleteTag[]>([]);
   const [assessmentTags, setAssessmentTags] = useState<IAthleteTag[]>([]);
 
-  // Goals
   const [goals, setGoals] = useState<IGoal[]>([]);
 
-  // Notes
   const [blastNotes, setBlastNotes] = useState<ICoachNote[]>([]);
   const [hittraxNotes, setHittraxNotes] = useState<ICoachNote[]>([]);
   const [trackmanNotes, setTrackmanNotes] = useState<ICoachNote[]>([]);
   const [profileNotes, setProfileNotes] = useState<ICoachNote[]>([]);
 
-  // Height & Weight
   const [height, setHeight] = useState<string>('');
   const [weight, setWeight] = useState<number | null>(null);
 
-  // Weight editing UI
   const [isEditingWeight, setIsEditingWeight] = useState(false);
   const [newWeight, setNewWeight] = useState<string>('');
 
-  // Active notes tab
   const [activeTab, setActiveTab] = useState<
     'blast' | 'hittrax' | 'trackman' | 'profile'
   >('blast');
 
-  /* ------------------------------ helpers --------------------------------- */
+  /* ------------------------------ helpers ------------------------------- */
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -82,7 +71,7 @@ const AthleteDashboard = () => {
       day: 'numeric',
     });
 
-  /* ------------------------------ effects --------------------------------- */
+  /* ------------------------------ effects ------------------------------- */
   useEffect(() => {
     if (!resolvedAthleteId) return;
 
@@ -121,14 +110,13 @@ const AthleteDashboard = () => {
     })();
   }, [resolvedAthleteId]);
 
-  /* -------------------------- weight update handlers ---------------------- */
+  /* -------------------------- weight handlers --------------------------- */
   const handleWeightEdit = () => {
     setIsEditingWeight(true);
     setNewWeight(weight?.toString() ?? '');
   };
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow digits or an optional single decimal point
     const value = e.target.value;
     if (/^[0-9]*\.?[0-9]*$/.test(value)) setNewWeight(value);
   };
@@ -139,7 +127,6 @@ const AthleteDashboard = () => {
       alert('Please enter a valid number');
       return;
     }
-
     try {
       const res = await fetch(`/api/athlete/${resolvedAthleteId}/weight`, {
         method: 'PUT',
@@ -161,11 +148,11 @@ const AthleteDashboard = () => {
     setNewWeight(weight?.toString() ?? '');
   };
 
-  /* --------------------------- early returns ------------------------------ */
+  /* --------------------------- early returns ---------------------------- */
   if (loading) return <Loader />;
   if (errorMessage) return <div className="text-gray-800">{errorMessage}</div>;
 
-  /* ----------------------------- render ----------------------------------- */
+  /* ------------------------------ render ------------------------------- */
   const noteTabs = [
     { key: 'blast', title: 'Blast', notes: blastNotes },
     { key: 'hittrax', title: 'HitTrax', notes: hittraxNotes },
@@ -182,7 +169,7 @@ const AthleteDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100 overflow-y-auto">
-      {/* Sidebar (mobile & desktop) */}
+      {/* Sidebar */}
       <div className="md:hidden bg-gray-100">
         <SidebarComponent />
       </div>
@@ -190,7 +177,7 @@ const AthleteDashboard = () => {
         <SidebarComponent />
       </div>
 
-      {/* Main Content */}
+      {/* Main */}
       <div className="flex-1 p-4 pb-24 text-gray-800">
         {role !== 'ATHLETE' && (
           <button
@@ -202,7 +189,7 @@ const AthleteDashboard = () => {
         )}
         <h1 className="text-3xl font-bold mb-6 text-center">My Stats</h1>
 
-        {/* Counts (Height, Weight, Swings, Pitches) */}
+        {/* Counts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Height */}
           <div className="bg-white rounded-lg shadow p-6 border-2 border-gray-300">
@@ -210,7 +197,7 @@ const AthleteDashboard = () => {
             <p className="text-4xl font-semibold text-center">{height}</p>
           </div>
 
-          {/* Weight – editable by any viewer */}
+          {/* Weight (clickable when not editing) */}
           <div className="bg-white rounded-lg shadow p-6 border-2 border-gray-300">
             <h2 className="text-xl font-bold mb-4">Weight&nbsp;(lbs)</h2>
             {isEditingWeight ? (
@@ -239,7 +226,14 @@ const AthleteDashboard = () => {
               </div>
             ) : (
               <div className="flex flex-col items-center space-y-2">
-                <p className="text-4xl font-semibold text-center">{weight}</p>
+                <p
+                  className="text-4xl font-semibold text-center cursor-pointer hover:text-blue-600"
+                  onClick={() =>
+                    router.push(`/athlete/${resolvedAthleteId}/weight`)
+                  }
+                >
+                  {weight}
+                </p>
                 <button
                   onClick={handleWeightEdit}
                   className="px-3 py-1 text-sm bg-gray-800 text-white rounded hover:bg-gray-900 transition"
