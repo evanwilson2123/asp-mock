@@ -381,3 +381,10 @@ model GoalEntry {
   value                   Float
   date                    DateTime
 }
+
+model WeightLog {
+  id                      Int @id @default(autoincrement())
+  athlete                 String
+  weight                  Float
+  date                    DateTime
+}

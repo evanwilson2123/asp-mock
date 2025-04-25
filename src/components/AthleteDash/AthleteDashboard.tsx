@@ -27,8 +27,7 @@ const AthleteDashboard = () => {
   const { user } = useUser();
   const role = user?.publicMetadata?.role as string | undefined;
 
-  // If viewer is the athlete themself, use their own objectId.
-  // Otherwise (coach/admin), use the `[athleteId]` route param.
+  // Determine athlete ID
   const resolvedAthleteId: string | undefined =
     role === 'ATHLETE'
       ? (user?.publicMetadata?.objectId as string)
@@ -62,10 +61,15 @@ const AthleteDashboard = () => {
   const [trackmanNotes, setTrackmanNotes] = useState<ICoachNote[]>([]);
   const [profileNotes, setProfileNotes] = useState<ICoachNote[]>([]);
 
-  // Height and Weight
+  // Height & Weight
   const [height, setHeight] = useState<string>('');
   const [weight, setWeight] = useState<number | null>(null);
 
+  // Weight editing UI
+  const [isEditingWeight, setIsEditingWeight] = useState(false);
+  const [newWeight, setNewWeight] = useState<string>('');
+
+  // Active notes tab
   const [activeTab, setActiveTab] = useState<
     'blast' | 'hittrax' | 'trackman' | 'profile'
   >('blast');
@@ -105,8 +109,10 @@ const AthleteDashboard = () => {
         setHittraxNotes(data.hittraxNotes);
         setTrackmanNotes(data.trackmanNotes);
         setProfileNotes(data.profileNotes);
+
         setHeight(data.height);
         setWeight(data.weight);
+        setNewWeight(data.weight?.toString() ?? '');
       } catch (err: any) {
         setErrorMessage(err.message ?? 'Error fetching athlete dashboard data');
       } finally {
@@ -114,6 +120,48 @@ const AthleteDashboard = () => {
       }
     })();
   }, [resolvedAthleteId]);
+
+  /* -------------------------- weight update handlers ---------------------- */
+  const handleWeightEdit = () => {
+    setIsEditingWeight(true);
+  };
+
+  const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // strip everything except digits and a single optional decimal point
+    const raw = e.target.value.replace(/[^0-9.]/g, '');
+    const parts = raw.split('.');
+    const sanitized =
+      parts.length <= 2 ? raw : `${parts[0]}.${parts.slice(1).join('')}`;
+    setNewWeight(sanitized);
+  };
+
+  const handleWeightSave = async () => {
+    const parsed = parseFloat(newWeight);
+    if (Number.isNaN(parsed)) {
+      alert('Please enter a valid number');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/athlete/${resolvedAthleteId}/weight`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weight: parsed }),
+      });
+      if (!res.ok) throw new Error('Error updating weight');
+      const data = await res.json();
+      setWeight(data.weight);
+      setIsEditingWeight(false);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message ?? 'Error updating weight');
+    }
+  };
+
+  const handleWeightCancel = () => {
+    setIsEditingWeight(false);
+    setNewWeight(weight?.toString() ?? '');
+  };
 
   /* --------------------------- early returns ------------------------------ */
   if (loading) return <Loader />;
@@ -156,22 +204,69 @@ const AthleteDashboard = () => {
         )}
         <h1 className="text-3xl font-bold mb-6 text-center">My Stats</h1>
 
-        {/* Counts */}
+        {/* Counts (Height, Weight, Swings, Pitches) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {[
-            { label: 'Height', value: height },
-            { label: 'Weight', value: weight },
-            { label: 'Swing Count', value: swingCount },
-            { label: 'Pitch Count', value: pitchCount },
-          ].map(({ label, value }) => (
-            <div
-              key={label}
-              className="bg-white rounded-lg shadow p-6 border-2 border-gray-300"
-            >
-              <h2 className="text-xl font-bold mb-4">{label}</h2>
-              <p className="text-4xl font-semibold text-center">{value}</p>
-            </div>
-          ))}
+          {/* Height */}
+          <div className="bg-white rounded-lg shadow p-6 border-2 border-gray-300">
+            <h2 className="text-xl font-bold mb-4">Height</h2>
+            <p className="text-4xl font-semibold text-center">{height}</p>
+          </div>
+
+          {/* Weight with editable UI for athletes */}
+          <div className="bg-white rounded-lg shadow p-6 border-2 border-gray-300">
+            <h2 className="text-xl font-bold mb-4">Weight (lbs)</h2>
+            {role === 'ATHLETE' ? (
+              isEditingWeight ? (
+                <div className="flex items-center space-x-2 justify-center">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*"
+                    value={newWeight}
+                    onChange={handleWeightChange}
+                    placeholder="lbs"
+                    className="border p-2 rounded w-24 appearance-none text-center"
+                  />
+                  <button
+                    onClick={handleWeightSave}
+                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={handleWeightCancel}
+                    className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center space-y-2">
+                  <p className="text-4xl font-semibold text-center">{weight}</p>
+                  <button
+                    onClick={handleWeightEdit}
+                    className="px-3 py-1 text-sm bg-gray-800 text-white rounded hover:bg-gray-900 transition"
+                  >
+                    Edit
+                  </button>
+                </div>
+              )
+            ) : (
+              <p className="text-4xl font-semibold text-center">{weight}</p>
+            )}
+          </div>
+
+          {/* Swing Count */}
+          <div className="bg-white rounded-lg shadow p-6 border-2 border-gray-300">
+            <h2 className="text-xl font-bold mb-4">Swing Count</h2>
+            <p className="text-4xl font-semibold text-center">{swingCount}</p>
+          </div>
+
+          {/* Pitch Count */}
+          <div className="bg-white rounded-lg shadow p-6 border-2 border-gray-300">
+            <h2 className="text-xl font-bold mb-4">Pitch Count</h2>
+            <p className="text-4xl font-semibold text-center">{pitchCount}</p>
+          </div>
         </div>
 
         {/* Tags */}
@@ -193,7 +288,7 @@ const AthleteDashboard = () => {
               key={title}
               className="bg-white rounded-lg shadow p-4 border-2 border-gray-300"
             >
-              <h3 className="font-semibold mb-2">{title}</h3>
+              <h3 className="font-semibold mb-2 text-center">{title}</h3>
               <ul>
                 {tags.filter(Boolean).map((tag) => (
                   <li
@@ -219,19 +314,21 @@ const AthleteDashboard = () => {
           {goals.map((goal) => (
             <div
               key={goal._id.toString()}
-              className="bg-white rounded-lg shadow p-6 border-2 border-gray-300 cursor-pointer"
+              className="bg-white rounded-lg shadow p-6 border-2 border-gray-300 cursor-pointer hover:shadow-md transition"
               onClick={() =>
                 router.push(`/athlete/${resolvedAthleteId}/goals/${goal._id}`)
               }
             >
-              <h3 className="text-lg font-semibold mb-2">{goal.goalName}</h3>
-              <p className="text-gray-700">{goal.tech}</p>
+              <h3 className="text-lg font-semibold mb-2 text-center">
+                {goal.goalName}
+              </h3>
+              <p className="text-gray-700 text-center">{goal.tech}</p>
             </div>
           ))}
         </div>
 
+        {/* Coaches Notes */}
         <div className="rounded-lg ring-2 ring-offset-2 p-6 ring-offset-white ring-gray-300 bg-white">
-          {/* Coaches Notes */}
           <h2 className="text-2xl font-bold mb-6">Coaches Notes</h2>
 
           {/* Tabs */}
@@ -239,7 +336,7 @@ const AthleteDashboard = () => {
             {noteTabs.map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => setActiveTab(tab.key as typeof activeTab)}
                 className={`px-4 py-2 rounded-md font-semibold transition-colors duration-150 ${
                   activeTab === tab.key
                     ? 'bg-gray-800 text-white'
