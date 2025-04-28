@@ -388,3 +388,65 @@ model WeightLog {
   weight                  Float
   date                    DateTime
 }
+
+model ForceCMJ {
+  id                      Int @id @default(autoincrement())
+  athlete                 String
+  date                    DateTime
+  bodyWeight              Float
+  reps                    Int
+  addLoad                 Float
+  jmpHeight               Float
+  lowLimbStiff            Float
+  peakPowerW              Float
+  peakPowerBM             Float
+  eccentricDuration       Float
+  concretricDuration      Float
+  RSImodified             Float
+  counterMovement         Float
+  CMJstiffness            String
+  eccentricDeceleration   String
+  P1concentricImp         String
+  P2concentricImp         String
+  concentricPeakForce     String
+  eccentricPeakForce      String
+  minimumEccentricForce   String
+}
+
+model ForceHop {
+  id                      Int @id @default(autoincrement())
+  athlete                 String
+  date                    DateTime
+  bw                      Float
+  reps                    Int
+  bestActiveStiffness     Float
+  bestJumpHeight          Float
+  bestRSIF                Float
+  bestRSIJ                Float
+}
+
+model ForceIMTP {
+  id                      Int @id @default(autoincrement())
+  athlete                 String
+  date                    DateTime
+  bw                      Float
+  reps                    Int
+  netPeakVerticalForce    Float
+  peakVerticalForce       Float
+  forceAt100ms            Float
+  forceAt150ms            Float
+  forceAt200ms            Float
+}
+
+model ForceSJ {
+  id                      Int @id @default(autoincrement())
+  athlete                 String
+  date                    DateTime
+  bw                      Float
+  reps                    Int
+  additionalLoad          Float
+  peakPowerW              Float
+  peakPowerBM             Float
+  P1concentricImp         String
+  P2concentricImp         String
+}
