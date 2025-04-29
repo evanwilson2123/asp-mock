@@ -1,112 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
-/**
- * GET /api/hittrax
- *
- * This API endpoint retrieves HitTrax data filtered by the specified play level (e.g., "High School", "College").
- * It calculates the maximum exit velocity, maximum distance, hard-hit rate, and session averages for the provided level.
- *
- * ---
- *
- * @param {NextRequest} req - The incoming request containing the query parameter `level` (optional).
- *
- * @queryParam {string} [level="High School"] - The play level to filter the data (e.g., "High School", "College").
- *
- * ---
- *
- * @returns {Promise<NextResponse>} JSON response containing:
- *
- * - **Success (200):**
- *   Returns the maximum exit velocity, maximum distance, hard-hit rate, and session averages.
- *   ```json
- *   {
- *     "maxExitVelo": number,
- *     "maxDistance": number,
- *     "hardHitRate": number,
- *     "sessionAverages": [
- *       {
- *         "sessionId": string,
- *         "date": string,
- *         "avgExitVelo": number
- *       }
- *     ]
- *   }
- *   ```
- *
- * - **Error (404):**
- *   Occurs when no data is found for the specified level.
- *   ```json
- *   { "error": "No HitTrax data found for this level" }
- *   ```
- *
- * - **Error (500):**
- *   Occurs due to server/database errors during data fetching.
- *   ```json
- *   { "error": "Failed to fetch HitTrax data" }
- *   ```
- *
- * ---
- *
- * @example
- * // Example request to fetch data for College level
- * GET /api/hittrax?level=College
- *
- * @errorHandling
- * - Returns **404** if no data exists for the specified level.
- * - Returns **500** for any internal server/database issues.
- */
+
+function getStartDate(range: string | null): Date | null {
+  if (!range || range.toUpperCase() === 'ALL') return null;
+  const n = new Date();
+  switch (range) {
+    case 'Past Week':
+      n.setDate(n.getDate() - 7);
+      break;
+    case 'Past Month':
+      n.setMonth(n.getMonth() - 1);
+      break;
+    case 'Past 3 Months':
+      n.setMonth(n.getMonth() - 3);
+      break;
+    case 'Past 6 Months':
+      n.setMonth(n.getMonth() - 6);
+      break;
+    case 'Past Year':
+      n.setFullYear(n.getFullYear() - 1);
+      break;
+    default:
+      return null;
+  }
+  return n;
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const level = searchParams.get('level') || 'High School'; // Default to "High School"
+  const level = searchParams.get('level') || 'High School';
+  const range = searchParams.get('range');
+  const startDate = getStartDate(range);
 
   try {
     const data = await prisma.hitTrax.findMany({
-      where: { playLevel: level },
+      where: {
+        playLevel: level,
+        ...(startDate && { date: { gte: startDate } }),
+      },
       orderBy: { date: 'desc' },
     });
 
-    // if (!data || data.length === 0) {
-    //   return NextResponse.json(
-    //     { error: 'No HitTrax data found for this level' },
-    //     { status: 404 }
-    //   );
-    // }
-
+    /* ---------- per-session averages ---------- */
     const sessions: Record<
       string,
-      { velocities: number[]; distances: number[]; date: Date }
+      { vels: number[]; dists: number[]; date: Date }
     > = {};
 
-    data.forEach((record) => {
-      const sessionId = record.sessionId;
-      if (!sessions[sessionId]) {
-        sessions[sessionId] = {
-          velocities: [],
-          distances: [],
-          date: record.date || new Date(),
-        };
-      }
-      if (record.velo) sessions[sessionId].velocities.push(record.velo);
-      if (record.dist) sessions[sessionId].distances.push(record.dist);
+    data.forEach((r) => {
+      const id = r.sessionId;
+      if (!sessions[id])
+        sessions[id] = { vels: [], dists: [], date: r.date || new Date() };
+      if (r.velo) sessions[id].vels.push(r.velo);
+      if (r.dist) sessions[id].dists.push(r.dist);
     });
 
-    const sessionAverages = Object.keys(sessions).map((sessionId) => {
-      const session = sessions[sessionId];
-      const avgExitVelo =
-        session.velocities.reduce((a, b) => a + b, 0) /
-        session.velocities.length;
-      return {
-        sessionId,
-        date: session.date,
-        avgExitVelo,
-      };
-    });
+    const sessionAverages = Object.entries(sessions).map(([sessionId, s]) => ({
+      sessionId,
+      date: s.date,
+      avgExitVelo: s.vels.reduce((a, b) => a + b, 0) / (s.vels.length || 1),
+    }));
 
-    const maxExitVelo = Math.max(...data.map((record) => record.velo || 0));
-    const maxDistance = Math.max(...data.map((record) => record.dist || 0));
-    const hardHitRate =
-      data.filter((record) => (record.velo || 0) >= 95).length / data.length;
+    /* ---------- safe metrics ---------- */
+    const maxExitVelo = data.length
+      ? Math.max(...data.map((r) => r.velo ?? 0))
+      : 0;
+    const maxDistance = data.length
+      ? Math.max(...data.map((r) => r.dist ?? 0))
+      : 0;
+    const hardHitRate = data.length
+      ? data.filter((r) => (r.velo ?? 0) >= 95).length / data.length
+      : 0;
 
     return NextResponse.json({
       maxExitVelo,
@@ -114,8 +78,8 @@ export async function GET(req: NextRequest) {
       hardHitRate,
       sessionAverages,
     });
-  } catch (error: any) {
-    console.error('Error fetching HitTrax data:', error);
+  } catch (err) {
+    console.error('Error fetching HitTrax data:', err);
     return NextResponse.json(
       { error: 'Failed to fetch HitTrax data' },
       { status: 500 }

@@ -35,6 +35,16 @@ ChartJS.register(
 // Example levels
 const levels = ['High School', 'College', 'Pro'];
 
+// Time-range options
+const timeRanges = [
+  'Past Week',
+  'Past Month',
+  'Past 3 Months',
+  'Past 6 Months',
+  'Past Year',
+  'All',
+];
+
 // ------------------ Type Definitions ------------------
 interface BlastSessionAvg {
   date: string;
@@ -88,28 +98,7 @@ interface AthleteNums {
 /**
  * Dashboard Component
  *
- * This component serves as the central dashboard for coaches and admins, providing
- * aggregated performance data from various technologies like Blast Motion, HitTrax, and Trackman.
- * It visualizes athlete statistics through interactive charts, displays key performance metrics,
- * and allows filtering by athlete levels (High School, College, Pro).
- *
- * Features:
- * - **Authentication:** Ensures only signed-in users with appropriate roles can access the dashboard.
- * - **Role-Based Sidebar:** Dynamically renders either the CoachSidebar or AdminSidebar based on user role.
- * - **Real-Time Data Fetching:** Retrieves data from multiple API endpoints using `Promise.all` for efficiency.
- * - **Charts & Visualization:** Uses `react-chartjs-2` with `Chart.js` for rendering line charts to display trends.
- * - **Responsive Design:** Optimized for both desktop and mobile views with a flexible grid layout.
- * - **Dynamic Filters:** Users can filter data based on athlete levels (High School, College, Pro).
- * - **Error Handling:** Displays user-friendly error messages if data fetching fails.
- *
- * Technologies:
- * - **Chart.js (via react-chartjs-2):** For rendering interactive data visualizations.
- * - **Next.js (Client Component):** Supports dynamic routing and API calls.
- * - **Clerk:** Handles user authentication and role-based access control.
- *
- * Usage:
- * - This dashboard is ideal for coaches or admins to monitor athlete performance,
- *   track progress over time, and identify key metrics like max bat speed, exit velocity, etc.
+ * (description unchanged)
  */
 
 const Dashboard: React.FC = () => {
@@ -117,6 +106,7 @@ const Dashboard: React.FC = () => {
   const role = user?.publicMetadata?.role;
 
   const [level, setLevel] = useState<string>('High School');
+  const [timeRange, setTimeRange] = useState<string>('All');
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -132,19 +122,25 @@ const Dashboard: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Call all aggregator endpoints for the chosen level
+        // Call all aggregator endpoints for the chosen level + range
+        const query = `level=${encodeURIComponent(
+          level
+        )}&range=${encodeURIComponent(timeRange)}`;
+
         const [blastRes, hitTraxRes, trackmanRes, athleteNumsRes] =
           await Promise.all([
-            fetch(`/api/admin/dashboard/blast-motion?level=${level}`, {
+            fetch(`/api/admin/dashboard/blast-motion?${query}`, {
               next: { revalidate: 60 },
             }),
-            fetch(`/api/admin/dashboard/hittrax?level=${level}`, {
+            fetch(`/api/admin/dashboard/hittrax?${query}`, {
               next: { revalidate: 60 },
             }),
-            fetch(`/api/admin/dashboard/trackman?level=${level}`, {
+            fetch(`/api/admin/dashboard/trackman?${query}`, {
               next: { revalidate: 60 },
             }),
-            fetch('/api/admin/dashboard', { next: { revalidate: 60 } }),
+            fetch(`/api/admin/dashboard?${query}`, {
+              next: { revalidate: 60 },
+            }),
           ]);
 
         if (
@@ -164,8 +160,6 @@ const Dashboard: React.FC = () => {
             athleteNumsRes.json(),
           ]);
 
-        console.log('Athlete nums res', athleteNumsJson);
-
         setBlastData(blastJson);
         setHitTraxData(hitTraxJson);
         setTrackmanData(trackmanJson);
@@ -179,7 +173,7 @@ const Dashboard: React.FC = () => {
     };
 
     fetchData();
-  }, [level]);
+  }, [level, timeRange]);
 
   if (!isSignedIn) {
     return <SignInPrompt />;
@@ -242,30 +236,24 @@ const Dashboard: React.FC = () => {
   };
 
   // ====================== TRACKMAN ======================
-  // We'll do "one line per pitch type" over time
   const pitchStats = trackmanData?.pitchStats ?? [];
   const avgPitchSpeeds = trackmanData?.avgPitchSpeeds ?? [];
 
-  // 1) Gather all unique dates from avgPitchSpeeds
   const allDates = Array.from(
     new Set(avgPitchSpeeds.map((item) => item.date))
   ).sort();
 
-  // 2) Build a structure mapping pitchType -> array of speeds (aligned with allDates)
   const pitchSpeedMap: Record<string, Array<number | null>> = {};
-  // Initialize each pitchType's array
   avgPitchSpeeds.forEach((item) => {
     if (!pitchSpeedMap[item.pitchType]) {
       pitchSpeedMap[item.pitchType] = new Array(allDates.length).fill(null);
     }
   });
-  // Fill in the correct speed for the correct date index
   avgPitchSpeeds.forEach((item) => {
     const dateIndex = allDates.indexOf(item.date);
     pitchSpeedMap[item.pitchType][dateIndex] = item.avgSpeed;
   });
 
-  // 3) Convert pitchSpeedMap into multiple datasets
   const colors = [
     '#FF6384',
     '#36A2EB',
@@ -338,10 +326,6 @@ const Dashboard: React.FC = () => {
     },
   };
 
-  // if (role === 'ATHLETE') {
-  //   return <AthleteDashboard />;
-  // }
-
   // ====================== JSX Output ======================
   return (
     <div className="flex min-h-screen bg-gray-100 overflow-y-auto">
@@ -354,9 +338,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="flex-1 p-4 text-gray-800">
-        {/* <h1 className="text-3xl font-bold mb-4">Dashboard</h1> */}
-
-        {/* Athlete Numbers Card - Centered & Organized */}
+        {/* Athlete Numbers Card */}
         {athleteNums && (
           <div className="mb-8">
             <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center border-2 border-gray-300">
@@ -441,22 +423,42 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         )}
-        {/* Level Selector */}
-        <div className="mb-6">
-          <label className="block mb-2 text-lg font-semibold">
-            Select Level
-          </label>
-          <select
-            value={level}
-            onChange={(e) => setLevel(e.target.value)}
-            className="p-2 rounded border-2 border-gray-300"
-          >
-            {levels.map((lvl) => (
-              <option key={lvl} value={lvl}>
-                {lvl}
-              </option>
-            ))}
-          </select>
+
+        {/* Selectors */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-end gap-4">
+          <div>
+            <label className="block mb-2 text-lg font-semibold">
+              Select Level
+            </label>
+            <select
+              value={level}
+              onChange={(e) => setLevel(e.target.value)}
+              className="p-2 rounded border-2 border-gray-300"
+            >
+              {levels.map((lvl) => (
+                <option key={lvl} value={lvl}>
+                  {lvl}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block mb-2 text-lg font-semibold">
+              Select Time Range
+            </label>
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="p-2 rounded border-2 border-gray-300"
+            >
+              {timeRanges.map((tr) => (
+                <option key={tr} value={tr}>
+                  {tr}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Grid of cards for each "tech" */}

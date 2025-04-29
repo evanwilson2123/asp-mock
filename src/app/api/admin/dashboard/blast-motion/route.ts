@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prismaDb';
 
+/* ------------- helper to convert range → Date ------------- */
+function getStartDate(range: string | null): Date | null {
+  if (!range || range.toUpperCase() === 'ALL') return null;
+  const now = new Date();
+  switch (range) {
+    case 'Past Week':
+      now.setDate(now.getDate() - 7);
+      break;
+    case 'Past Month':
+      now.setMonth(now.getMonth() - 1);
+      break;
+    case 'Past 3 Months':
+      now.setMonth(now.getMonth() - 3);
+      break;
+    case 'Past 6 Months':
+      now.setMonth(now.getMonth() - 6);
+      break;
+    case 'Past Year':
+      now.setFullYear(now.getFullYear() - 1);
+      break;
+    default:
+      return null;
+  }
+  return now;
+}
+
 export async function GET(req: NextRequest): Promise<
   | NextResponse<{ error: string }>
   | NextResponse<{
@@ -15,70 +41,48 @@ export async function GET(req: NextRequest): Promise<
 > {
   const { searchParams } = new URL(req.url);
   const level = searchParams.get('level') || 'High School';
+  const timeRange = searchParams.get('range');
+  const startDate = getStartDate(timeRange);
 
   try {
     const data = await prisma.blastMotion.findMany({
-      where: { playLevel: level },
+      where: {
+        playLevel: level,
+        ...(startDate && { date: { gte: startDate } }),
+      },
       orderBy: { date: 'desc' },
     });
 
-    // if (!data || data.length === 0) {
-    //   return NextResponse.json(
-    //     { error: 'No BlastMotion data found for this level' },
-    //     { status: 404 }
-    //   );
-    // }
-
-    // Group data by date (formatted as YYYY-MM-DD)
-    const dateGroups: Record<
-      string,
-      { batSpeeds: number[]; handSpeeds: number[] }
-    > = {};
-
-    data.forEach((record) => {
-      const dateStr = record.date.toISOString().split('T')[0];
-      if (!dateGroups[dateStr]) {
-        dateGroups[dateStr] = { batSpeeds: [], handSpeeds: [] };
-      }
-      if (record.batSpeed) {
-        dateGroups[dateStr].batSpeeds.push(record.batSpeed);
-      }
-      if (record.peakHandSpeed) {
-        dateGroups[dateStr].handSpeeds.push(record.peakHandSpeed);
-      }
+    /* ---------- aggregate averages by date ---------- */
+    const groups: Record<string, { bats: number[]; hands: number[] }> = {};
+    data.forEach((r) => {
+      const d = r.date.toISOString().split('T')[0];
+      if (!groups[d]) groups[d] = { bats: [], hands: [] };
+      if (r.batSpeed) groups[d].bats.push(r.batSpeed);
+      if (r.peakHandSpeed) groups[d].hands.push(r.peakHandSpeed);
     });
 
-    // Calculate averages for each date
-    const sessionAverages = Object.keys(dateGroups).map((date) => {
-      const group = dateGroups[date];
-      return {
-        date,
-        avgBatSpeed:
-          group.batSpeeds.length > 0
-            ? group.batSpeeds.reduce((a, b) => a + b, 0) /
-              group.batSpeeds.length
-            : 0,
-        avgHandSpeed:
-          group.handSpeeds.length > 0
-            ? group.handSpeeds.reduce((a, b) => a + b, 0) /
-              group.handSpeeds.length
-            : 0,
-      };
-    });
+    const sessionAverages = Object.entries(groups).map(([date, g]) => ({
+      date,
+      avgBatSpeed: g.bats.reduce((a, b) => a + b, 0) / (g.bats.length || 1),
+      avgHandSpeed: g.hands.reduce((a, b) => a + b, 0) / (g.hands.length || 1),
+    }));
 
-    // Calculate overall max values
-    const maxBatSpeed = Math.max(...data.map((record) => record.batSpeed || 0));
-    const maxHandSpeed = Math.max(
-      ...data.map((record) => record.peakHandSpeed || 0)
-    );
+    /* ---------- safe “max” values ---------- */
+    const maxBatSpeed = data.length
+      ? Math.max(...data.map((r) => r.batSpeed ?? 0))
+      : 0;
+    const maxHandSpeed = data.length
+      ? Math.max(...data.map((r) => r.peakHandSpeed ?? 0))
+      : 0;
 
     return NextResponse.json({
       maxBatSpeed,
       maxHandSpeed,
       sessionAverages,
     });
-  } catch (error: any) {
-    console.error('Error fetching BlastMotion data:', error);
+  } catch (err) {
+    console.error('Error fetching BlastMotion data:', err);
     return NextResponse.json(
       { error: 'Failed to fetch BlastMotion data' },
       { status: 500 }
