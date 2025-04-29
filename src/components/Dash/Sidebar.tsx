@@ -195,6 +195,9 @@ const Sidebar: React.FC = () => {
                 <li className="p-2 rounded hover:bg-gray-700">
                   <Link href="/file-room">File Room</Link>
                 </li>
+                <li className="p-2 rounded hover:bg-gray-700">
+                  <Link href="/forceplates-upload">Forceplates Upload</Link>
+                </li>
                 {/* <li className="p-2 rounded hover:bg-gray-700">
                   <Link href="/radar-plot">Radar Plot Creator</Link>
                 </li> */}
