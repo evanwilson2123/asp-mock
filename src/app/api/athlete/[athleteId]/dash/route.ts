@@ -6,6 +6,31 @@ import Goal from '@/models/goal';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
+function getStartDate(range: string | null): Date | null {
+  if (!range || range.toUpperCase() === 'ALL') return null;
+  const now = new Date();
+  switch (range) {
+    case 'Past Week':
+      now.setDate(now.getDate() - 7);
+      break;
+    case 'Past Month':
+      now.setMonth(now.getMonth() - 1);
+      break;
+    case 'Past 3 Months':
+      now.setMonth(now.getMonth() - 3);
+      break;
+    case 'Past 6 Months':
+      now.setMonth(now.getMonth() - 6);
+      break;
+    case 'Past Year':
+      now.setFullYear(now.getFullYear() - 1);
+      break;
+    default:
+      return null;
+  }
+  return now;
+}
+
 export async function GET(req: NextRequest, context: any) {
   const { userId } = await auth();
   if (!userId) {
@@ -23,6 +48,9 @@ export async function GET(req: NextRequest, context: any) {
     );
   }
   try {
+    const { searchParams } = new URL(req.url);
+    const range = searchParams.get('range');
+    const startDate = getStartDate(range);
     await connectDB();
     // initially get the athlete
     const athlete = await Athlete.findById(athleteId).exec();
@@ -31,11 +59,13 @@ export async function GET(req: NextRequest, context: any) {
     const swingCountBlast = await prisma.blastMotion.count({
       where: {
         athlete: athleteId,
+        ...(startDate && { date: { gte: startDate } }),
       },
     });
     const swingCountHit = await prisma.hitTrax.count({
       where: {
         athlete: athleteId,
+        ...(startDate && { date: { gte: startDate } }),
       },
     });
     // total swing count
@@ -45,6 +75,7 @@ export async function GET(req: NextRequest, context: any) {
     const pitchCountTrack = await prisma.trackman.count({
       where: {
         athleteId: athleteId,
+        ...(startDate && { createdAt: { gte: startDate } }),
       },
     });
     const pitchCountIntended = await prisma.trackman.count({

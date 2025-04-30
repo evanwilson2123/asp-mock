@@ -11,6 +11,15 @@ import Loader from '../Loader';
 import { useParams, useRouter } from 'next/navigation';
 import { ICoachNote } from '@/models/coachesNote';
 
+const timeRanges = [
+  'Past Week',
+  'Past Month',
+  'Past 3 Months',
+  'Past 6 Months',
+  'Past Year',
+  'All',
+];
+
 /**
  * AthleteDashboard
  * ----------------------------------------------------
@@ -59,6 +68,8 @@ const AthleteDashboard = () => {
   const [isEditingWeight, setIsEditingWeight] = useState(false);
   const [newWeight, setNewWeight] = useState<string>('');
 
+  const [timeRange, setTimeRange] = useState<string>('All');
+
   const [activeTab, setActiveTab] = useState<
     'blast' | 'hittrax' | 'trackman' | 'profile'
   >('blast');
@@ -78,7 +89,9 @@ const AthleteDashboard = () => {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/athlete/${resolvedAthleteId}/dash`);
+        const res = await fetch(
+          `/api/athlete/${resolvedAthleteId}/dash?range=${encodeURIComponent(timeRange)}`
+        );
         if (!res.ok) throw new Error('Error fetching athlete dashboard data');
         const data = await res.json();
 
@@ -108,7 +121,7 @@ const AthleteDashboard = () => {
         setLoading(false);
       }
     })();
-  }, [resolvedAthleteId]);
+  }, [resolvedAthleteId, timeRange]);
 
   /* -------------------------- weight handlers --------------------------- */
   const handleWeightEdit = () => {
@@ -188,6 +201,23 @@ const AthleteDashboard = () => {
           </button>
         )}
         <h1 className="text-3xl font-bold mb-6 text-center">My Stats</h1>
+
+        <div>
+          <label className="block mb-2 text-lg font-semibold">
+            Select Time Range
+          </label>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="p-2 rounded border-2 border-gray-300"
+          >
+            {timeRanges.map((tr) => (
+              <option key={tr} value={tr}>
+                {tr}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Counts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
