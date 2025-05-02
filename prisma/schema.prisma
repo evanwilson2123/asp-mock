@@ -438,6 +438,7 @@ model ForceIMTP {
   forceAt200ms            Float
 }
 
+// (Best RSIF)
 model ForceSJ {
   id                      Int @id @default(autoincrement())
   athlete                 String
