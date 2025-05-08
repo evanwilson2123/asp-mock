@@ -314,6 +314,13 @@ const AthleteDetails = () => {
             Hitting
           </button>
           <button
+            key="forceplates"
+            onClick={() => router.push(`/athlete/${athleteId}/forceplates`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Forceplates
+          </button>
+          <button
             key="goals"
             onClick={() => router.push(`/athlete/${athleteId}/goals`)}
             className="text-gray-700 font-semibold hover:text-gray-900 transition"
