@@ -9,6 +9,7 @@ interface Test {
   date: Date;
   peakPowerW?: number;
   jmpHeight?: number;
+  jumpHeight?: number;
   peakVerticalForce?: number;
   bestRSIF?: number;
   eccentricPeakForce?: number;
@@ -75,8 +76,8 @@ function getSJData(sjTests: Test[]) {
     if (test.peakPowerW! > peakPower) {
       peakPower = test.peakPowerW!;
     }
-    if (test.jmpHeight! > jumpHeight) {
-      jumpHeight = test.jmpHeight!;
+    if (test.jumpHeight! > jumpHeight) {
+      jumpHeight = test.jumpHeight!;
     }
   });
   return { peakPower, jumpHeight };
