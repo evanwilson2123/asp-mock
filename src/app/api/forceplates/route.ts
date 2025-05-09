@@ -7,6 +7,11 @@ import prisma from '@/lib/prismaDb';
 import csvParser from 'csv-parser';
 import Athlete from '@/models/athlete';
 
+
+// todo: prevent duplicate uploads by checking the date and time of the csv entry
+
+
+
 /*──────────────── helpers ────────────────*/
 
 type Row = Record<string, string | number | null | Date>;
@@ -72,9 +77,22 @@ async function parseTypeCMJ(rows: Row[]) {
     console.log('athlete:', athlete?._id?.toString() ?? null);
     if (!athlete) continue;
 
+    const existingEntry = await prisma.forceCMJ.findFirst({
+      where: {
+        athlete: athlete._id.toString(),
+        date: new Date(row['Date'] as string),
+        time: row['Time'] as string,
+      },
+    });
+    if (existingEntry) {
+      console.log('→ duplicate entry, skipping');
+      continue;
+    }
+
     const data = {
       athlete: athlete._id.toString(),
       date: new Date(row['Date'] as string),
+      time: row['Time'] as string,
       bodyWeight: toFloat(row['BW [KG]']),
       reps: toInt(row['Reps']),
       addLoad: toFloat(row['Additional Load [lb]']),
@@ -128,10 +146,23 @@ async function parseTypeHop(rows: Row[]) {
     });
     if (!athlete) continue;
 
+    const existingEntry = await prisma.forceHop.findFirst({
+      where: {
+        athlete: athlete._id.toString(),
+        date: new Date(row['Date'] as string),
+        time: row['Time'] as string,
+      },
+    });
+    if (existingEntry) {
+      console.log('→ duplicate entry, skipping');
+      continue;
+    }
+
     /*── build record ─*/
     const data = {
       athlete: athlete._id.toString(), // String in schema
       date: new Date(row['Date'] as string),
+      time: row['Time'] as string,
       bw: toFloat(row['BW [KG]']),
       reps: toInt(row['Reps']),
       bestActiveStiffness: toFloat(row['Best Active Stiffness [N/m]']),
@@ -164,10 +195,23 @@ async function parseTypeIMTP(rows: Row[]) {
     });
     if (!athlete) continue;
 
+    const existingEntry = await prisma.forceIMTP.findFirst({
+      where: {
+        athlete: athlete._id.toString(),
+        date: new Date(row['Date'] as string),
+        time: row['Time'] as string,
+      },
+    });
+    if (existingEntry) {
+      console.log('→ duplicate entry, skipping');
+      continue;
+    }
+
     // build the record
     const data = {
       athlete: athlete._id.toString(),
       date: new Date(row['Date'] as string),
+      time: row['Time'] as string,
       bw: toFloat(row['BW [KG]']),
       reps: toInt(row['Reps']),
       netPeakVerticalForce: toFloat(row['Net Peak Vertical Force [N]']),
@@ -199,9 +243,22 @@ async function parseTypeSJ(rows: Row[]) {
     });
     if (!athlete) continue;
 
+    const existingEntry = await prisma.forceSJ.findFirst({
+      where: {
+        athlete: athlete._id.toString(),
+        date: new Date(row['Date'] as string),
+        time: row['Time'] as string,
+      },
+    });
+    if (existingEntry) {
+      console.log('→ duplicate entry, skipping');
+      continue;
+    }
+
     const data = {
       athlete: athlete._id.toString(),
       date: new Date(row['Date'] as string),
+      time: row['Time'] as string,
       bw: toFloat(row['BW [KG]']),
       reps: toInt(row['Reps']),
       additionalLoad: toFloat(row['Additional Load [lb]']),
@@ -214,6 +271,54 @@ async function parseTypeSJ(rows: Row[]) {
     };
 
     await prisma.forceSJ.create({ data });
+  }
+}
+
+async function parseTypePPU(rows: Row[]) {
+  for (const row of rows) {
+    /*── athlete lookup ─*/
+    let rawName = row['Name'] as string | undefined;
+    if (!rawName) {
+      const k = Object.keys(row).find((h) => h.toLowerCase().includes('name'));
+      rawName = k ? (row[k] as string) : undefined;
+    }
+    if (!rawName) continue;
+
+    const parts = rawName.trim().split(/\s+/, 2);
+    if (parts.length < 2) continue;
+
+    const athlete = await Athlete.findOne({
+      firstName: parts[0],
+      lastName: parts[1],
+    });
+    if (!athlete) continue;
+
+    const existingEntry = await prisma.forcePPU.findFirst({
+      where: {
+        athlete: athlete._id.toString(),
+        date: new Date(row['Date'] as string),
+        time: row['Time'] as string,
+      },
+    });
+
+    if (existingEntry) {
+      console.log('→ duplicate entry, skipping');
+      continue;
+    }
+
+    const data = {
+      athlete: athlete._id.toString(),
+      date: new Date(row['Date'] as string),
+      time: row['Time'] as string,
+      bw: toFloat(row['BW [KG]']),
+      reps: toInt(row['Reps']),
+      takeoffPeakForceN: toFloat(row['Takeoff Peak Force [N]']),
+      eccentricPeakForce: toFloat(row['Eccentric Peak Force [N]']),
+      takeoffPeakForceAsym: row['Takeoff Peak Force % (Asym) (%)'] as string,
+      eccentricPeakForceAsym: row['Eccentric Peak Force % (Asym) (%)'] as string,
+    };
+
+    await prisma.forcePPU.create({ data });
   }
 }
 
@@ -275,6 +380,9 @@ export async function POST(req: NextRequest) {
         break;
       case 'SJ':
         await parseTypeSJ(rows);
+        break;
+      case 'PPU':
+        await parseTypePPU(rows);
         break;
       default:
         return NextResponse.json(

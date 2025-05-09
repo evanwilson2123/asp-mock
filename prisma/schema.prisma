@@ -393,6 +393,7 @@ model ForceCMJ {
   id                      Int @id @default(autoincrement())
   athlete                 String
   date                    DateTime
+  time                    String
   bodyWeight              Float
   reps                    Int
   addLoad                 Float
@@ -417,6 +418,7 @@ model ForceHop {
   id                      Int @id @default(autoincrement())
   athlete                 String
   date                    DateTime
+  time                    String
   bw                      Float
   reps                    Int
   bestActiveStiffness     Float
@@ -429,6 +431,7 @@ model ForceIMTP {
   id                      Int @id @default(autoincrement())
   athlete                 String
   date                    DateTime
+  time                    String
   bw                      Float
   reps                    Int
   netPeakVerticalForce    Float
@@ -443,6 +446,7 @@ model ForceSJ {
   id                      Int @id @default(autoincrement())
   athlete                 String
   date                    DateTime
+  time                    String
   bw                      Float
   reps                    Int
   additionalLoad          Float
@@ -450,4 +454,17 @@ model ForceSJ {
   peakPowerBM             Float
   P1concentricImp         String
   P2concentricImp         String
+}
+
+model ForcePPU {
+  id                      Int @id @default(autoincrement())
+  athlete                 String
+  date                    DateTime
+  time                    String
+  bw                      Float
+  reps                    Int
+  takeoffPeakForceN       Float
+  eccentricPeakForce      Float
+  takeoffPeakForceAsym    String
+  eccentricPeakForceAsym  String
 }

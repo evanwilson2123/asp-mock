@@ -35,6 +35,7 @@ type TestsByType = {
   cmj: Test[];
   imtp: Test[];
   hop: Test[];
+  ppu: Test[];
 };
 
 interface TestData {
@@ -43,6 +44,7 @@ interface TestData {
   imtpData: { peakVerticalForce: number };
   hopData: { rsi: number };
   bodyWeight: number;
+  ppuData: { takeoffPeakForceN: number };
 }
 
 const TEST_TYPES = [
@@ -50,6 +52,7 @@ const TEST_TYPES = [
   { key: 'cmj', label: 'CMJ' },
   { key: 'imtp', label: 'IMTP' },
   { key: 'hop', label: 'Hop' },
+  { key: 'ppu', label: 'PPU' },
 ] as const;
 
 ChartJS.register(
@@ -74,6 +77,7 @@ const ForceplatesOverview: React.FC = () => {
     cmj: [],
     imtp: [],
     hop: [],
+    ppu: [],
   });
   const [testData, setTestData] = useState<TestData>({
     cmjData: { peakPower: 0, jumpHeight: 0 },
@@ -81,9 +85,10 @@ const ForceplatesOverview: React.FC = () => {
     imtpData: { peakVerticalForce: 0 },
     hopData: { rsi: 0 },
     bodyWeight: 0,
+    ppuData: { takeoffPeakForceN: 0 },
   });
   const [selectedType, setSelectedType] = useState<
-    'sj' | 'cmj' | 'imtp' | 'hop'
+    'sj' | 'cmj' | 'imtp' | 'hop' | 'ppu'
   >('cmj');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +110,7 @@ const ForceplatesOverview: React.FC = () => {
           cmj: data.cmjTests ?? [],
           imtp: data.imtpTests ?? [],
           hop: data.hopTests ?? [],
+          ppu: data.ppuTests ?? [],
         };
 
         // Sort each array newest → oldest
@@ -121,6 +127,7 @@ const ForceplatesOverview: React.FC = () => {
           imtpData: data.imtpData,
           hopData: data.hopData,
           bodyWeight: Number(data.bodyWeight) || 0,
+          ppuData: { takeoffPeakForceN: data.ppuData?.takeoffPeakForceN || 0 },
         });
       } catch (err: any) {
         console.error(err);
@@ -145,6 +152,7 @@ const ForceplatesOverview: React.FC = () => {
     imtpPeakVertForce: 5000, // N
     hopRSI: 4, // RSI
     bodyWeight: 250, // lbs
+    ppuTakeoff: 1500, // N
   };
 
   // Comparison values from the table
@@ -155,6 +163,7 @@ const ForceplatesOverview: React.FC = () => {
       bodyWeight: 162.3,
       imtpPeakVertForce: 2148.1,
       hopRSI: 1.7,
+      ppuTakeoff: 934.7,
     },
     avg90: {
       sjPeakPower: 5715.3,
@@ -162,6 +171,7 @@ const ForceplatesOverview: React.FC = () => {
       bodyWeight: 213.8,
       imtpPeakVertForce: 3526.6,
       hopRSI: 2.6,
+      ppuTakeoff: 1334.7,
     },
     avg95: {
       sjPeakPower: 6259.3,
@@ -169,6 +179,7 @@ const ForceplatesOverview: React.FC = () => {
       bodyWeight: 226.2,
       imtpPeakVertForce: 3645.2,
       hopRSI: 2.7,
+      ppuTakeoff: 1378.9,
     },
   };
 
@@ -179,6 +190,7 @@ const ForceplatesOverview: React.FC = () => {
       'Body Weight (lbs)',
       'IMTP Peak Vert Force (N)',
       'Hop RSI',
+      'Plyo Pushup Takeoff Force (N)',
     ],
     datasets: [
       {
@@ -189,6 +201,7 @@ const ForceplatesOverview: React.FC = () => {
           testData.bodyWeight / MAX_VALUES.bodyWeight,
           testData.imtpData.peakVerticalForce / MAX_VALUES.imtpPeakVertForce,
           testData.hopData.rsi / MAX_VALUES.hopRSI,
+          testData.ppuData.takeoffPeakForceN / MAX_VALUES.ppuTakeoff,
         ],
         backgroundColor: 'rgba(37, 99, 235, 0.2)',
         borderColor: 'rgba(37, 99, 235, 1)',
@@ -205,6 +218,7 @@ const ForceplatesOverview: React.FC = () => {
           comparison.min90.bodyWeight / MAX_VALUES.bodyWeight,
           comparison.min90.imtpPeakVertForce / MAX_VALUES.imtpPeakVertForce,
           comparison.min90.hopRSI / MAX_VALUES.hopRSI,
+          comparison.min90.ppuTakeoff / MAX_VALUES.ppuTakeoff,
         ],
         backgroundColor: 'rgba(55, 65, 81, 0.1)',
         borderColor: 'rgba(55, 65, 81, 0.7)',
@@ -219,6 +233,7 @@ const ForceplatesOverview: React.FC = () => {
           comparison.avg90.bodyWeight / MAX_VALUES.bodyWeight,
           comparison.avg90.imtpPeakVertForce / MAX_VALUES.imtpPeakVertForce,
           comparison.avg90.hopRSI / MAX_VALUES.hopRSI,
+          comparison.avg90.ppuTakeoff / MAX_VALUES.ppuTakeoff,
         ],
         backgroundColor: 'rgba(251, 191, 36, 0.1)',
         borderColor: 'rgba(251, 191, 36, 1)',
@@ -232,6 +247,7 @@ const ForceplatesOverview: React.FC = () => {
           comparison.avg95.bodyWeight / MAX_VALUES.bodyWeight,
           comparison.avg95.imtpPeakVertForce / MAX_VALUES.imtpPeakVertForce,
           comparison.avg95.hopRSI / MAX_VALUES.hopRSI,
+          comparison.avg95.ppuTakeoff / MAX_VALUES.ppuTakeoff,
         ],
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         borderColor: 'rgba(239, 68, 68, 1)',
@@ -263,6 +279,8 @@ const ForceplatesOverview: React.FC = () => {
                 return `IMTP Peak Vert Force: ${testData.imtpData.peakVerticalForce.toFixed(1)} N`;
               case 4:
                 return `Hop RSI: ${testData.hopData.rsi.toFixed(2)}`;
+              case 5:
+                return `Plyo Pushup Takeoff Force: ${testData.ppuData.takeoffPeakForceN.toFixed(1)} N`;
               default:
                 return '';
             }
@@ -341,6 +359,15 @@ const ForceplatesOverview: React.FC = () => {
             <h3 className="text-sm font-medium text-gray-500">RSI</h3>
             <p className="text-2xl font-bold text-gray-900">
               {testData.hopData.rsi.toFixed(2)}
+            </p>
+          </div>
+        );
+      case 'ppu':
+        return (
+          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 className="text-sm font-medium text-gray-500">Peak Takeoff Force</h3>
+            <p className="text-2xl font-bold text-gray-900">
+              {testData.ppuData.takeoffPeakForceN.toFixed(1)} N
             </p>
           </div>
         );

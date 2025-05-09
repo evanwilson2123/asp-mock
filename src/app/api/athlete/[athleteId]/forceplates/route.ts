@@ -11,6 +11,8 @@ interface Test {
   jmpHeight?: number;
   peakVerticalForce?: number;
   bestRSIF?: number;
+  eccentricPeakForce?: number;
+  takeoffPeakForceN?: number;
 }
 
 interface CMJ_DATA {
@@ -31,15 +33,22 @@ interface HOP_DATA {
   rsi: number;
 }
 
+interface PPU_DATA {
+  eccentricPeakForce: number;
+  takeoffPeakForceN: number;
+}
+
 interface Response {
   sjTests: Test[];
   cmjTests: Test[];
   imtpTests: Test[];
   hopTests: Test[];
+  ppuTests: Test[];
   cmjData: CMJ_DATA;
   sjData: SJ_DATA;
   imtpData: IMTP_DATA;
   hopData: HOP_DATA;
+  ppuData: PPU_DATA;
   bodyWeight: number;
 }
 
@@ -92,6 +101,21 @@ function getHOPData(hopTests: Test[]) {
   });
   return { rsi };
 }
+
+function getPPUData(ppuTests: Test[]) {
+  let eccentricPeakForce = 0;
+  let takeoffPeakForceN = 0;
+  ppuTests.forEach((test) => {
+    if (test.eccentricPeakForce! > eccentricPeakForce) {
+      eccentricPeakForce = test.eccentricPeakForce!;
+    }
+    if (test.takeoffPeakForceN! > takeoffPeakForceN) {
+      takeoffPeakForceN = test.takeoffPeakForceN!;
+    }
+  });
+  return { eccentricPeakForce, takeoffPeakForceN };
+}
+
 /**
  *
  * @param req
@@ -138,6 +162,7 @@ export async function GET(req: NextRequest, context: any) {
       select: {
         id: true,
         date: true,
+        peakPowerW: true,
       },
     });
     const cmjTests = await prisma.forceCMJ.findMany({
@@ -172,15 +197,29 @@ export async function GET(req: NextRequest, context: any) {
       },
     });
 
+    const ppuTests = await prisma.forcePPU.findMany({
+      where: {
+        athlete: athleteId,
+      },
+      select: {
+        id: true,
+        date: true,
+        eccentricPeakForce: true,
+        takeoffPeakForceN: true,
+      },
+    });
+
     const response: Response = {
       sjTests: sjTests,
       cmjTests: cmjTests,
       imtpTests: imtpTests,
       hopTests: hopTests,
+      ppuTests: ppuTests,
       cmjData: getCMJData(cmjTests),
       sjData: getSJData(sjTests),
       imtpData: getIMTPData(imtpTests),
       hopData: getHOPData(hopTests),
+      ppuData: getPPUData(ppuTests),
       bodyWeight: bodyWeight,
     };
 
