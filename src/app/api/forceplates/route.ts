@@ -8,7 +8,6 @@ import csvParser from 'csv-parser';
 import Athlete from '@/models/athlete';
 
 
-// todo: prevent duplicate uploads by checking the date and time of the csv entry
 
 
 
@@ -268,6 +267,10 @@ async function parseTypeSJ(rows: Row[]) {
       P2concentricImp: row[
         'P2 Concentric Impulse:P1 Concentric Impulse % (Asym) (%)'
       ] as string,
+      jumpHeight: toFloat(row['Jump Height (Flight Time) [cm]']),
+      bodyWeightPounds: toFloat(row['Bodyweight in Pounds [lbs]']),
+      RSImodified: toFloat(row['RSI-modified [m/s]']),
+      concentricRFD: toFloat(row['Concentric RFD - 100ms [N/s]']),
     };
 
     await prisma.forceSJ.create({ data });

@@ -454,6 +454,10 @@ model ForceSJ {
   peakPowerBM             Float
   P1concentricImp         String
   P2concentricImp         String
+  jumpHeight              Float
+  bodyWeightPounds        Float
+  RSImodified             Float
+  concentricRFD           Float
 }
 
 model ForcePPU {

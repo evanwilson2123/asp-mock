@@ -163,6 +163,7 @@ export async function GET(req: NextRequest, context: any) {
         id: true,
         date: true,
         peakPowerW: true,
+        jumpHeight: true,
       },
     });
     const cmjTests = await prisma.forceCMJ.findMany({
