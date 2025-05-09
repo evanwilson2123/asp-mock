@@ -5,6 +5,28 @@ import { NextRequest, NextResponse } from 'next/server';
 interface Test {
   id: number;
   date: Date;
+  peakPowerW?: number;
+  jmpHeight?: number;
+  peakVertForce?: number;
+  bestRSIF?: number;
+}
+
+interface CMJ_DATA {
+  peakPower: number;
+  jumpHeight: number;
+}
+
+interface SJ_DATA {
+  peakPower: number;
+  jumpHeight: number;
+}
+
+interface IMTP_DATA {
+  peakVertForce: number;
+}
+
+interface HOP_DATA {
+  rsi: number;
 }
 
 interface Response {
@@ -12,7 +34,74 @@ interface Response {
   cmjTests: Test[];
   imtpTests: Test[];
   hopTests: Test[];
+  cmjData: CMJ_DATA;
+  sjData: SJ_DATA;
+  imtpData: IMTP_DATA;
+  hopData: HOP_DATA;
 }
+
+
+function getCMJData(cmjTests: Test[]) {
+  let peakPower = 0;
+  let jumpHeight = 0;
+  cmjTests.forEach((test) => {
+    if (test.peakPowerW! > peakPower) {
+      peakPower = test.peakPowerW!;
+    }
+    if (test.jmpHeight! > jumpHeight) {
+      jumpHeight = test.jmpHeight!;
+    }
+  });
+  console.log(peakPower, jumpHeight);
+  return { peakPower, jumpHeight };
+}
+
+function getSJData(sjTests: Test[]) {
+  let peakPower = 0;
+  let jumpHeight = 0;
+  sjTests.forEach((test) => {
+    if (test.peakPowerW! > peakPower) {
+      peakPower = test.peakPowerW!;
+    }
+    if (test.jmpHeight! > jumpHeight) {
+      jumpHeight = test.jmpHeight!;
+    }
+  });
+  return { peakPower, jumpHeight };
+}
+
+function getIMTPData(imtpTests: Test[]) {
+  let peakVertForce = 0;
+  imtpTests.forEach((test) => {
+    if (test.peakVertForce! > peakVertForce) {
+      peakVertForce = test.peakVertForce!;
+    }
+  });
+  return { peakVertForce };
+}
+
+function getHOPData(hopTests: Test[]) {
+  let rsi = 0;
+  hopTests.forEach((test) => {
+    if (test.bestRSIF! > rsi) {
+      rsi = test.bestRSIF!;
+    }
+  });
+  return { rsi };
+}
+/**
+ *
+ * @param req
+ * @param context
+ * @returns
+ *
+ * TODO:
+ * Gather the following data for each test:
+ * CMJ: Peak Power, Jump Height
+ * SJ: Peak Power, Jump Height
+ * IMTP: Peak Vertical Force
+ * Hop Test: RSI
+ */
 
 export async function GET(req: NextRequest, context: any) {
   const { userId } = await auth();
@@ -45,6 +134,8 @@ export async function GET(req: NextRequest, context: any) {
       select: {
         id: true,
         date: true,
+        jmpHeight: true,
+        peakPowerW: true,
       },
     });
     const imtpTests = await prisma.forceIMTP.findMany({
@@ -63,6 +154,7 @@ export async function GET(req: NextRequest, context: any) {
       select: {
         id: true,
         date: true,
+        bestRSIF: true,
       },
     });
 
@@ -71,6 +163,10 @@ export async function GET(req: NextRequest, context: any) {
       cmjTests: cmjTests,
       imtpTests: imtpTests,
       hopTests: hopTests,
+      cmjData: getCMJData(cmjTests),
+      sjData: getSJData(sjTests),
+      imtpData: getIMTPData(imtpTests),
+      hopData: getHOPData(hopTests),
     };
 
     return NextResponse.json({ tests: response }, { status: 200 });

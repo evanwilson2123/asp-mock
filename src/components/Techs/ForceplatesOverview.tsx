@@ -14,6 +14,10 @@ import ErrorMessage from '../ErrorMessage';
 interface Test {
   id: number;
   date: string; // ISO string after JSON stringify
+  peakPower?: number;
+  jumpHeight?: number;
+  peakVertForce?: number;
+  rsi?: number;
 }
 
 type TestsByType = {
@@ -22,6 +26,13 @@ type TestsByType = {
   imtp: Test[];
   hop: Test[];
 };
+
+interface TestData {
+  cmjData: { peakPower: number; jumpHeight: number };
+  sjData: { peakPower: number; jumpHeight: number };
+  imtpData: { peakVertForce: number };
+  hopData: { rsi: number };
+}
 
 const TEST_TYPES = [
   { key: 'sj', label: 'SJ' },
@@ -43,6 +54,12 @@ const ForceplatesOverview: React.FC = () => {
     cmj: [],
     imtp: [],
     hop: [],
+  });
+  const [testData, setTestData] = useState<TestData>({
+    cmjData: { peakPower: 0, jumpHeight: 0 },
+    sjData: { peakPower: 0, jumpHeight: 0 },
+    imtpData: { peakVertForce: 0 },
+    hopData: { rsi: 0 },
   });
   const [selectedType, setSelectedType] = useState<
     'sj' | 'cmj' | 'imtp' | 'hop'
@@ -77,6 +94,12 @@ const ForceplatesOverview: React.FC = () => {
         });
 
         setTests(parsed);
+        setTestData({
+          cmjData: data.cmjData,
+          sjData: data.sjData,
+          imtpData: data.imtpData,
+          hopData: data.hopData,
+        });
       } catch (err: any) {
         console.error(err);
         setError(err.message || 'Unknown error');
@@ -91,6 +114,63 @@ const ForceplatesOverview: React.FC = () => {
   /* --------------- render ---------------------- */
   if (loading) return <Loader />;
   if (error) return <ErrorMessage role={role as string} message={error} />;
+
+  const renderTestData = () => {
+    switch (selectedType) {
+      case 'cmj':
+        return (
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-500">Peak Power</h3>
+              <p className="text-2xl font-bold text-gray-900">
+                {testData.cmjData.peakPower.toFixed(1)} 
+              </p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-500">Jump Height</h3>
+              <p className="text-2xl font-bold text-gray-900">
+                {testData.cmjData.jumpHeight.toFixed(1)} cm
+              </p>
+            </div>
+          </div>
+        );
+      case 'sj':
+        return (
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-500">Peak Power</h3>
+              <p className="text-2xl font-bold text-gray-900">
+                {testData.sjData.peakPower.toFixed(1)} W
+              </p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-500">Jump Height</h3>
+              <p className="text-2xl font-bold text-gray-900">
+                {testData.sjData.jumpHeight.toFixed(1)} cm
+              </p>
+            </div>
+          </div>
+        );
+      case 'imtp':
+        return (
+          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 className="text-sm font-medium text-gray-500">Peak Vertical Force</h3>
+            <p className="text-2xl font-bold text-gray-900">
+              {testData.imtpData.peakVertForce.toFixed(1)} N
+            </p>
+          </div>
+        );
+      case 'hop':
+        return (
+          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 className="text-sm font-medium text-gray-500">RSI</h3>
+            <p className="text-2xl font-bold text-gray-900">
+              {testData.hopData.rsi.toFixed(2)}
+            </p>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -174,6 +254,9 @@ const ForceplatesOverview: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             {TEST_TYPES.find((t) => t.key === selectedType)?.label} Tests
           </h2>
+
+          {/* Display test data */}
+          {renderTestData()}
 
           {tests[selectedType].length > 0 ? (
             <ul className="divide-y divide-gray-200">
