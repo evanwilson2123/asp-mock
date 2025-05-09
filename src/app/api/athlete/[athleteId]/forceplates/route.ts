@@ -1,4 +1,6 @@
+import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prismaDb';
+import Athlete from '@/models/athlete';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -7,7 +9,7 @@ interface Test {
   date: Date;
   peakPowerW?: number;
   jmpHeight?: number;
-  peakVertForce?: number;
+  peakVerticalForce?: number;
   bestRSIF?: number;
 }
 
@@ -22,7 +24,7 @@ interface SJ_DATA {
 }
 
 interface IMTP_DATA {
-  peakVertForce: number;
+  peakVerticalForce: number;
 }
 
 interface HOP_DATA {
@@ -38,6 +40,7 @@ interface Response {
   sjData: SJ_DATA;
   imtpData: IMTP_DATA;
   hopData: HOP_DATA;
+  bodyWeight: number;
 }
 
 
@@ -71,13 +74,13 @@ function getSJData(sjTests: Test[]) {
 }
 
 function getIMTPData(imtpTests: Test[]) {
-  let peakVertForce = 0;
+  let peakVerticalForce = 0;
   imtpTests.forEach((test) => {
-    if (test.peakVertForce! > peakVertForce) {
-      peakVertForce = test.peakVertForce!;
+    if (test.peakVerticalForce! > peakVerticalForce) {
+      peakVerticalForce = test.peakVerticalForce!;
     }
   });
-  return { peakVertForce };
+  return { peakVerticalForce };
 }
 
 function getHOPData(hopTests: Test[]) {
@@ -118,6 +121,16 @@ export async function GET(req: NextRequest, context: any) {
     return NextResponse.json({ error: 'Missing athleteId' }, { status: 400 });
   }
   try {
+    await connectDB();
+
+    const athlete = await Athlete.findById(athleteId);
+    if (!athlete) {
+      console.log('Athlete not found');
+      return NextResponse.json({ error: 'Athlete not found' }, { status: 400 });
+    }
+
+    const bodyWeight = athlete.weight;
+
     const sjTests = await prisma.forceSJ.findMany({
       where: {
         athlete: athleteId,
@@ -145,6 +158,7 @@ export async function GET(req: NextRequest, context: any) {
       select: {
         id: true,
         date: true,
+        peakVerticalForce: true,
       },
     });
     const hopTests = await prisma.forceHop.findMany({
@@ -167,6 +181,7 @@ export async function GET(req: NextRequest, context: any) {
       sjData: getSJData(sjTests),
       imtpData: getIMTPData(imtpTests),
       hopData: getHOPData(hopTests),
+      bodyWeight: bodyWeight,
     };
 
     return NextResponse.json({ tests: response }, { status: 200 });

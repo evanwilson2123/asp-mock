@@ -3,6 +3,16 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { Radar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import AthleteSidebar from '@/components/Dash/AthleteSidebar';
@@ -16,7 +26,7 @@ interface Test {
   date: string; // ISO string after JSON stringify
   peakPower?: number;
   jumpHeight?: number;
-  peakVertForce?: number;
+  peakVerticalForce?: number;
   rsi?: number;
 }
 
@@ -30,8 +40,9 @@ type TestsByType = {
 interface TestData {
   cmjData: { peakPower: number; jumpHeight: number };
   sjData: { peakPower: number; jumpHeight: number };
-  imtpData: { peakVertForce: number };
+  imtpData: { peakVerticalForce: number };
   hopData: { rsi: number };
+  bodyWeight: number;
 }
 
 const TEST_TYPES = [
@@ -40,6 +51,15 @@ const TEST_TYPES = [
   { key: 'imtp', label: 'IMTP' },
   { key: 'hop', label: 'Hop' },
 ] as const;
+
+ChartJS.register(
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend
+);
 
 const ForceplatesOverview: React.FC = () => {
   /* --------------- route + auth --------------- */
@@ -58,8 +78,9 @@ const ForceplatesOverview: React.FC = () => {
   const [testData, setTestData] = useState<TestData>({
     cmjData: { peakPower: 0, jumpHeight: 0 },
     sjData: { peakPower: 0, jumpHeight: 0 },
-    imtpData: { peakVertForce: 0 },
+    imtpData: { peakVerticalForce: 0 },
     hopData: { rsi: 0 },
+    bodyWeight: 0,
   });
   const [selectedType, setSelectedType] = useState<
     'sj' | 'cmj' | 'imtp' | 'hop'
@@ -99,6 +120,7 @@ const ForceplatesOverview: React.FC = () => {
           sjData: data.sjData,
           imtpData: data.imtpData,
           hopData: data.hopData,
+          bodyWeight: Number(data.bodyWeight) || 0,
         });
       } catch (err: any) {
         console.error(err);
@@ -114,6 +136,159 @@ const ForceplatesOverview: React.FC = () => {
   /* --------------- render ---------------------- */
   if (loading) return <Loader />;
   if (error) return <ErrorMessage role={role as string} message={error} />;
+
+  // Radar chart data setup
+  // These max values should be set to reasonable upper bounds for normalization
+  const MAX_VALUES = {
+    sjPeakPower: 7000, // W
+    cmjPeakPower: 7000, // W
+    imtpPeakVertForce: 5000, // N
+    hopRSI: 4, // RSI
+    bodyWeight: 250, // lbs
+  };
+
+  // Comparison values from the table
+  const comparison = {
+    min90: {
+      sjPeakPower: 4334.8,
+      cmjPeakPower: 4099.9,
+      bodyWeight: 162.3,
+      imtpPeakVertForce: 2148.1,
+      hopRSI: 1.7,
+    },
+    avg90: {
+      sjPeakPower: 5715.3,
+      cmjPeakPower: 5963.9,
+      bodyWeight: 213.8,
+      imtpPeakVertForce: 3526.6,
+      hopRSI: 2.6,
+    },
+    avg95: {
+      sjPeakPower: 6259.3,
+      cmjPeakPower: 6554.6,
+      bodyWeight: 226.2,
+      imtpPeakVertForce: 3645.2,
+      hopRSI: 2.7,
+    },
+  };
+
+  const radarData = {
+    labels: [
+      'SJ Peak Power (W)',
+      'CMJ Peak Power (W)',
+      'Body Weight (lbs)',
+      'IMTP Peak Vert Force (N)',
+      'Hop RSI',
+    ],
+    datasets: [
+      {
+        label: 'Athlete',
+        data: [
+          testData.sjData.peakPower / MAX_VALUES.sjPeakPower,
+          testData.cmjData.peakPower / MAX_VALUES.cmjPeakPower,
+          testData.bodyWeight / MAX_VALUES.bodyWeight,
+          testData.imtpData.peakVerticalForce / MAX_VALUES.imtpPeakVertForce,
+          testData.hopData.rsi / MAX_VALUES.hopRSI,
+        ],
+        backgroundColor: 'rgba(37, 99, 235, 0.2)',
+        borderColor: 'rgba(37, 99, 235, 1)',
+        pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgba(37, 99, 235, 1)',
+      },
+      {
+        label: 'Min 90 MPH',
+        data: [
+          comparison.min90.sjPeakPower / MAX_VALUES.sjPeakPower,
+          comparison.min90.cmjPeakPower / MAX_VALUES.cmjPeakPower,
+          comparison.min90.bodyWeight / MAX_VALUES.bodyWeight,
+          comparison.min90.imtpPeakVertForce / MAX_VALUES.imtpPeakVertForce,
+          comparison.min90.hopRSI / MAX_VALUES.hopRSI,
+        ],
+        backgroundColor: 'rgba(55, 65, 81, 0.1)',
+        borderColor: 'rgba(55, 65, 81, 0.7)',
+        pointBackgroundColor: 'rgba(55, 65, 81, 1)',
+        borderDash: [6, 6],
+      },
+      {
+        label: 'Avg 90+ MPH',
+        data: [
+          comparison.avg90.sjPeakPower / MAX_VALUES.sjPeakPower,
+          comparison.avg90.cmjPeakPower / MAX_VALUES.cmjPeakPower,
+          comparison.avg90.bodyWeight / MAX_VALUES.bodyWeight,
+          comparison.avg90.imtpPeakVertForce / MAX_VALUES.imtpPeakVertForce,
+          comparison.avg90.hopRSI / MAX_VALUES.hopRSI,
+        ],
+        backgroundColor: 'rgba(251, 191, 36, 0.1)',
+        borderColor: 'rgba(251, 191, 36, 1)',
+        pointBackgroundColor: 'rgba(251, 191, 36, 1)',
+      },
+      {
+        label: 'Avg 95+ MPH',
+        data: [
+          comparison.avg95.sjPeakPower / MAX_VALUES.sjPeakPower,
+          comparison.avg95.cmjPeakPower / MAX_VALUES.cmjPeakPower,
+          comparison.avg95.bodyWeight / MAX_VALUES.bodyWeight,
+          comparison.avg95.imtpPeakVertForce / MAX_VALUES.imtpPeakVertForce,
+          comparison.avg95.hopRSI / MAX_VALUES.hopRSI,
+        ],
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderColor: 'rgba(239, 68, 68, 1)',
+        pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+      },
+    ],
+  };
+
+  const radarOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top' as const,
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context: any) {
+            // Show actual value instead of normalized
+            const idx = context.dataIndex;
+            switch (idx) {
+              case 0:
+                return `SJ Peak Power: ${testData.sjData.peakPower.toFixed(1)} W`;
+              case 1:
+                return `CMJ Peak Power: ${testData.cmjData.peakPower.toFixed(1)} W`;
+              case 2:
+                return `Body Weight: ${Number(testData.bodyWeight).toFixed(1)} lbs`;
+              case 3:
+                return `IMTP Peak Vert Force: ${testData.imtpData.peakVerticalForce.toFixed(1)} N`;
+              case 4:
+                return `Hop RSI: ${testData.hopData.rsi.toFixed(2)}`;
+              default:
+                return '';
+            }
+          },
+        },
+      },
+    },
+    scales: {
+      r: {
+        min: 0,
+        max: 1,
+        ticks: {
+          stepSize: 0.2,
+          callback: function(tickValue: string | number) {
+            const val = typeof tickValue === 'number' ? tickValue : parseFloat(tickValue);
+            return `${(val * 100).toFixed(0)}%`;
+          },
+        },
+        pointLabels: {
+          font: {
+            size: 14,
+          },
+        },
+      },
+    },
+  };
 
   const renderTestData = () => {
     switch (selectedType) {
@@ -156,7 +331,7 @@ const ForceplatesOverview: React.FC = () => {
           <div className="bg-gray-50 p-4 rounded-lg mb-6">
             <h3 className="text-sm font-medium text-gray-500">Peak Vertical Force</h3>
             <p className="text-2xl font-bold text-gray-900">
-              {testData.imtpData.peakVertForce.toFixed(1)} N
+              {testData.imtpData.peakVerticalForce.toFixed(1)} N
             </p>
           </div>
         );
@@ -230,6 +405,11 @@ const ForceplatesOverview: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-700 mb-4">
             Force-Plates Overview
           </h1>
+
+          {/* Radar Chart */}
+          <div className="mb-8 w-full max-w-3xl mx-auto aspect-[4/3] min-h-[300px] flex items-center justify-center">
+            <Radar data={radarData} options={radarOptions} />
+          </div>
 
           {/* toggle buttons */}
           <div className="flex flex-wrap gap-3">
