@@ -535,8 +535,13 @@ const ForceplatesOverview: React.FC = () => {
             </table>
           </div>
 
-          {/* toggle buttons */}
-          <div className="flex flex-wrap gap-3">
+          
+        </div>
+
+        {/* tests list for selected type */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          {/* toggle buttons - moved above the tests button */}
+          <div className="flex flex-wrap gap-3 mb-6">
             {TEST_TYPES.map(({ key, label }) => (
               <button
                 key={key}
@@ -551,10 +556,6 @@ const ForceplatesOverview: React.FC = () => {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* tests list for selected type */}
-        <div className="bg-white rounded-lg shadow-md p-6">
           <button
             onClick={() => router.push(`/athlete/${athleteId}/forceplates/${selectedType}`)}
             className="inline-flex items-center mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-lg font-semibold text-blue-700 hover:bg-blue-100 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-300 transition cursor-pointer shadow-sm"
