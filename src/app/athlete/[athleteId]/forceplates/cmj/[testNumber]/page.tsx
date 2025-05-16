@@ -1,9 +1,9 @@
 import React from 'react'
-import ForceplatesCMJTest from '@/components/Techs/ForceplatesCMJTest'
+import CMJtestView from '@/components/Techs/CMJtestView'
 const page = () => {
   return (
     <div>
-        <ForceplatesCMJTest />
+        <CMJtestView />
     </div>
   )
 }

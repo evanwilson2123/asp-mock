@@ -25,7 +25,6 @@ interface TestData {
     peakVerticalForce: number;
     forceAt100ms: number;
     date?: string;
-    testDate?: string;
 }
 
 const IMTPtestsOverTime = () => {
@@ -61,7 +60,7 @@ const IMTPtestsOverTime = () => {
     if (error) return <ErrorMessage message={error} role={role} />;
     
     // Prepare chart data for each metric
-    const labels = dataOverTime.map((d) => d.testDate || d.date || '');
+    const labels = dataOverTime.map((d) => d.date || '');
 
     const netPeakData = {
       labels,
