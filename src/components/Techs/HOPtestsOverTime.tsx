@@ -13,12 +13,14 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  PointElement,
+  LineElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface TestData {
     bestRSIF: number;
@@ -62,20 +64,87 @@ const HOPtestsOverTime = () => {
 
     // Prepare chart data
     const labels = dataOverTime.map((d) => d.date || '');
+    // Regression line helper
+    function regressionLine(arr: number[]) {
+      const n = arr.length;
+      if (n === 0) return [];
+      const x = arr.map((_, i) => i);
+      const y = arr;
+      const sumX = x.reduce((a, b) => a + b, 0);
+      const sumY = y.reduce((a, b) => a + b, 0);
+      const sumXY = x.reduce((acc, xi, i) => acc + xi * y[i], 0);
+      const sumXX = x.reduce((acc, xi) => acc + xi * xi, 0);
+      const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX || 1);
+      const intercept = (sumY - slope * sumX) / n;
+      return x.map((xi) => slope * xi + intercept);
+    }
+
+    // Percent change helper
+    function percentChange(arr: number[]) {
+      return arr.map((val, i) => {
+        if (i === 0) return null;
+        const prev = arr[i - 1];
+        if (!prev) return null;
+        return ((val - prev) / prev) * 100;
+      });
+    }
+
+    // Table rendering helper
+    function renderProgressionTable(dates: string[], changes: (number|null)[]) {
+      return (
+        <table className="min-w-[160px] ml-4 text-xs md:text-sm border rounded-lg overflow-hidden shadow">
+          <thead className="bg-gray-100 text-gray-800">
+            <tr>
+              <th className="px-2 py-1 border">Date</th>
+              <th className="px-2 py-1 border">% Change</th>
+            </tr>
+          </thead>
+          <tbody className="text-gray-800">
+            {dates.map((date, i) => (
+              <tr key={date} className="text-center">
+                <td className="border px-2 py-1">{date}</td>
+                <td className={`border px-2 py-1 font-semibold ${i === 0 ? '' : changes[i] !== null && changes[i] > 0 ? 'text-green-600' : changes[i] !== null && changes[i] < 0 ? 'text-red-600' : ''}`}>{i === 0 ? '—' : changes[i] !== null ? `${changes[i].toFixed(1)}%` : '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    const rsiArr = dataOverTime.map((d) => d.bestRSIF);
+    const rsiTrend = regressionLine(rsiArr).map(v => v / 2);
+    const rsiChange = percentChange(rsiArr);
+
     const rsiData = {
       labels,
       datasets: [
         {
+          type: 'bar' as const,
           label: 'Best RSI (Flight/Contact Time)',
-          data: dataOverTime.map((d) => d.bestRSIF),
+          data: rsiArr,
           backgroundColor: 'rgba(251, 191, 36, 0.7)',
+          yAxisID: 'y',
+        },
+        {
+          type: 'line' as const,
+          label: 'Trend',
+          data: rsiTrend,
+          borderColor: 'rgba(239, 68, 68, 1)',
+          backgroundColor: 'rgba(239, 68, 68, 0.2)',
+          yAxisID: 'y',
+          spanGaps: true,
+          pointRadius: 0,
+          pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+          borderWidth: 2,
+          borderDash: [6, 4],
+          tension: 0,
         },
       ],
     };
     const barOptions = {
       responsive: true,
       plugins: {
-        legend: { display: false },
+        legend: { display: true },
       },
       scales: {
         y: { beginAtZero: true },
@@ -115,9 +184,15 @@ const HOPtestsOverTime = () => {
             >
               <span className="mr-2">←</span> Back
             </button>
-            <div className="bg-white rounded-lg shadow-md p-6 pt-12">
-              <h2 className="text-xl font-bold text-gray-700 mb-4">Best RSI (Flight/Contact Time) Over Time</h2>
-              <Bar data={rsiData} options={barOptions} />
+            <div className="bg-white rounded-lg shadow-md p-6 pt-12 flex flex-col md:flex-row md:items-start md:gap-6">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-700 mb-4">Best RSI (Flight/Contact Time) Over Time</h2>
+                <Bar data={rsiData as any} options={barOptions} />
+              </div>
+              <div className="mt-6 md:mt-0 md:w-56">
+                <h3 className="text-md font-semibold text-gray-700 mb-2">Progression Table</h3>
+                {renderProgressionTable(labels, rsiChange)}
+              </div>
             </div>
           </div>
         </div>
