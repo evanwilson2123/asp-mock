@@ -92,6 +92,7 @@ const ForceplatesOverview: React.FC = () => {
   >('cmj');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedView, setSelectedView] = useState<'pitching' | 'hitting'>('pitching');
 
   /* --------------- fetch data ----------------- */
   useEffect(() => {
@@ -180,6 +181,34 @@ const ForceplatesOverview: React.FC = () => {
       imtpPeakVertForce: 3645.2,
       hopRSI: 2.7,
       ppuTakeoff: 1378.9,
+    },
+  };
+
+  // Hitting comparison values from the image
+  const hittingComparison = {
+    min65: {
+      sjPeakPower: 3994.16,
+      cmjPeakPower: 3826.75,
+      bodyWeight: 168.92,
+      hopRSI: 2.42,
+      ppuTakeoff: 1014.09,
+      imtpPeakVertForce: 2587.92,
+    },
+    avg65: {
+      sjPeakPower: 5213.87,
+      cmjPeakPower: 4952.88,
+      bodyWeight: 192.6,
+      hopRSI: 2.69,
+      ppuTakeoff: 1268.49,
+      imtpPeakVertForce: 3281.79,
+    },
+    avg70: {
+      sjPeakPower: 5815.98,
+      cmjPeakPower: 5503.53,
+      bodyWeight: 207.83,
+      hopRSI: 2.71,
+      ppuTakeoff: 1390.43,
+      imtpPeakVertForce: 3477.29,
     },
   };
 
@@ -354,6 +383,51 @@ const ForceplatesOverview: React.FC = () => {
     },
   ];
 
+  const hittingTableRows = [
+    {
+      label: 'SJ Peak Power (w)',
+      min65: hittingComparison.min65.sjPeakPower,
+      avg65: hittingComparison.avg65.sjPeakPower,
+      avg70: hittingComparison.avg70.sjPeakPower,
+      athlete: testData.sjData.peakPower,
+    },
+    {
+      label: 'CMJ Peak Power (w)',
+      min65: hittingComparison.min65.cmjPeakPower,
+      avg65: hittingComparison.avg65.cmjPeakPower,
+      avg70: hittingComparison.avg70.cmjPeakPower,
+      athlete: testData.cmjData.peakPower,
+    },
+    {
+      label: 'Body Weight (lbs)',
+      min65: hittingComparison.min65.bodyWeight,
+      avg65: hittingComparison.avg65.bodyWeight,
+      avg70: hittingComparison.avg70.bodyWeight,
+      athlete: testData.bodyWeight,
+    },
+    {
+      label: 'Reactive Strength - RSI',
+      min65: hittingComparison.min65.hopRSI,
+      avg65: hittingComparison.avg65.hopRSI,
+      avg70: hittingComparison.avg70.hopRSI,
+      athlete: testData.hopData.rsi,
+    },
+    {
+      label: 'Plyo Pushup - Peak Takeoff Force (n)',
+      min65: hittingComparison.min65.ppuTakeoff,
+      avg65: hittingComparison.avg65.ppuTakeoff,
+      avg70: hittingComparison.avg70.ppuTakeoff,
+      athlete: testData.ppuData.takeoffPeakForceN,
+    },
+    {
+      label: 'IMTP - Net Peak Vertical Force (n)',
+      min65: hittingComparison.min65.imtpPeakVertForce,
+      avg65: hittingComparison.avg65.imtpPeakVertForce,
+      avg70: hittingComparison.avg70.imtpPeakVertForce,
+      athlete: testData.imtpData.peakVerticalForce,
+    },
+  ];
+
   function percentDiff(a: number, b: number) {
     if (!a) return 0;
     return ((b - a) / a) * 100;
@@ -489,53 +563,184 @@ const ForceplatesOverview: React.FC = () => {
 
         {/* page title + type toggles */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          {/* Pitching/Hitting toggle */}
+          <div className="flex gap-4 mb-6">
+            <button
+              className={`px-4 py-2 rounded-lg font-semibold border transition ${selectedView === 'pitching' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200'}`}
+              onClick={() => setSelectedView('pitching')}
+            >
+              Pitching
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg font-semibold border transition ${selectedView === 'hitting' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200'}`}
+              onClick={() => setSelectedView('hitting')}
+            >
+              Hitting
+            </button>
+          </div>
           <h1 className="text-3xl font-bold text-gray-700 mb-4">
             Force-Plates Overview
           </h1>
 
-          {/* Radar Chart */}
-          <div className="mb-8 w-full max-w-3xl mx-auto aspect-[4/3] min-h-[300px] flex items-center justify-center">
-            <Radar data={radarData} options={radarOptions} />
-          </div>
-
-          {/* Comparison Table */}
-          <div className="overflow-x-auto mb-8">
-            <table className="min-w-full border text-xs md:text-sm rounded-lg overflow-hidden shadow">
-              <thead className="bg-gray-100 text-gray-800">
-                <tr>
-                  <th className="px-2 py-2 border">Metric</th>
-                  <th className="px-2 py-2 border">Min 90 MPH</th>
-                  <th className="px-2 py-2 border">Avg 90+ MPH</th>
-                  <th className="px-2 py-2 border">Avg 95+ MPH</th>
-                  <th className="px-2 py-2 border">Athlete Data</th>
-                  <th className="px-2 py-2 border">% Diff Min90</th>
-                  <th className="px-2 py-2 border">% Diff 90+</th>
-                  <th className="px-2 py-2 border">% Diff 95+</th>
-                </tr>
-              </thead>
-              <tbody className="text-gray-800">
-                {tableRows.map((row) => {
-                  const diffMin90 = percentDiff(row.min90, row.athlete);
-                  const diff90 = percentDiff(row.avg90, row.athlete);
-                  const diff95 = percentDiff(row.avg95, row.athlete);
-                  return (
-                    <tr key={row.label} className="text-center">
-                      <td className="border px-2 py-1 font-medium text-left">{row.label}</td>
-                      <td className="border px-2 py-1">{row.min90?.toFixed(1)}</td>
-                      <td className="border px-2 py-1">{row.avg90?.toFixed(1)}</td>
-                      <td className="border px-2 py-1">{row.avg95?.toFixed(1)}</td>
-                      <td className="border px-2 py-1 font-bold">{row.athlete?.toFixed(1)}</td>
-                      <td className={`border px-2 py-1 font-semibold ${getDiffColor(diffMin90)}`}>{diffMin90.toFixed(1)}%</td>
-                      <td className={`border px-2 py-1 font-semibold ${getDiffColor(diff90)}`}>{diff90.toFixed(1)}%</td>
-                      <td className={`border px-2 py-1 font-semibold ${getDiffColor(diff95)}`}>{diff95.toFixed(1)}%</td>
+          {/* Radar Chart & Table: Pitching or Hitting */}
+          {selectedView === 'pitching' ? (
+            <>
+              {/* Radar Chart */}
+              <div className="mb-8 w-full max-w-3xl mx-auto aspect-[4/3] min-h-[300px] flex items-center justify-center">
+                <Radar data={radarData} options={radarOptions} />
+              </div>
+              {/* Comparison Table */}
+              <div className="overflow-x-auto mb-8">
+                <table className="min-w-full border text-xs md:text-sm rounded-lg overflow-hidden shadow">
+                  <thead className="bg-gray-100 text-gray-800">
+                    <tr>
+                      <th className="px-2 py-2 border">Metric</th>
+                      <th className="px-2 py-2 border">Min 90 MPH</th>
+                      <th className="px-2 py-2 border">Avg 90+ MPH</th>
+                      <th className="px-2 py-2 border">Avg 95+ MPH</th>
+                      <th className="px-2 py-2 border">Athlete Data</th>
+                      <th className="px-2 py-2 border">% Diff Min90</th>
+                      <th className="px-2 py-2 border">% Diff 90+</th>
+                      <th className="px-2 py-2 border">% Diff 95+</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          
+                  </thead>
+                  <tbody className="text-gray-800">
+                    {tableRows.map((row) => {
+                      const diffMin90 = percentDiff(row.min90, row.athlete);
+                      const diff90 = percentDiff(row.avg90, row.athlete);
+                      const diff95 = percentDiff(row.avg95, row.athlete);
+                      return (
+                        <tr key={row.label} className="text-center">
+                          <td className="border px-2 py-1 font-medium text-left">{row.label}</td>
+                          <td className="border px-2 py-1">{row.min90?.toFixed(1)}</td>
+                          <td className="border px-2 py-1">{row.avg90?.toFixed(1)}</td>
+                          <td className="border px-2 py-1">{row.avg95?.toFixed(1)}</td>
+                          <td className="border px-2 py-1 font-bold">{row.athlete?.toFixed(1)}</td>
+                          <td className={`border px-2 py-1 font-semibold ${getDiffColor(diffMin90)}`}>{diffMin90.toFixed(1)}%</td>
+                          <td className={`border px-2 py-1 font-semibold ${getDiffColor(diff90)}`}>{diff90.toFixed(1)}%</td>
+                          <td className={`border px-2 py-1 font-semibold ${getDiffColor(diff95)}`}>{diff95.toFixed(1)}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Radar Chart for Hitting */}
+              <div className="mb-8 w-full max-w-3xl mx-auto aspect-[4/3] min-h-[300px] flex items-center justify-center">
+                <Radar
+                  data={{
+                    labels: [
+                      'SJ Peak Power (w)',
+                      'CMJ Peak Power (w)',
+                      'Body Weight (lbs)',
+                      'Reactive Strength - RSI',
+                      'Plyo Pushup - Peak Takeoff Force (n)',
+                      'IMTP - Net Peak Vertical Force (n)',
+                    ],
+                    datasets: [
+                      {
+                        label: 'Min <65 MPH',
+                        data: [
+                          hittingComparison.min65.sjPeakPower / MAX_VALUES.sjPeakPower,
+                          hittingComparison.min65.cmjPeakPower / MAX_VALUES.cmjPeakPower,
+                          hittingComparison.min65.bodyWeight / MAX_VALUES.bodyWeight,
+                          hittingComparison.min65.hopRSI / MAX_VALUES.hopRSI,
+                          hittingComparison.min65.ppuTakeoff / MAX_VALUES.ppuTakeoff,
+                          hittingComparison.min65.imtpPeakVertForce / MAX_VALUES.imtpPeakVertForce,
+                        ],
+                        borderColor: 'black',
+                        borderDash: [6, 6],
+                        backgroundColor: 'rgba(0,0,0,0.05)',
+                        pointBackgroundColor: 'black',
+                      },
+                      {
+                        label: 'Avg 65-70 MPH',
+                        data: [
+                          hittingComparison.avg65.sjPeakPower / MAX_VALUES.sjPeakPower,
+                          hittingComparison.avg65.cmjPeakPower / MAX_VALUES.cmjPeakPower,
+                          hittingComparison.avg65.bodyWeight / MAX_VALUES.bodyWeight,
+                          hittingComparison.avg65.hopRSI / MAX_VALUES.hopRSI,
+                          hittingComparison.avg65.ppuTakeoff / MAX_VALUES.ppuTakeoff,
+                          hittingComparison.avg65.imtpPeakVertForce / MAX_VALUES.imtpPeakVertForce,
+                        ],
+                        borderColor: 'green',
+                        backgroundColor: 'rgba(34,197,94,0.1)',
+                        pointBackgroundColor: 'green',
+                      },
+                      {
+                        label: 'Avg >70 MPH',
+                        data: [
+                          hittingComparison.avg70.sjPeakPower / MAX_VALUES.sjPeakPower,
+                          hittingComparison.avg70.cmjPeakPower / MAX_VALUES.cmjPeakPower,
+                          hittingComparison.avg70.bodyWeight / MAX_VALUES.bodyWeight,
+                          hittingComparison.avg70.hopRSI / MAX_VALUES.hopRSI,
+                          hittingComparison.avg70.ppuTakeoff / MAX_VALUES.ppuTakeoff,
+                          hittingComparison.avg70.imtpPeakVertForce / MAX_VALUES.imtpPeakVertForce,
+                        ],
+                        borderColor: 'red',
+                        backgroundColor: 'rgba(239,68,68,0.1)',
+                        pointBackgroundColor: 'red',
+                      },
+                      {
+                        label: 'Athlete',
+                        data: [
+                          testData.sjData.peakPower / MAX_VALUES.sjPeakPower,
+                          testData.cmjData.peakPower / MAX_VALUES.cmjPeakPower,
+                          testData.bodyWeight / MAX_VALUES.bodyWeight,
+                          testData.hopData.rsi / MAX_VALUES.hopRSI,
+                          testData.ppuData.takeoffPeakForceN / MAX_VALUES.ppuTakeoff,
+                          testData.imtpData.peakVerticalForce / MAX_VALUES.imtpPeakVertForce,
+                        ],
+                        borderColor: 'blue',
+                        backgroundColor: 'rgba(37,99,235,0.2)',
+                        pointBackgroundColor: 'blue',
+                      },
+                    ],
+                  }}
+                  options={radarOptions}
+                />
+              </div>
+              {/* Hitting Table */}
+              <div className="overflow-x-auto mb-8">
+                <table className="min-w-full border text-xs md:text-sm rounded-lg overflow-hidden shadow">
+                  <thead className="bg-gray-100 text-gray-800">
+                    <tr>
+                      <th className="px-2 py-2 border">Metric</th>
+                      <th className="px-2 py-2 border">Min {'<'}65 MPH</th>
+                      <th className="px-2 py-2 border">Avg 65-70 MPH</th>
+                      <th className="px-2 py-2 border">Avg {'>'}70 MPH</th>
+                      <th className="px-2 py-2 border">Athlete Data</th>
+                      <th className="px-2 py-2 border">% Diff Min65</th>
+                      <th className="px-2 py-2 border">% Diff 65+</th>
+                      <th className="px-2 py-2 border">% Diff 70+</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-800">
+                    {hittingTableRows.map((row) => {
+                      const diffMin65 = percentDiff(row.min65, row.athlete);
+                      const diff65 = percentDiff(row.avg65, row.athlete);
+                      const diff70 = percentDiff(row.avg70, row.athlete);
+                      return (
+                        <tr key={row.label} className="text-center">
+                          <td className="border px-2 py-1 font-medium text-left">{row.label}</td>
+                          <td className="border px-2 py-1">{row.min65?.toFixed(2)}</td>
+                          <td className="border px-2 py-1">{row.avg65?.toFixed(2)}</td>
+                          <td className="border px-2 py-1">{row.avg70?.toFixed(2)}</td>
+                          <td className="border px-2 py-1 font-bold">{row.athlete?.toFixed(2)}</td>
+                          <td className={`border px-2 py-1 font-semibold ${getDiffColor(diffMin65)}`}>{diffMin65.toFixed(1)}%</td>
+                          <td className={`border px-2 py-1 font-semibold ${getDiffColor(diff65)}`}>{diff65.toFixed(1)}%</td>
+                          <td className={`border px-2 py-1 font-semibold ${getDiffColor(diff70)}`}>{diff70.toFixed(1)}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
 
         {/* tests list for selected type */}
