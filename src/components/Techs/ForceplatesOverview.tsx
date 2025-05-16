@@ -308,6 +308,66 @@ const ForceplatesOverview: React.FC = () => {
     },
   };
 
+  // Table data setup
+  const tableRows = [
+    {
+      label: 'SJ Peak Power (w)',
+      min90: comparison.min90.sjPeakPower,
+      avg90: comparison.avg90.sjPeakPower,
+      avg95: comparison.avg95.sjPeakPower,
+      athlete: testData.sjData.peakPower,
+    },
+    {
+      label: 'CMJ Peak Power (w)',
+      min90: comparison.min90.cmjPeakPower,
+      avg90: comparison.avg90.cmjPeakPower,
+      avg95: comparison.avg95.cmjPeakPower,
+      athlete: testData.cmjData.peakPower,
+    },
+    {
+      label: 'Body Weight (lbs)',
+      min90: comparison.min90.bodyWeight,
+      avg90: comparison.avg90.bodyWeight,
+      avg95: comparison.avg95.bodyWeight,
+      athlete: testData.bodyWeight,
+    },
+    {
+      label: 'Reactive Strength - RSI',
+      min90: comparison.min90.hopRSI,
+      avg90: comparison.avg90.hopRSI,
+      avg95: comparison.avg95.hopRSI,
+      athlete: testData.hopData.rsi,
+    },
+    {
+      label: 'Plyo Pushup - Peak Takeoff Force (n)',
+      min90: comparison.min90.ppuTakeoff,
+      avg90: comparison.avg90.ppuTakeoff,
+      avg95: comparison.avg95.ppuTakeoff,
+      athlete: testData.ppuData.takeoffPeakForceN,
+    },
+    {
+      label: 'IMTP - Net Peak Vertical Force (n)',
+      min90: comparison.min90.imtpPeakVertForce,
+      avg90: comparison.avg90.imtpPeakVertForce,
+      avg95: comparison.avg95.imtpPeakVertForce,
+      athlete: testData.imtpData.peakVerticalForce,
+    },
+  ];
+
+  function percentDiff(a: number, b: number) {
+    if (!a) return 0;
+    return ((b - a) / a) * 100;
+  }
+
+  function getDiffColor(val: number) {
+    if (val >= 30) return 'bg-green-400/60';
+    if (val >= 8) return 'bg-green-200';
+    if (val >= 0) return 'bg-yellow-100';
+    if (val >= -10) return 'bg-yellow-300';
+    if (val >= -20) return 'bg-orange-300';
+    return 'bg-red-400 text-white';
+  }
+
   const renderTestData = () => {
     switch (selectedType) {
       case 'cmj':
@@ -436,6 +496,43 @@ const ForceplatesOverview: React.FC = () => {
           {/* Radar Chart */}
           <div className="mb-8 w-full max-w-3xl mx-auto aspect-[4/3] min-h-[300px] flex items-center justify-center">
             <Radar data={radarData} options={radarOptions} />
+          </div>
+
+          {/* Comparison Table */}
+          <div className="overflow-x-auto mb-8">
+            <table className="min-w-full border text-xs md:text-sm rounded-lg overflow-hidden shadow">
+              <thead className="bg-gray-100 text-gray-800">
+                <tr>
+                  <th className="px-2 py-2 border">Metric</th>
+                  <th className="px-2 py-2 border">Min 90 MPH</th>
+                  <th className="px-2 py-2 border">Avg 90+ MPH</th>
+                  <th className="px-2 py-2 border">Avg 95+ MPH</th>
+                  <th className="px-2 py-2 border">Athlete Data</th>
+                  <th className="px-2 py-2 border">% Diff Min90</th>
+                  <th className="px-2 py-2 border">% Diff 90+</th>
+                  <th className="px-2 py-2 border">% Diff 95+</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-800">
+                {tableRows.map((row) => {
+                  const diffMin90 = percentDiff(row.min90, row.athlete);
+                  const diff90 = percentDiff(row.avg90, row.athlete);
+                  const diff95 = percentDiff(row.avg95, row.athlete);
+                  return (
+                    <tr key={row.label} className="text-center">
+                      <td className="border px-2 py-1 font-medium text-left">{row.label}</td>
+                      <td className="border px-2 py-1">{row.min90?.toFixed(1)}</td>
+                      <td className="border px-2 py-1">{row.avg90?.toFixed(1)}</td>
+                      <td className="border px-2 py-1">{row.avg95?.toFixed(1)}</td>
+                      <td className="border px-2 py-1 font-bold">{row.athlete?.toFixed(1)}</td>
+                      <td className={`border px-2 py-1 font-semibold ${getDiffColor(diffMin90)}`}>{diffMin90.toFixed(1)}%</td>
+                      <td className={`border px-2 py-1 font-semibold ${getDiffColor(diff90)}`}>{diff90.toFixed(1)}%</td>
+                      <td className={`border px-2 py-1 font-semibold ${getDiffColor(diff95)}`}>{diff95.toFixed(1)}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
           {/* toggle buttons */}
