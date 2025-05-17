@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { SignOutButton } from '@clerk/nextjs';
+import { SignOutButton, useAuth } from '@clerk/nextjs';
 
 /**
  * Navbar Component
@@ -44,6 +44,7 @@ import { SignOutButton } from '@clerk/nextjs';
  *         {/* Page content here */
 
 const Navbar: React.FC = () => {
+  const { isSignedIn } = useAuth();
   return (
     <header className="bg-gray-900 text-white p-4 flex justify-between items-center">
       {/* Logo and App Name */}
@@ -68,7 +69,9 @@ const Navbar: React.FC = () => {
         {/* <button className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
           Sign Out
         </button> */}
-        <SignOutButton />
+        {isSignedIn && (
+          <SignOutButton />
+        )}
       </nav>
     </header>
   );

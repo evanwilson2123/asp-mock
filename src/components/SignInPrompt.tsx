@@ -62,23 +62,39 @@ import React from 'react';
 
 const SignInPrompt: React.FC = () => {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-      <div className="bg-gray-800 rounded-lg shadow-lg p-8 max-w-sm w-full">
-        <h1 className="text-2xl font-bold text-center mb-6">
-          Welcome to ASP Analytics
-        </h1>
-        <p className="text-gray-400 text-center mb-6">
-          Please sign in to access your dashboard.
-        </p>
-        <div className="flex justify-center">
-          {/* Clerk's Sign-In Button */}
-          <SignInButton>
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
-              Sign In
-            </button>
-          </SignInButton>
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden">
+      {/* Decorative background shapes */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-blue-900 opacity-20 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-700 opacity-10 rounded-full blur-2xl -z-10" />
+      {/* Logo/Icon */}
+      <div className="mb-8 flex flex-col items-center">
+        {/* Replace with your logo if available */}
+        <div className="bg-gray-900 rounded-full w-20 h-20 flex items-center justify-center shadow-lg mb-4">
+          <span className="text-4xl">⚡️</span>
         </div>
+        <h1 className="text-4xl font-extrabold tracking-tight text-center mb-2">
+          ASP Analytics
+        </h1>
+        <p className="text-lg text-gray-300 text-center max-w-xl mb-6">
+          Unlock your athletic potential. Visualize, track, and compare your performance data with powerful, intuitive analytics.
+        </p>
       </div>
+      {/* Sign In Call to Action */}
+      <div className="flex flex-col items-center bg-gray-800/80 rounded-xl shadow-2xl px-8 py-8 w-full max-w-md">
+        <h2 className="text-2xl font-semibold mb-4 text-center">Sign in to get started</h2>
+        <SignInButton>
+          <button className="w-full bg-gray-900 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg text-lg transition mb-2 shadow-md">
+            Sign In
+          </button>
+        </SignInButton>
+        <p className="text-gray-400 text-sm text-center mt-2">
+          Secure authentication powered by Clerk
+        </p>
+      </div>
+      {/* Footer */}
+      <footer className="absolute bottom-4 w-full flex justify-center text-gray-500 text-xs">
+        &copy; {new Date().getFullYear()} ASP Analytics. All rights reserved.
+      </footer>
     </div>
   );
 };
