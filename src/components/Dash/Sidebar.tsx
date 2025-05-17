@@ -79,6 +79,9 @@ const Sidebar: React.FC = () => {
             >
               <Link href="/manage-athletes">Manage Athletes</Link>
             </li>
+            <li className={`hover:bg-gray-700 p-3 rounded ${pathname === '/manage-coaches' ? 'bg-gray-700' : ''}`}>
+              <Link href="/manage-coaches">Manage Coaches</Link>
+            </li>
 
             {/* CSV Upload */}
             {/* <li

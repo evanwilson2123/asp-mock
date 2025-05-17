@@ -63,13 +63,7 @@ const TeamDetails = () => {
   }, [teamId]);
 
   const handleBackClick = () => {
-    if (role === 'COACH') {
-      router.push('/my-team');
-    } else if (role === 'ADMIN') {
-      router.push('/teams-groups');
-    } else {
-      router.push('/'); // Default behavior
-    }
+    router.back();
   };
 
   if (loading) return <Loader />;
@@ -94,7 +88,7 @@ const TeamDetails = () => {
             onClick={handleBackClick}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
           >
-            Back to Teams
+            Back
           </button>
         </div>
 

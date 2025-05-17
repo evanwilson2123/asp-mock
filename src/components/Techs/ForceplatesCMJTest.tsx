@@ -91,7 +91,7 @@ const ForceplatesCMJTest = () => {
     if (loading) return <div>Loading...</div>;
     if (error) return <ErrorMessage message={error} role={role} />;
 
-    return (
+  return (
       <div className="flex min-h-screen bg-gray-100">
         {/* ---------- sidebars ---------- */}
         {/* mobile */}

@@ -6,6 +6,7 @@ export interface ICoach {
   lastName: string;
   email: string;
   teams?: Types.ObjectId[];
+  photoUrl?: string;
 }
 
 const coachSchema = new Schema<ICoach>({
@@ -13,6 +14,7 @@ const coachSchema = new Schema<ICoach>({
   lastName: { type: String, required: true },
   email: { type: String, required: true },
   teams: [{ type: mongoose.Types.ObjectId, ref: "Team" }],
+  photoUrl: { type: String },
 });
 
 const Coach = models.Coach || model<ICoach>("Coach", coachSchema);

@@ -147,7 +147,7 @@ const PPUtestsOverTime = () => {
     if (loading) return <div>Loading...</div>;
     if (error) return <div className="text-red-500">{error}</div>;
 
-    return (
+  return (
       <div className="flex min-h-screen bg-gray-100">
         {/* ---------- sidebars ---------- */}
         {/* mobile */}
