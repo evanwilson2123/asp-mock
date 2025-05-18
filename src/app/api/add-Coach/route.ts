@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
     });
 
     const coach = new Coach({
+      clerkId: user.id,
       firstName,
       lastName,
       email,

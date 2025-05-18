@@ -106,8 +106,11 @@ export async function POST(req: NextRequest) {
       password,
     });
 
+    console.log(user.id);
+
     // Create an athlete Object:
     const athlete = new Athlete({
+      clerkId: user.id,
       firstName,
       lastName,
       email,

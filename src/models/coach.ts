@@ -2,6 +2,7 @@ import mongoose, { Schema, model, models, Types } from "mongoose";
 
 export interface ICoach {
   _id: Types.ObjectId;
+  clerkId: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -10,6 +11,7 @@ export interface ICoach {
 }
 
 const coachSchema = new Schema<ICoach>({
+  clerkId: { type: String, required: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: { type: String, required: true },

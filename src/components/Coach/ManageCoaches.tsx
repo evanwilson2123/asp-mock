@@ -6,6 +6,7 @@ import ErrorMessage from '../ErrorMessage';
 import { useRouter } from 'next/navigation';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
+import { TrashIcon } from '@heroicons/react/24/solid';
 
 interface Coach {
     firstName: string;
@@ -26,6 +27,9 @@ const ManageCoaches = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 5;
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [coachToDelete, setCoachToDelete] = useState<Coach | null>(null);
+    const [confirmationName, setConfirmationName] = useState('');
 
     const fetchData = useCallback(async () => {
         try {
@@ -84,6 +88,38 @@ const ManageCoaches = () => {
     // Build numeric page links
     const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
+    // Add delete handler
+    const handleDeleteClick = useCallback((e: React.MouseEvent, coach: Coach) => {
+        e.stopPropagation(); // Prevent row click
+        setCoachToDelete(coach);
+        setDeleteModalOpen(true);
+    }, []);
+
+    const handleDeleteConfirm = useCallback(async () => {
+        if (confirmationName !== coachToDelete?.firstName) {
+            setError('First name does not match');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/coaches/${coachToDelete._id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete coach');
+            }
+
+            // Remove coach from local state
+            setCoaches(prev => prev.filter(c => c._id !== coachToDelete._id));
+            setDeleteModalOpen(false);
+            setCoachToDelete(null);
+            setConfirmationName('');
+        } catch (err: any) {
+            setError(err.message);
+        }
+    }, [coachToDelete, confirmationName]);
+
     if (loading) return <Loader />;
     if (error) return <ErrorMessage message={error} role={role} />;
     if (role !== 'ADMIN') {
@@ -139,6 +175,7 @@ const ManageCoaches = () => {
                                     <th className="py-2 px-4 text-left">First Name</th>
                                     <th className="py-2 px-4 text-left">Last Name</th>
                                     <th className="py-2 px-4 text-left">Email</th>
+                                    <th className="py-2 px-4 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -153,10 +190,62 @@ const ManageCoaches = () => {
                                         </td>
                                         <td className="text-black py-2 px-4">{coach.lastName}</td>
                                         <td className="text-black py-2 px-4">{coach.email}</td>
+                                        <td className="text-black py-2 px-4 text-right">
+                                            <button
+                                                onClick={(e) => handleDeleteClick(e, coach)}
+                                                className="text-red-600 hover:text-red-800 transition-colors"
+                                            >
+                                                <TrashIcon className="h-5 w-5" />
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+
+                        {/* Delete Confirmation Modal */}
+                        {deleteModalOpen && coachToDelete && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                                        Delete Coach
+                                    </h3>
+                                    <p className="text-gray-600 mb-4">
+                                        Are you sure you want to delete {coachToDelete.firstName} {coachToDelete.lastName}?
+                                        This action cannot be undone.
+                                    </p>
+                                    <p className="text-gray-600 mb-4">
+                                        To confirm, please type the coach&apos;s first name: <span className="font-semibold">{coachToDelete.firstName}</span>
+                                    </p>
+                                    <input
+                                        type="text"
+                                        value={confirmationName}
+                                        onChange={(e) => setConfirmationName(e.target.value)}
+                                        placeholder="Type first name to confirm"
+                                        className="w-full p-2 border rounded mb-4 text-black"
+                                    />
+                                    <div className="flex justify-end space-x-4">
+                                        <button
+                                            onClick={() => {
+                                                setDeleteModalOpen(false);
+                                                setCoachToDelete(null);
+                                                setConfirmationName('');
+                                            }}
+                                            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleDeleteConfirm}
+                                            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                                            disabled={confirmationName !== coachToDelete.firstName}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Pagination Controls */}
                         <div className="mt-4 flex items-center justify-center space-x-4">

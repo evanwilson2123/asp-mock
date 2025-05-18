@@ -3,6 +3,7 @@ import { coachNoteSchema, ICoachNote } from './coachesNote';
 import mediaSchema from './media';
 export interface IAthlete {
   _id: Types.ObjectId;
+  clerkId: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -34,6 +35,7 @@ export interface IAthlete {
 }
 
 const athleteSchema = new Schema<IAthlete>({
+  clerkId: { type: String, required: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: { type: String, required: true },
