@@ -32,8 +32,8 @@ import MobileSidebar from './MobileSidebar';
 
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const [isCoachesToolsOpen, setIsCoachesToolsOpen] = useState(false); // State to manage dropdown
-  // const [isReportsOpen, setIsReportsOpen] = useState(false); // State to manage reports drop down
+  const [isCoachesToolsOpen, setIsCoachesToolsOpen] = useState(false);
+  const [isManageOpen, setIsManageOpen] = useState(false); // New state for Manage dropdown
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
@@ -71,36 +71,16 @@ const Sidebar: React.FC = () => {
               <Link href="/">Dashboard</Link>
             </li>
 
-            {/* Analytics */}
+            {/* Manage Dropdown */}
             <li
-              className={`hover:bg-gray-700 p-3 rounded ${
-                pathname === '/manage-athletes' ? 'bg-gray-700' : ''
-              }`}
-            >
-              <Link href="/manage-athletes">Manage Athletes</Link>
-            </li>
-            <li className={`hover:bg-gray-700 p-3 rounded ${pathname === '/manage-coaches' ? 'bg-gray-700' : ''}`}>
-              <Link href="/manage-coaches">Manage Coaches</Link>
-            </li>
-
-            {/* CSV Upload */}
-            {/* <li
-            className={`hover:bg-gray-700 p-3 rounded ${
-              pathname === "/csv-upload" ? "bg-gray-700" : ""
-            }`}
-          >
-            <Link href="/csv-upload">CSV-Upload</Link>
-          </li> */}
-            {/* Reports Section */}
-            {/* <li
               className="p-3 rounded hover:bg-gray-700 text-base flex justify-between items-center cursor-pointer"
-              onClick={() => setIsReportsOpen(!isReportsOpen)}
+              onClick={() => setIsManageOpen(!isManageOpen)}
             >
-              <span>Reports</span>
+              <span>Manage</span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className={`h-5 w-5 transform transition-transform ${
-                  isReportsOpen ? 'rotate-180' : ''
+                  isManageOpen ? 'rotate-180' : ''
                 }`}
                 fill="none"
                 viewBox="0 0 24 24"
@@ -113,32 +93,29 @@ const Sidebar: React.FC = () => {
                   d="M19 9l-7 7-7-7"
                 />
               </svg>
-            </li> */}
+            </li>
 
-            {/* Dropdown Options For Reports*/}
-            {/* {isReportsOpen && (
+            {/* Manage Dropdown Options */}
+            {isManageOpen && (
               <ul className="mt-2 space-y-2 pl-4">
                 <li
                   className={`p-2 rounded ${
-                    pathname === '/blast-motion' ? 'bg-gray-700' : ''
+                    pathname === '/manage-athletes' ? 'bg-gray-700' : ''
                   } hover:bg-gray-700`}
                 >
-                  <Link href="/blast-motion">Blast Motion</Link>
+                  <Link href="/manage-athletes">Manage Athletes</Link>
                 </li>
-                <li className="p-2 rounded hover:bg-gray-700">
-                  <Link href="/hittrax">Hittrax</Link>
-                </li>
-                <li className="p-2 rounded hover:bg-gray-700">
-                  <Link href="/trackman">Trackman</Link>
-                </li>
-                <li className="p-2 rounded hover:bg-gray-700">
-                  <Link href="/forceplates">Forceplates</Link>
-                </li>
-                <li className="p-2 rounded hover:bg-gray-700">
-                  <Link href="/arm-care">ArmCare.com</Link>
+                <li
+                  className={`p-2 rounded ${
+                    pathname === '/manage-coaches' ? 'bg-gray-700' : ''
+                  } hover:bg-gray-700`}
+                >
+                  <Link href="/manage-coaches">Manage Coaches</Link>
                 </li>
               </ul>
-            )} */}
+            )}
+
+            {/* Reports */}
             <li
               className={`hover:bg-gray-700 p-3 rounded ${
                 pathname === '/reports' ? 'bg-gray-700' : ''
@@ -147,6 +124,7 @@ const Sidebar: React.FC = () => {
               <Link href="/reports">Reports</Link>
             </li>
 
+            {/* Chat/Messaging */}
             <li
               className={`hover:bg-gray-700 p-3 rounded ${
                 pathname === '/chat' ? 'bg-gray-700' : ''
@@ -179,7 +157,7 @@ const Sidebar: React.FC = () => {
               </svg>
             </li>
 
-            {/* Dropdown Options for Coaches Tools*/}
+            {/* Dropdown Options for Coaches Tools */}
             {isCoachesToolsOpen && (
               <ul className="mt-2 space-y-2 pl-4">
                 <li
@@ -201,15 +179,10 @@ const Sidebar: React.FC = () => {
                 <li className="p-2 rounded hover:bg-gray-700">
                   <Link href="/forceplates-upload">Forceplates Upload</Link>
                 </li>
-                {/* <li className="p-2 rounded hover:bg-gray-700">
-                  <Link href="/radar-plot">Radar Plot Creator</Link>
-                </li> */}
-                {/* <li className="p-2 rounded hover:bg-gray-700">
-                <Link href="/program-planner">Program Planner</Link>
-              </li> */}
               </ul>
             )}
 
+            {/* Programming */}
             <li
               className={`hover:bg-gray-700 p-3 rounded ${
                 pathname === '/programming' ? 'bg-gray-700' : ''
@@ -218,7 +191,7 @@ const Sidebar: React.FC = () => {
               <Link href="/programming">Programming</Link>
             </li>
 
-            {/* Logout */}
+            {/* Teams/Groups */}
             <li
               className={`hover:bg-gray-700 p-3 rounded ${
                 pathname === '/teams-groups' ? 'bg-gray-700' : ''
@@ -226,6 +199,8 @@ const Sidebar: React.FC = () => {
             >
               <Link href="/teams-groups">Teams/Groups</Link>
             </li>
+
+            {/* Add Players/Coaches */}
             <li
               className={`hover:bg-gray-700 p-3 rounded ${
                 pathname === '/add-members' ? 'bg-gray-700' : ''
@@ -233,12 +208,14 @@ const Sidebar: React.FC = () => {
             >
               <Link href="/add-members">Add Players/Coaches</Link>
             </li>
+
+            {/* Assessments */}
             <li
               className={`hover:bg-gray-700 p-3 rounded ${
                 pathname === '/assesment' ? 'bg-gray-700' : ''
               }`}
             >
-              <Link href="/assesment">Assesments</Link>
+              <Link href="/assesment">Assessments</Link>
             </li>
           </ul>
         </nav>
