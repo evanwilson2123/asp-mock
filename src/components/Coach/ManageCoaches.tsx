@@ -32,19 +32,19 @@ const ManageCoaches = () => {
     const [confirmationName, setConfirmationName] = useState('');
 
     const fetchData = useCallback(async () => {
-        try {
-            const response = await fetch('/api/coaches');
-            if (!response.ok) {
-                setError('Failed to fetch coaches');
-                return;
+            try {
+                const response = await fetch('/api/coaches');
+                if (!response.ok) {
+                    setError('Failed to fetch coaches');
+                    return;
+                }
+                const data = await response.json();
+                setCoaches(data.coaches);
+            } catch (error: any) {
+                setError(error.message);
+            } finally {
+                setLoading(false);
             }
-            const data = await response.json();
-            setCoaches(data.coaches);
-        } catch (error: any) {
-            setError(error.message);
-        } finally {
-            setLoading(false);
-        }
     }, []);
 
     useEffect(() => {
@@ -126,7 +126,7 @@ const ManageCoaches = () => {
         return <div>You are not authorized to access this page</div>;
     }
 
-    return (
+  return (
         <div className="flex min-h-screen">
             {/* Sidebar */}
             <div className="md:hidden bg-gray-100">

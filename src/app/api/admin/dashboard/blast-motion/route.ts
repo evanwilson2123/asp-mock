@@ -31,11 +31,12 @@ export async function GET(req: NextRequest): Promise<
   | NextResponse<{ error: string }>
   | NextResponse<{
       maxBatSpeed: number;
-      maxHandSpeed: number;
+      avgBatSpeed: number;
+      avgAttackAngle: number;
       sessionAverages: {
         date: string;
         avgBatSpeed: number;
-        avgHandSpeed: number;
+        avgAttackAngle: number;
       }[];
     }>
 > {
@@ -54,31 +55,36 @@ export async function GET(req: NextRequest): Promise<
     });
 
     /* ---------- aggregate averages by date ---------- */
-    const groups: Record<string, { bats: number[]; hands: number[] }> = {};
+    const groups: Record<string, { bats: number[]; angles: number[] }> = {};
     data.forEach((r) => {
       const d = r.date.toISOString().split('T')[0];
-      if (!groups[d]) groups[d] = { bats: [], hands: [] };
+      if (!groups[d]) groups[d] = { bats: [], angles: [] };
       if (r.batSpeed) groups[d].bats.push(r.batSpeed);
-      if (r.peakHandSpeed) groups[d].hands.push(r.peakHandSpeed);
+      if (r.attackAngle) groups[d].angles.push(r.attackAngle);
     });
 
     const sessionAverages = Object.entries(groups).map(([date, g]) => ({
       date,
       avgBatSpeed: g.bats.reduce((a, b) => a + b, 0) / (g.bats.length || 1),
-      avgHandSpeed: g.hands.reduce((a, b) => a + b, 0) / (g.hands.length || 1),
+      avgAttackAngle: g.angles.reduce((a, b) => a + b, 0) / (g.angles.length || 1),
     }));
 
-    /* ---------- safe “max” values ---------- */
-    const maxBatSpeed = data.length
-      ? Math.max(...data.map((r) => r.batSpeed ?? 0))
+    /* ---------- calculate overall averages and max values ---------- */
+    const allBatSpeeds = data.map(r => r.batSpeed ?? 0).filter(speed => speed > 0);
+    const allAttackAngles = data.map(r => r.attackAngle ?? 0).filter(angle => angle !== 0);
+
+    const maxBatSpeed = allBatSpeeds.length ? Math.max(...allBatSpeeds) : 0;
+    const avgBatSpeed = allBatSpeeds.length 
+      ? allBatSpeeds.reduce((a, b) => a + b, 0) / allBatSpeeds.length 
       : 0;
-    const maxHandSpeed = data.length
-      ? Math.max(...data.map((r) => r.peakHandSpeed ?? 0))
+    const avgAttackAngle = allAttackAngles.length
+      ? allAttackAngles.reduce((a, b) => a + b, 0) / allAttackAngles.length
       : 0;
 
     return NextResponse.json({
       maxBatSpeed,
-      maxHandSpeed,
+      avgBatSpeed,
+      avgAttackAngle,
       sessionAverages,
     });
   } catch (err) {

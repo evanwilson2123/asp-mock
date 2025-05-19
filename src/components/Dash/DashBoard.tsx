@@ -49,11 +49,12 @@ const timeRanges = [
 interface BlastSessionAvg {
   date: string;
   avgBatSpeed: number;
-  avgHandSpeed: number;
+  avgAttackAngle: number;
 }
 interface BlastData {
   maxBatSpeed?: number;
-  maxHandSpeed?: number;
+  avgBatSpeed?: number;
+  avgAttackAngle?: number;
   sessionAverages?: BlastSessionAvg[];
 }
 
@@ -207,14 +208,16 @@ const Dashboard: React.FC = () => {
         backgroundColor: 'rgba(54, 162, 235, 0.1)',
         fill: true,
         tension: 0.3,
+        yAxisID: 'y',
       },
       {
-        label: 'Avg Hand Speed',
-        data: sortedBlastData?.map((s) => s.avgHandSpeed) ?? [],
-        borderColor: 'rgba(75, 192, 192, 0.9)',
-        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        label: 'Avg Attack Angle',
+        data: sortedBlastData?.map((s) => s.avgAttackAngle) ?? [],
+        borderColor: 'rgba(255, 99, 132, 0.9)',
+        backgroundColor: 'rgba(255, 99, 132, 0.1)',
         fill: true,
         tension: 0.3,
+        yAxisID: 'y1',
       },
     ],
   };
@@ -317,10 +320,40 @@ const Dashboard: React.FC = () => {
         },
       },
       y: {
+        type: 'linear' as const,
+        display: true,
+        position: 'left' as const,
+        title: {
+          display: true,
+          text: 'Bat Speed (mph)',
+          font: {
+            size: 11,
+          },
+        },
         ticks: {
           font: {
             size: 11,
           },
+        },
+      },
+      y1: {
+        type: 'linear' as const,
+        display: true,
+        position: 'right' as const,
+        title: {
+          display: true,
+          text: 'Attack Angle (°)',
+          font: {
+            size: 11,
+          },
+        },
+        ticks: {
+          font: {
+            size: 11,
+          },
+        },
+        grid: {
+          drawOnChartArea: false,
         },
       },
     },
@@ -474,21 +507,21 @@ const Dashboard: React.FC = () => {
                 </span>
                 <div className="mt-2 relative rounded-full w-20 h-20 border-4 border-blue-200 flex items-center justify-center">
                   <span className="text-xl font-bold text-blue-600">
-                    {blastData?.maxBatSpeed ?? 0}
+                    {blastData?.maxBatSpeed?.toFixed(1) ?? '0'}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-blue-600 font-medium">mph</p>
               </div>
               <div className="flex flex-col items-center bg-gray-50 p-3 rounded shadow border-2 border-gray-200">
                 <span className="text-sm text-gray-600 font-medium">
-                  Max Hand Speed
+                  Avg Attack Angle
                 </span>
-                <div className="mt-2 relative rounded-full w-20 h-20 border-4 border-green-200 flex items-center justify-center">
-                  <span className="text-xl font-bold text-green-600">
-                    {blastData?.maxHandSpeed ?? 0}
+                <div className="mt-2 relative rounded-full w-20 h-20 border-4 border-red-200 flex items-center justify-center">
+                  <span className="text-xl font-bold text-red-600">
+                    {blastData?.avgAttackAngle?.toFixed(1) ?? '0'}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-green-600 font-medium">mph</p>
+                <p className="mt-1 text-xs text-red-600 font-medium">degrees</p>
               </div>
             </div>
 
