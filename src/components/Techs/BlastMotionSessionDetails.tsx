@@ -438,45 +438,45 @@ const BlastMotionSessionDetails: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Session Details for {swings[0].sessionName}
         </h1>
-        <div className="flex flex-col md:flex-row gap-8 mb-8">
-          <div className="bg-white p-6 rounded shadow w-full md:w-1/2 border-2 border-gray-300">
-            <h2 className="text-lg font-bold text-gray-600 justify-center flex">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-8 mb-8">
+          <div className="bg-white p-4 md:p-6 rounded shadow w-full md:w-1/2 border-2 border-gray-300">
+            <h2 className="text-base md:text-lg font-bold text-gray-600 justify-center flex">
               Max Bat Speed
             </h2>
-            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
+            <div className="mt-2 md:mt-4 text-2xl md:text-4xl font-semibold text-blue-900 justify-center flex">
               {maxBatSpeed.toFixed(1)} mph
             </div>
           </div>
-          <div className="bg-white p-6 rounded shadow w-full md:w-1/2 border-2 border-gray-300">
-            <h2 className="text-lg font-bold text-gray-600 justify-center flex">
+          <div className="bg-white p-4 md:p-6 rounded shadow w-full md:w-1/2 border-2 border-gray-300">
+            <h2 className="text-base md:text-lg font-bold text-gray-600 justify-center flex">
               Max Hand Speed
             </h2>
-            <div className="mt-4 text-4xl font-semibold text-blue-900 justify-center flex">
+            <div className="mt-2 md:mt-4 text-2xl md:text-4xl font-semibold text-blue-900 justify-center flex">
               {maxHandSpeed.toFixed(1)} mph
             </div>
           </div>
         </div>
         {/* Line Chart for Attack Angle Over Swings */}
-        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+        <div className="bg-white p-2 md:p-6 rounded shadow mb-8 border-2 border-gray-300">
+          <h2 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-4">
             Attack Angle Over Swings
           </h2>
-          <div className="mb-2 text-gray-700 text-sm font-medium">
+          <div className="mb-2 text-gray-700 text-xs md:text-sm font-medium text-center">
             {percentInBox.toFixed(1)}% of swings had an attack angle between 0° and 15°.
           </div>
-          {swings.length > 0 ? (
-            <Line data={attackAngleLineChartData} options={attackAngleLineChartOptions} />
-          ) : (
-            <p className="text-gray-500">No swing data available.</p>
-          )}
+          <div className="w-full max-w-md mx-auto aspect-[4/3]">
+            <Line data={attackAngleLineChartData} options={{...attackAngleLineChartOptions, responsive: true, maintainAspectRatio: false}} />
+          </div>
         </div>
         {/* First Scatter Chart: Early Connection vs Connection At Impact */}
-        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+        <div className="bg-white p-2 md:p-6 rounded shadow mb-8 border-2 border-gray-300">
+          <h2 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-4">
             Early Connection vs Connection At Impact
           </h2>
           {scatterDataPoints.length > 0 ? (
-            <Scatter data={scatterChartData} options={scatterChartOptions} />
+            <div className="w-full max-w-md mx-auto aspect-[4/3]">
+              <Scatter data={scatterChartData} options={{...scatterChartOptions, responsive: true, maintainAspectRatio: false}} />
+            </div>
           ) : (
             <p className="text-gray-500">
               Not enough data to display scatter plot.
@@ -484,16 +484,18 @@ const BlastMotionSessionDetails: React.FC = () => {
           )}
         </div>
         {/* Second Scatter Chart: Attack Angle vs On-Plane Efficiency */}
-        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">
+        <div className="bg-white p-2 md:p-6 rounded shadow mb-8 border-2 border-gray-300">
+          <h2 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-4">
             Attack Angle vs On-Plane Efficiency
           </h2>
-          <p className="mb-4 text-sm text-gray-700">
+          <p className="mb-4 text-xs md:text-sm text-gray-700">
             {percentageInBox.toFixed(1)}% of swings fall within the box (Attack
             Angle: 5-15, Efficiency: 75-85)
           </p>
           {scatterDataPoints2.length > 0 ? (
-            <Scatter data={scatterChartData2} options={scatterChartOptions2} />
+            <div className="w-full max-w-md mx-auto aspect-[4/3]">
+              <Scatter data={scatterChartData2} options={{...scatterChartOptions2, responsive: true, maintainAspectRatio: false}} />
+            </div>
           ) : (
             <p className="text-gray-500">
               Not enough data to display scatter plot.
@@ -501,12 +503,12 @@ const BlastMotionSessionDetails: React.FC = () => {
           )}
         </div>
         {/* Polar Area Chart for Average Scores */}
-        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+        <div className="bg-white p-2 md:p-6 rounded shadow mb-8 border-2 border-gray-300">
+          <h2 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-4">
             Average Scores
           </h2>
-          <div className="w-full max-w-md mx-auto aspect-square">
-            <PolarArea data={polarData} options={polarOptions} />
+          <div className="w-full max-w-xs mx-auto aspect-square">
+            <PolarArea data={polarData} options={{...polarOptions, responsive: true, maintainAspectRatio: false}} />
           </div>
         </div>
         {/* Paginated Table for Swing Details */}
