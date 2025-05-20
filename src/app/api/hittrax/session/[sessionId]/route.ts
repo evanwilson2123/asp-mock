@@ -131,7 +131,17 @@ export async function GET(req: NextRequest, context: any) {
     // Filter out hits where velo or dist is 0 or null.
     const filteredHits = hits.filter(
       (h) => h.velo !== 0 && h.dist !== 0 && h.velo !== null && h.dist !== null
-    );
+    ).map(hit => ({
+      ...hit,
+      POIX: hit.POIX,
+      POIY: hit.POIY,
+      velo: hit.velo,
+      dist: hit.dist,
+      LA: hit.LA,
+      sprayChartX: hit.sprayChartX,
+      sprayChartZ: hit.sprayChartZ,
+      type: hit.type
+    }));
 
     if (filteredHits.length === 0) {
       return NextResponse.json(

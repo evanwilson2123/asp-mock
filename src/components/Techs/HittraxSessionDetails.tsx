@@ -22,6 +22,7 @@ import { Bar, Pie } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
 import StrikeZone from '@/components/StrikeZone';
 import AthleteSidebar from '../Dash/AthleteSidebar';
+import PlatePlot from './PlatePlot';
 
 ChartJS.register(
   CategoryScale,
@@ -42,6 +43,9 @@ interface Hit {
   sprayChartX?: number | null;
   sprayChartZ?: number | null;
   type?: string;
+  POIX: number | null;
+  POIY: number | null;
+  POIZ: number | null;
 }
 
 interface SessionData {
@@ -106,6 +110,7 @@ const HitTraxSessionDetails: React.FC = () => {
         if (!data.hits) throw new Error('Required hit data not provided');
 
         setSessionData(data);
+        console.log(JSON.stringify(data, null, 2));
       } catch (err: any) {
         setErrorMessage(err.message);
       } finally {
@@ -471,7 +476,27 @@ const HitTraxSessionDetails: React.FC = () => {
           />
         </div>
 
-        {/* Pie Chart for LD/GB/FB distribution (smaller container) */}
+        {/* Plate Plot visualization */}
+        <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Ball-Bat Contact Points
+          </h2>
+          <div className="flex justify-center">
+            <PlatePlot
+              width={400}
+              height={400}
+              hits={hits}
+              dotSize={8}
+              plateColor="rgba(200, 200, 200, 0.2)"
+            />
+          </div>
+          <div className="mt-4 text-sm text-gray-600 text-center">
+            <p>Points show where the ball was met with the bat. Color intensity indicates exit velocity.</p>
+            <p className="mt-1">Darker blue = higher exit velocity</p>
+          </div>
+        </div>
+
+        {/* Pie Chart for LD/GB/FB distribution */}
         <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Hit Result Distribution
