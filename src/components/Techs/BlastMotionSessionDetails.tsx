@@ -128,41 +128,56 @@ const BlastMotionSessionDetails: React.FC = () => {
       </div>
     );
 
-  // Line Chart Data for Bat and Hand Speed over swings
-  const labels = swings.map((_, i) => `Swing ${i + 1}`);
-  const batSpeedData = swings.map((s) =>
-    s.batSpeed !== null ? s.batSpeed : 0
+  // Line Chart Data for Attack Angle over swings
+  const attackAngleData = swings.map((s) =>
+    s.attackAngle !== null ? s.attackAngle : null
   );
-  const handSpeedData = swings.map((s) =>
-    s.peakHandSpeed !== null ? s.peakHandSpeed : 0
-  );
+  const attackAngleLabels = swings.map((_, i) => `Swing ${i + 1}`);
 
-  const lineChartData = {
-    labels,
+  const attackAngleLineChartData = {
+    labels: attackAngleLabels,
     datasets: [
       {
-        label: 'Bat Speed',
-        data: batSpeedData,
+        label: 'Attack Angle',
+        data: attackAngleData,
         borderColor: 'rgba(54, 162, 235, 0.8)',
         backgroundColor: 'rgba(54, 162, 235, 0.2)',
-        fill: true,
+        fill: false,
         tension: 0.2,
-      },
-      {
-        label: 'Hand Speed',
-        data: handSpeedData,
-        borderColor: 'rgba(75, 192, 192, 0.8)',
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        fill: true,
-        tension: 0.2,
+        spanGaps: true,
       },
     ],
   };
 
-  const lineChartOptions = {
+  // Calculate percent of swings in the 0-15 attack angle box
+  const swingsInBox = attackAngleData.filter(v => v !== null && v >= 0 && v <= 15).length;
+  const percentInBox = swings.length > 0 ? (swingsInBox / swings.length) * 100 : 0;
+
+  const attackAngleLineChartOptions = {
     responsive: true,
     plugins: {
       legend: { position: 'top' as const },
+      annotation: {
+        annotations: {
+          grayBox: {
+            type: 'box' as const,
+            yMin: 0,
+            yMax: 15,
+            backgroundColor: 'rgba(128,128,128,0.3)',
+            borderWidth: 0,
+          },
+        },
+      },
+    },
+    scales: {
+      y: {
+        title: { display: true, text: 'Attack Angle (°)' },
+        min: Math.min(0, ...attackAngleData.filter(v => v !== null)),
+        max: Math.max(20, ...attackAngleData.filter(v => v !== null)),
+      },
+      x: {
+        title: { display: true, text: 'Swing Number' },
+      },
     },
   };
 
@@ -441,13 +456,16 @@ const BlastMotionSessionDetails: React.FC = () => {
             </div>
           </div>
         </div>
-        {/* Line Chart for Swing Data */}
+        {/* Line Chart for Attack Angle Over Swings */}
         <div className="bg-white p-6 rounded shadow mb-8 border-2 border-gray-300">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Swing Data Over Time
+            Attack Angle Over Swings
           </h2>
+          <div className="mb-2 text-gray-700 text-sm font-medium">
+            {percentInBox.toFixed(1)}% of swings had an attack angle between 0° and 15°.
+          </div>
           {swings.length > 0 ? (
-            <Line data={lineChartData} options={lineChartOptions} />
+            <Line data={attackAngleLineChartData} options={attackAngleLineChartOptions} />
           ) : (
             <p className="text-gray-500">No swing data available.</p>
           )}
