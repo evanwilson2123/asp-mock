@@ -52,7 +52,7 @@ export async function GET(req: NextRequest, context: any) {
     }).exec();
 
 
-    return NextResponse.json({ athletes, headCoaches, assistants }, { status: 200 });
+    return NextResponse.json({ athletes, headCoaches, assistants, level: group.level }, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching athletes:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '../Loader';
+import { TrashIcon } from '@heroicons/react/24/solid';
 
 interface Athlete {
   _id: string;
@@ -50,6 +51,13 @@ const TeamDetails = () => {
   const { teamId } = useParams();
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
+  const [showAddAthlete, setShowAddAthlete] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [allAthletes, setAllAthletes] = useState<Athlete[]>([]);
+  const [selectedAthleteId, setSelectedAthleteId] = useState('');
+  const [fetchingAthletes, setFetchingAthletes] = useState(false);
+  const [level, setLevel] = useState<string>('');
+  const [athleteSearch, setAthleteSearch] = useState('');
 
   useEffect(() => {
     // Fetch athletes for the team
@@ -64,6 +72,7 @@ const TeamDetails = () => {
         setAthletes(data.athletes || []);
         setHeadCoaches(data.headCoaches || []);
         setAssistants(data.assistants || []);
+        setLevel(data.level || '');
       } catch (err: any) {
         setError(err.message || 'An unexpected error occurred');
       } finally {
@@ -76,6 +85,60 @@ const TeamDetails = () => {
 
   const handleBackClick = () => {
     router.back();
+  };
+
+  const openAddModal = async () => {
+    setShowAddAthlete(true);
+    setFetchingAthletes(true);
+    setAddError(null);
+    setSelectedAthleteId('');
+    try {
+      const res = await fetch( `/api/my-teams/${teamId}/add-athlete/${level}`);
+      const data = await res.json();
+      setAllAthletes(data.athletes || []);
+    } catch (e: any) {
+      console.log(e);
+      setAllAthletes([]);
+    }
+    setFetchingAthletes(false);
+  };
+
+  const handleAddAthlete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddError(null);
+    try {
+      const res = await fetch(`/api/my-teams/${teamId}/add-athlete/${level}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ athleteId: selectedAthleteId }),
+      });
+      if (!res.ok) {
+        setAddError('Failed to add athlete.');
+        return;
+      }
+      const created = await res.json();
+      setAthletes((prev) => [...prev, created.athlete || created]);
+      setShowAddAthlete(false);
+      setSelectedAthleteId('');
+    } catch (err: any) {
+      setAddError(err.message || 'Failed to add athlete.');
+    }
+  };
+
+  const handleRemoveAthlete = async (athleteId: string) => {
+    if (!window.confirm('Remove this athlete?')) return;
+    try {
+      const res = await fetch(`/api/my-teams/${teamId}/remove-athlete/${athleteId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        alert('Failed to remove athlete.');
+        return;
+      }
+      setAthletes((prev) => prev.filter((a) => a._id !== athleteId));
+    } catch (err: any) {
+      alert(err.message || 'Failed to remove athlete.');
+    }
   };
 
   if (loading) return <Loader />;
@@ -162,6 +225,64 @@ const TeamDetails = () => {
 
         {/* Athletes List */}
         <h1 className='text-2xl font-bold text-gray-700 justify-center flex mb-4'>Athletes</h1>
+        {/* Add Athlete Button and Modal Form */}
+        <div className="mb-4">
+          {!showAddAthlete && (
+            <button
+              onClick={openAddModal}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+              + Add Athlete
+            </button>
+          )}
+          {addError && <div className="text-red-600 mt-2">{addError}</div>}
+        </div>
+        {/* Modal for Add Athlete */}
+        {showAddAthlete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
+              <form onSubmit={handleAddAthlete} className="flex flex-col gap-2">
+                {fetchingAthletes ? (
+                  <div>Loading athletes...</div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Search by name..."
+                      value={athleteSearch}
+                      onChange={e => setAthleteSearch(e.target.value)}
+                      className="border p-2 rounded text-black"
+                    />
+                    <select
+                      required
+                      value={selectedAthleteId}
+                      onChange={e => setSelectedAthleteId(e.target.value)}
+                      className="border p-2 rounded text-black"
+                    >
+                      <option value="" className='text-black'>Select an athlete</option>
+                      {allAthletes
+                        .filter(a =>
+                          athleteSearch.trim() === '' ||
+                          a.firstName.toLowerCase().includes(athleteSearch.toLowerCase()) ||
+                          a.lastName.toLowerCase().includes(athleteSearch.toLowerCase())
+                        )
+                        .map(a => (
+                          <option key={a._id} value={a._id} className='text-black'>
+                            {a.firstName} {a.lastName} ({a.email})
+                          </option>
+                        ))}
+                    </select>
+                  </>
+                )}
+                <div className="flex gap-2 mt-2">
+                  <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded" disabled={!selectedAthleteId}>Add</button>
+                  <button type="button" onClick={() => setShowAddAthlete(false)} className="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
+                </div>
+              </form>
+              {addError && <div className="text-red-600 mt-2">{addError}</div>}
+            </div>
+          </div>
+        )}
         {athletes.length > 0 ? (
           <table className="min-w-full bg-white rounded-lg shadow-md">
             <thead>
@@ -170,6 +291,7 @@ const TeamDetails = () => {
                 <th className="py-2 px-4 text-left">Last Name</th>
                 <th className="py-2 px-4 text-left">Email</th>
                 <th className="py-2 px-4 text-left">Level</th>
+                <th className="py-2 px-4 text-left"></th>
               </tr>
             </thead>
             <tbody>
@@ -183,6 +305,15 @@ const TeamDetails = () => {
                   <td className="text-black py-2 px-4">{athlete.lastName}</td>
                   <td className="text-black py-2 px-4">{athlete.email}</td>
                   <td className="text-black py-2 px-4">{athlete.level}</td>
+                  <td className="py-2 px-4" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => handleRemoveAthlete(athlete._id)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Remove Athlete"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
