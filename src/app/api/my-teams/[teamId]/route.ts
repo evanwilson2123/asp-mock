@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Athlete from '@/models/athlete';
 import { auth } from '@clerk/nextjs/server';
 import Group from '@/models/group';
+import Coach from '@/models/coach';
 
 /**
  * GET /api/my-teams/:teamId
@@ -42,7 +43,16 @@ export async function GET(req: NextRequest, context: any) {
       _id: { $in: group.athletes },
     }).exec();
 
-    return NextResponse.json({ athletes }, { status: 200 });
+    const headCoaches = await Coach.find({
+      _id: { $in: group.headCoach  },
+    }).exec();
+
+    const assistants = await Coach.find({
+      _id: { $in: group.assistants },
+    }).exec();
+
+
+    return NextResponse.json({ athletes, headCoaches, assistants }, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching athletes:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

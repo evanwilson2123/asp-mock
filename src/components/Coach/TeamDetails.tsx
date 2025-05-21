@@ -16,6 +16,14 @@ interface Athlete {
   u?: string;
 }
 
+interface Coach {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
 /**
  * TeamDetails Component
  *
@@ -34,6 +42,8 @@ interface Athlete {
 
 const TeamDetails = () => {
   const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [headCoaches, setHeadCoaches] = useState<Coach[]>([]);
+  const [assistants, setAssistants] = useState<Coach[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -52,6 +62,8 @@ const TeamDetails = () => {
 
         const data = await response.json();
         setAthletes(data.athletes || []);
+        setHeadCoaches(data.headCoaches || []);
+        setAssistants(data.assistants || []);
       } catch (err: any) {
         setError(err.message || 'An unexpected error occurred');
       } finally {
@@ -92,7 +104,64 @@ const TeamDetails = () => {
           </button>
         </div>
 
+        { /* Head Coaches List */}
+        <div>
+          <h1 className='text-2xl font-bold text-gray-700 justify-center flex mb-4'>Head Coaches</h1>
+          {headCoaches.length > 0 ? (
+            <table className="min-w-full bg-white rounded-lg shadow-md mb-6">
+              <thead>
+                <tr className="bg-gray-200 text-gray-700">
+                  <th className="py-2 px-4 text-left">First Name</th>
+                  <th className="py-2 px-4 text-left">Last Name</th>
+                  <th className="py-2 px-4 text-left">Email</th>
+                  <th className="py-2 px-4 text-left"></th> 
+                </tr>
+              </thead>
+              <tbody>
+                {headCoaches.map((coach) => (
+                  <tr key={coach._id} className="hover:bg-blue-50 cursor-pointer">
+                    <td className="text-black py-2 px-4">{coach.firstName}</td>
+                    <td className="text-black py-2 px-4">{coach.lastName}</td>
+                    <td className="text-black py-2 px-4">{coach.email}</td>
+                    <td className="text-black py-2 px-4">{coach.phone}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className='text-lg text-blue-900 text-center mb-6'>No head coaches found for this team.</p>
+          )}
+        </div>
+
+        { /* Assistants List */}
+        {assistants.length > 0 && (
+          <div>
+            <h1 className='text-2xl font-bold text-gray-700 justify-center flex mb-4'>Assistants</h1>
+            <table className="min-w-full bg-white rounded-lg shadow-md mb-6">
+              <thead>
+                <tr className="bg-gray-200 text-gray-700">
+                  <th className="py-2 px-4 text-left">First Name</th>
+                  <th className="py-2 px-4 text-left">Last Name</th>
+                  <th className="py-2 px-4 text-left">Email</th>
+                  {/* <th className="py-2 px-4 text-left">Phone</th> */}
+                </tr>
+              </thead>
+              <tbody>
+                {assistants.map((coach) => (
+                  <tr key={coach._id} className="hover:bg-blue-50 cursor-pointer">
+                    <td className="text-black py-2 px-4">{coach.firstName}</td>
+                    <td className="text-black py-2 px-4">{coach.lastName}</td>
+                    <td className="text-black py-2 px-4">{coach.email}</td>
+                    <td className="text-black py-2 px-4">{coach.phone}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Athletes List */}
+        <h1 className='text-2xl font-bold text-gray-700 justify-center flex mb-4'>Athletes</h1>
         {athletes.length > 0 ? (
           <table className="min-w-full bg-white rounded-lg shadow-md">
             <thead>

@@ -142,6 +142,7 @@ const TeamsGroups: React.FC = () => {
                     Head Coach:{' '}
                     {team.headCoaches && team.headCoaches.length > 0
                       ? team.headCoaches
+                          .filter((coach: any) => coach)
                           .map(
                             (coach: any) =>
                               coach.firstName + ' ' + coach.lastName
