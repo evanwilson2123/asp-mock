@@ -113,6 +113,7 @@ export async function GET(req: NextRequest, context: any) {
         inducedVerticalBreak: true,
         locationHeight: true,
         locationSide: true,
+        stuffPlus: true,
       },
     });
 
@@ -131,6 +132,7 @@ export async function GET(req: NextRequest, context: any) {
         horizontalBreaks: number[];
         verticalBreaks: number[];
         locations: { x: number; y: number }[];
+        stuffPlus: number[];
       }
     > = {};
 
@@ -144,6 +146,7 @@ export async function GET(req: NextRequest, context: any) {
           horizontalBreaks: [],
           verticalBreaks: [],
           locations: [],
+          stuffPlus: [],
         };
       }
 
@@ -170,6 +173,10 @@ export async function GET(req: NextRequest, context: any) {
           x: pitch.locationSide,
           y: pitch.locationHeight,
         });
+      }
+
+      if (pitch.stuffPlus !== null && pitch.stuffPlus !== undefined) {
+        dataByPitchType[pitchType].stuffPlus.push(pitch.stuffPlus);
       }
     });
 

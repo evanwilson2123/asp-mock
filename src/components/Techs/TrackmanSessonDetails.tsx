@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Scatter } from 'react-chartjs-2';
+import { Scatter, Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +12,8 @@ import {
   Title,
   Tooltip,
   Legend,
+  LineElement,
+  LineController,
 } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import Loader from '@/components/Loader';
@@ -25,6 +27,8 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
+  LineElement,
+  LineController,
   BarElement,
   Title,
   Tooltip,
@@ -48,6 +52,7 @@ const TrackmanSessionDetails: React.FC = () => {
       horizontalBreaks: number[];
       verticalBreaks: number[];
       locations: { x: number; y: number }[];
+      stuffPlus?: number[];
     };
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,6 +111,41 @@ const TrackmanSessionDetails: React.FC = () => {
     '#AF7AC5', // Soft purple
     '#F1948A', // Soft pink
   ];
+
+  // Find the max number of pitches for any type
+  const maxStuffPlusLength = Math.max(
+    ...pitchTypes.map((pitchType) => (dataByPitchType[pitchType].stuffPlus || []).length)
+  );
+  const stuffPlusLabels = Array.from({ length: maxStuffPlusLength }, (_, i) => i + 1);
+
+  const stuffPlusChartData = {
+    labels: stuffPlusLabels,
+    datasets: pitchTypes.map((pitchType, index) => ({
+      label: pitchType,
+      data: dataByPitchType[pitchType].stuffPlus || [],
+      borderColor: softColors[index % softColors.length],
+      backgroundColor: softColors[index % softColors.length],
+      fill: false,
+      tension: 0.2,
+    })),
+  };
+
+  const stuffPlusChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' as const },
+      title: { display: true, text: 'Stuff+ Score by Pitch Number' },
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Pitch Number' },
+      },
+      y: {
+        title: { display: true, text: 'Stuff+ Score' },
+        beginAtZero: false,
+      },
+    },
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -314,6 +354,14 @@ const TrackmanSessionDetails: React.FC = () => {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Stuff+ Score by Pitch Line Chart */}
+          <div className="bg-white p-6 rounded shadow lg:col-span-2">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+              Stuff+ Score by Pitch
+            </h2>
+            <Line data={stuffPlusChartData} options={stuffPlusChartOptions} />
           </div>
         </div>
       </div>
