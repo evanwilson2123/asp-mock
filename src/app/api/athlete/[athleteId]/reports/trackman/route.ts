@@ -171,6 +171,16 @@ export async function GET(req: NextRequest, context: any) {
       })
     );
 
+    const maxStuffPlus = sessionsData.reduce((max, session) => {
+      const stuffPlus = session.stuffPlus;
+      if (stuffPlus && stuffPlus > max) {
+        return stuffPlus;
+      }
+      return max;
+    }, 0);
+    
+    
+
     // Convert session map to array for clickable sessions
     const clickableSessions = Object.values(sessionMap);
 
@@ -198,6 +208,7 @@ export async function GET(req: NextRequest, context: any) {
       avgPitchSpeeds,
       sessions: clickableSessions, // Now includes sessionName
       coachesNotes: athlete.coachesNotes,
+      maxStuffPlus,
     });
   } catch (error: any) {
     console.error('Error fetching Trackman data:', error);

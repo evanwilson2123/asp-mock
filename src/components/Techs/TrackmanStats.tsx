@@ -55,6 +55,7 @@ interface TrackmanData {
   avgPitchSpeeds: AvgPitchSpeed[];
   sessions: Session[];
   coachesNotes: ICoachNote[];
+  maxStuffPlus: number;
 }
 
 interface BlastTag {
@@ -76,6 +77,7 @@ const TrackmanStats: React.FC = () => {
   const [averageVelocities, setAverageVelocities] = useState<AvgPitchSpeed[]>(
     []
   );
+  const [maxStuffPlus, setMaxStuffPlus] = useState<number>(0);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -130,6 +132,7 @@ const TrackmanStats: React.FC = () => {
         setAverageVelocities(data.avgPitchSpeeds || []);
         setSessions(data.sessions || []);
         setCoachNotes(data.coachesNotes || []);
+        setMaxStuffPlus(data.maxStuffPlus || 0);
       } catch (err: any) {
         setErrorMessage(err.message);
       } finally {
@@ -290,6 +293,8 @@ const TrackmanStats: React.FC = () => {
     });
     if (res.ok) setBlastTags((prev) => prev.filter((t) => t._id !== tagId));
   };
+
+  
 
   /* ----- Chart ----- */
   const colors = [
@@ -526,6 +531,28 @@ const TrackmanStats: React.FC = () => {
                 </p>
               </div>
             ))}
+            <div className="bg-white p-6 rounded shadow flex flex-col items-center">
+              <span className="text-xl font-bold text-gray-600">
+                Max Stuff+
+              </span>
+              <div
+                className="mt-4 rounded-full w-32 h-32 border-8 flex items-center justify-center"
+                style={{ borderColor: colors[0] }}
+              >
+                <span
+                  className="text-2xl font-semibold"
+                  style={{ color: colors[0] }}
+                >
+                  {maxStuffPlus.toFixed(2)}
+                </span>
+              </div>
+              <p
+                className="mt-2 font-medium"
+                style={{ color: colors[0] }}
+              >
+                Stuff+
+              </p>
+            </div>
           </div>
 
           {/* Averages chart */}
