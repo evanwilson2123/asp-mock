@@ -18,9 +18,10 @@ import {
   Legend,
   ArcElement,
   RadialLinearScale,
+  BarElement,
 } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import { Line, Scatter, PolarArea } from 'react-chartjs-2';
+import { Line, Scatter, PolarArea, Bar } from 'react-chartjs-2';
 import AthleteSidebar from '../Dash/AthleteSidebar';
 
 ChartJS.register(
@@ -33,6 +34,7 @@ ChartJS.register(
   Legend,
   ArcElement,
   RadialLinearScale,
+  BarElement,
   annotationPlugin
 );
 
@@ -62,6 +64,20 @@ interface BlastMotionSwing {
   createdAt: string;
   updatedAt: string;
   playLevel: string;
+}
+
+const threshholds = {
+  "youth": 60,
+  "high school": 67,
+  "college": 75,
+  "pro": 75,
+}
+
+const batSpeedThresholds = {
+  "youth": 50,
+  "high school": 65,
+  "college": 75,
+  "pro": 75,
 }
 
 /**
@@ -399,6 +415,68 @@ const BlastMotionSessionDetails: React.FC = () => {
     },
   };
 
+  // Calculate threshold and percentage for bat speeds
+  const batSpeedData = {
+    labels: swings.map((_, i) => `Swing ${i + 1}`),
+    datasets: [
+      {
+        label: 'Bat Speed (mph)',
+        data: swings.map(s => s.batSpeed),
+        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
+      }
+    ]
+  };
+
+  const getThresholdForPlayLevel = (playLevel: string, metric: 'score' | 'batSpeed') => {
+    const thresholds = metric === 'score' ? threshholds : batSpeedThresholds;
+    return thresholds[playLevel.toLowerCase() as keyof typeof thresholds] || (metric === 'score' ? 60 : 50);
+  };
+
+  const playLevelThreshold = getThresholdForPlayLevel(swings[0]?.playLevel || 'youth', 'batSpeed');
+  const swingsAboveThreshold = swings.filter(s => (s.batSpeed || 0) >= playLevelThreshold).length;
+  const percentAboveThreshold = (swingsAboveThreshold / swings.length) * 100;
+
+  const batSpeedOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' as const },
+      annotation: {
+        annotations: {
+          threshold: {
+            type: 'line' as const,
+            yMin: playLevelThreshold,
+            yMax: playLevelThreshold,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 2,
+            label: {
+              content: `${swings[0]?.playLevel || 'Youth'} Threshold (${playLevelThreshold} mph)`,
+              enabled: true,
+              position: 'start' as const
+            }
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: Math.max(100, ...swings.map(s => s.batSpeed || 0).filter(Boolean)) + 5,
+        title: {
+          display: true,
+          text: 'Bat Speed (mph)'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Swing Number'
+        }
+      }
+    }
+  };
+
   // Pagination logic for swing details table
   const indexOfLastSwing = currentPage * swingsPerPage;
   const indexOfFirstSwing = indexOfLastSwing - swingsPerPage;
@@ -464,8 +542,8 @@ const BlastMotionSessionDetails: React.FC = () => {
           <div className="mb-2 text-gray-700 text-xs md:text-sm font-medium text-center">
             {percentInBox.toFixed(1)}% of swings had an attack angle between 0° and 15°.
           </div>
-          <div className="w-full max-w-md mx-auto aspect-[4/3]">
-            <Line data={attackAngleLineChartData} options={{...attackAngleLineChartOptions, responsive: true, maintainAspectRatio: false}} />
+          <div className="w-full max-w-3xl mx-auto h-[400px]">
+            <Line data={attackAngleLineChartData} options={{...attackAngleLineChartOptions, maintainAspectRatio: false}} />
           </div>
         </div>
         {/* First Scatter Chart: Early Connection vs Connection At Impact */}
@@ -474,8 +552,8 @@ const BlastMotionSessionDetails: React.FC = () => {
             Early Connection vs Connection At Impact
           </h2>
           {scatterDataPoints.length > 0 ? (
-            <div className="w-full max-w-md mx-auto aspect-[4/3]">
-              <Scatter data={scatterChartData} options={{...scatterChartOptions, responsive: true, maintainAspectRatio: false}} />
+            <div className="w-full max-w-3xl mx-auto h-[400px]">
+              <Scatter data={scatterChartData} options={{...scatterChartOptions, maintainAspectRatio: false}} />
             </div>
           ) : (
             <p className="text-gray-500">
@@ -493,8 +571,8 @@ const BlastMotionSessionDetails: React.FC = () => {
             Angle: 5-15, Efficiency: 75-85)
           </p>
           {scatterDataPoints2.length > 0 ? (
-            <div className="w-full max-w-md mx-auto aspect-[4/3]">
-              <Scatter data={scatterChartData2} options={{...scatterChartOptions2, responsive: true, maintainAspectRatio: false}} />
+            <div className="w-full max-w-3xl mx-auto h-[400px]">
+              <Scatter data={scatterChartData2} options={{...scatterChartOptions2, maintainAspectRatio: false}} />
             </div>
           ) : (
             <p className="text-gray-500">
@@ -507,8 +585,20 @@ const BlastMotionSessionDetails: React.FC = () => {
           <h2 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-4">
             Average Scores
           </h2>
-          <div className="w-full max-w-xs mx-auto aspect-square">
-            <PolarArea data={polarData} options={{...polarOptions, responsive: true, maintainAspectRatio: false}} />
+          <div className="w-full max-w-2xl mx-auto h-[400px]">
+            <PolarArea data={polarData} options={{...polarOptions, maintainAspectRatio: false}} />
+          </div>
+        </div>
+        {/* Bat Speed Bar Chart */}
+        <div className="bg-white p-2 md:p-6 rounded shadow mb-8 border-2 border-gray-300">
+          <h2 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-4">
+            Fast Swing Rate
+          </h2>
+          <div className="mb-2 text-gray-700 text-xs md:text-sm font-medium text-center">
+            {percentAboveThreshold.toFixed(1)}% of swings ({swingsAboveThreshold} of {swings.length}) meet or exceed the {swings[0]?.playLevel || 'Youth'} threshold of {playLevelThreshold} mph
+          </div>
+          <div className="w-full max-w-3xl mx-auto h-[400px]">
+            <Bar data={batSpeedData} options={batSpeedOptions} />
           </div>
         </div>
         {/* Paginated Table for Swing Details */}

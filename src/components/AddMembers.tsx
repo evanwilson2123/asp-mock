@@ -61,7 +61,6 @@ const AddMembersPage: React.FC = () => {
     email: '',
     password: '',
     level: 'Youth',
-    u: '',
     age: 0,
     height: '',
     weight: '',
@@ -115,7 +114,6 @@ const AddMembersPage: React.FC = () => {
           email: '',
           password: '',
           level: 'Youth',
-          u: '',
           age: 0,
           height: '',
           weight: '',
@@ -290,7 +288,7 @@ const AddMembersPage: React.FC = () => {
                   </select>
                 </div>
 
-                <div>
+                {/* <div>
                   <label
                     htmlFor="u"
                     className="block text-sm font-medium text-gray-700"
@@ -307,7 +305,7 @@ const AddMembersPage: React.FC = () => {
                     required
                     className="w-full border border-gray-300 rounded px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-900"
                   />
-                </div>
+                </div> */}
 
                 <div>
                   <label
