@@ -66,16 +66,9 @@ interface BlastMotionSwing {
   playLevel: string;
 }
 
-const threshholds = {
+const batSpeedThresholds = {
   "youth": 60,
   "high school": 67,
-  "college": 75,
-  "pro": 75,
-}
-
-const batSpeedThresholds = {
-  "youth": 50,
-  "high school": 65,
   "college": 75,
   "pro": 75,
 }
@@ -415,7 +408,23 @@ const BlastMotionSessionDetails: React.FC = () => {
     },
   };
 
-  // Calculate threshold and percentage for bat speeds
+  // Calculate percentages for each threshold
+  const youthThreshold = batSpeedThresholds.youth;
+  const highSchoolThreshold = batSpeedThresholds['high school'];
+  const collegeProThreshold = batSpeedThresholds.college;
+
+  const swingsAboveYouth = swings.filter(s => (s.batSpeed || 0) >= youthThreshold).length;
+  const swingsAboveHighSchool = swings.filter(s => (s.batSpeed || 0) >= highSchoolThreshold).length;
+  const swingsAboveCollegePro = swings.filter(s => (s.batSpeed || 0) >= collegeProThreshold).length;
+
+  const percentAboveYouth = (swingsAboveYouth / swings.length) * 100;
+  const percentAboveHighSchool = (swingsAboveHighSchool / swings.length) * 100;
+  const percentAboveCollegePro = (swingsAboveCollegePro / swings.length) * 100;
+
+  // Get the current play level
+  const currentPlayLevel = swings[0]?.playLevel?.toLowerCase() || 'youth';
+
+  // Chart data for bat speeds
   const batSpeedData = {
     labels: swings.map((_, i) => `Swing ${i + 1}`),
     datasets: [
@@ -429,31 +438,68 @@ const BlastMotionSessionDetails: React.FC = () => {
     ]
   };
 
-  const getThresholdForPlayLevel = (playLevel: string, metric: 'score' | 'batSpeed') => {
-    const thresholds = metric === 'score' ? threshholds : batSpeedThresholds;
-    return thresholds[playLevel.toLowerCase() as keyof typeof thresholds] || (metric === 'score' ? 60 : 50);
-  };
-
-  const playLevelThreshold = getThresholdForPlayLevel(swings[0]?.playLevel || 'youth', 'batSpeed');
-  const swingsAboveThreshold = swings.filter(s => (s.batSpeed || 0) >= playLevelThreshold).length;
-  const percentAboveThreshold = (swingsAboveThreshold / swings.length) * 100;
+  // Pagination logic for swing details table
+  const indexOfLastSwing = currentPage * swingsPerPage;
+  const indexOfFirstSwing = indexOfLastSwing - swingsPerPage;
+  const currentSwings = swings.slice(indexOfFirstSwing, indexOfLastSwing);
+  const totalPages = Math.ceil(swings.length / swingsPerPage);
 
   const batSpeedOptions = {
     responsive: true,
     plugins: {
-      legend: { position: 'top' as const },
+      legend: { 
+        position: 'top' as const,
+        labels: {
+          boxWidth: 20,
+          padding: 20,
+          color: 'rgba(0, 0, 0, 0.8)',
+          font: {
+            size: 12
+          }
+        }
+      },
       annotation: {
         annotations: {
-          threshold: {
-            type: 'line' as const,
-            yMin: playLevelThreshold,
-            yMax: playLevelThreshold,
+          youthThreshold: {
+            type: 'line',
+            yMin: batSpeedThresholds.youth,
+            yMax: batSpeedThresholds.youth,
             borderColor: 'rgba(255, 99, 132, 1)',
             borderWidth: 2,
             label: {
-              content: `${swings[0]?.playLevel || 'Youth'} Threshold (${playLevelThreshold} mph)`,
-              enabled: true,
-              position: 'start' as const
+              content: 'Youth (50 mph)',
+              position: 'start',
+              backgroundColor: 'rgba(255, 99, 132, 0.8)',
+              color: 'white',
+              padding: 4
+            }
+          },
+          highSchoolThreshold: {
+            type: 'line',
+            yMin: batSpeedThresholds['high school'],
+            yMax: batSpeedThresholds['high school'],
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 2,
+            label: {
+              content: 'High School (65 mph)',
+              position: 'start',
+              backgroundColor: 'rgba(75, 192, 192, 0.8)',
+              color: 'white',
+              padding: 4
+            }
+          },
+          collegeProThreshold: {
+            type: 'line',
+            yMin: batSpeedThresholds.college,
+            yMax: batSpeedThresholds.college,
+            borderColor: 'rgba(153, 102, 255, 1)',
+            borderWidth: 2,
+            label: {
+              content: 'College/Pro (75 mph)',
+              position: 'start',
+              backgroundColor: 'rgba(153, 102, 255, 0.8)',
+              color: 'white',
+              padding: 4
             }
           }
         }
@@ -462,26 +508,28 @@ const BlastMotionSessionDetails: React.FC = () => {
     scales: {
       y: {
         beginAtZero: true,
-        max: Math.max(100, ...swings.map(s => s.batSpeed || 0).filter(Boolean)) + 5,
         title: {
           display: true,
-          text: 'Bat Speed (mph)'
-        }
+          text: 'Bat Speed (mph)',
+          font: {
+            size: 14,
+            weight: 'bold'
+          }
+        },
+        max: Math.max(...batSpeedData.datasets[0].data as number[], batSpeedThresholds.college) + 5
       },
       x: {
         title: {
           display: true,
-          text: 'Swing Number'
+          text: 'Swing Number',
+          font: {
+            size: 14,
+            weight: 'bold'
+          }
         }
       }
     }
-  };
-
-  // Pagination logic for swing details table
-  const indexOfLastSwing = currentPage * swingsPerPage;
-  const indexOfFirstSwing = indexOfLastSwing - swingsPerPage;
-  const currentSwings = swings.slice(indexOfFirstSwing, indexOfLastSwing);
-  const totalPages = Math.ceil(swings.length / swingsPerPage);
+  } as const;
 
   return (
     <div className="flex min-h-screen">
@@ -594,8 +642,16 @@ const BlastMotionSessionDetails: React.FC = () => {
           <h2 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-4">
             Fast Swing Rate
           </h2>
-          <div className="mb-2 text-gray-700 text-xs md:text-sm font-medium text-center">
-            {percentAboveThreshold.toFixed(1)}% of swings ({swingsAboveThreshold} of {swings.length}) meet or exceed the {swings[0]?.playLevel || 'Youth'} threshold of {playLevelThreshold} mph
+          <div className="mb-2 text-gray-700 text-xs md:text-sm font-medium text-center space-y-1">
+            <div className={currentPlayLevel === 'youth' ? 'font-bold' : ''}>
+              {percentAboveYouth.toFixed(1)}% of swings ({swingsAboveYouth} of {swings.length}) meet or exceed Youth threshold (50 mph)
+            </div>
+            <div className={currentPlayLevel === 'high school' ? 'font-bold' : ''}>
+              {percentAboveHighSchool.toFixed(1)}% of swings ({swingsAboveHighSchool} of {swings.length}) meet or exceed High School threshold (65 mph)
+            </div>
+            <div className={(currentPlayLevel === 'college' || currentPlayLevel === 'pro') ? 'font-bold' : ''}>
+              {percentAboveCollegePro.toFixed(1)}% of swings ({swingsAboveCollegePro} of {swings.length}) meet or exceed College/Pro threshold (75 mph)
+            </div>
           </div>
           <div className="w-full max-w-3xl mx-auto h-[400px]">
             <Bar data={batSpeedData} options={batSpeedOptions} />
