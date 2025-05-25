@@ -7,18 +7,32 @@ import Sidebar from '@/components/Dash/Sidebar';
 
 export type FieldType = 'text' | 'number' | 'select' | 'date' | 'checkbox';
 
+export interface ScoreRange {
+  min: number;
+  max: number;
+  score: number;
+}
+
 export interface Field {
   id: string; // Ephemeral ID from the client
   label: string;
   type: FieldType;
   required: boolean;
   options?: string; // Comma-separated options for select type
+  isScored?: boolean;
+  scoreRanges?: ScoreRange[];
+  maxScore?: number;
+  weight?: number;
 }
 
 export interface Section {
   id: string;
   title: string;
   fields: Field[];
+  isScored?: boolean;
+  maxScore?: number;
+  weight?: number;
+  passingScore?: number;
 }
 
 export interface Graph {
@@ -39,6 +53,12 @@ const CreateTemplate: React.FC = () => {
 
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
+
+  // // Add new state for managing score ranges
+  // const [editingScoreRanges, setEditingScoreRanges] = useState<{
+  //   sectionIndex: number;
+  //   fieldIndex: number;
+  // } | null>(null);
 
   if (role && role !== 'ADMIN') {
     return (
@@ -63,6 +83,10 @@ const CreateTemplate: React.FC = () => {
         id: nanoid(),
         title: '',
         fields: [],
+        isScored: false,
+        maxScore: 0,
+        weight: 1,
+        passingScore: 0
       },
     ]);
   };
@@ -84,11 +108,15 @@ const CreateTemplate: React.FC = () => {
     setSections((prev) => {
       const updated = [...prev];
       updated[sectionIndex].fields.push({
-        id: nanoid(), // Use nanoid for unique field ID
+        id: nanoid(),
         label: '',
         type: 'text',
         required: false,
         options: '',
+        isScored: false,
+        scoreRanges: [],
+        maxScore: 0,
+        weight: 1
       });
       return updated;
     });
@@ -98,7 +126,7 @@ const CreateTemplate: React.FC = () => {
     sectionIndex: number,
     fieldIndex: number,
     key: keyof Field,
-    value: string | boolean
+    value: string | boolean | number
   ) => {
     setSections((prev) => {
       const updated = [...prev];
@@ -177,6 +205,59 @@ const CreateTemplate: React.FC = () => {
     section.fields.filter((field) => field.type === 'number')
   );
 
+  // Add function to handle score range changes
+  const handleScoreRangeChange = (
+    sectionIndex: number,
+    fieldIndex: number,
+    rangeIndex: number,
+    key: keyof ScoreRange,
+    value: number
+  ) => {
+    setSections((prev) => {
+      const updated = [...prev];
+      const field = updated[sectionIndex].fields[fieldIndex];
+      if (!field.scoreRanges) {
+        field.scoreRanges = [];
+      }
+      if (!field.scoreRanges[rangeIndex]) {
+        field.scoreRanges[rangeIndex] = { min: 0, max: 0, score: 0 };
+      }
+      field.scoreRanges[rangeIndex] = {
+        ...field.scoreRanges[rangeIndex],
+        [key]: value,
+      };
+      return updated;
+    });
+  };
+
+  // Add function to add/remove score ranges
+  const handleAddScoreRange = (sectionIndex: number, fieldIndex: number) => {
+    setSections((prev) => {
+      const updated = [...prev];
+      const field = updated[sectionIndex].fields[fieldIndex];
+      if (!field.scoreRanges) {
+        field.scoreRanges = [];
+      }
+      field.scoreRanges.push({ min: 0, max: 0, score: 0 });
+      return updated;
+    });
+  };
+
+  const handleRemoveScoreRange = (
+    sectionIndex: number,
+    fieldIndex: number,
+    rangeIndex: number
+  ) => {
+    setSections((prev) => {
+      const updated = [...prev];
+      const field = updated[sectionIndex].fields[fieldIndex];
+      if (field.scoreRanges) {
+        field.scoreRanges = field.scoreRanges.filter((_, i) => i !== rangeIndex);
+      }
+      return updated;
+    });
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,12 +265,15 @@ const CreateTemplate: React.FC = () => {
     setError(null);
     setSuccessMessage(null);
 
-    // Build payload using sections and graphs
     const templateData = {
       name: templateName,
       desc: templateDesc,
       sections: sections.map((section) => ({
         title: section.title,
+        isScored: section.isScored,
+        maxScore: section.maxScore,
+        weight: section.weight,
+        passingScore: section.passingScore,
         fields: section.fields.map((field) => ({
           label: field.label,
           type: field.type,
@@ -198,7 +282,11 @@ const CreateTemplate: React.FC = () => {
             field.type === 'select'
               ? field.options?.split(',').map((opt) => opt.trim())
               : undefined,
-          clientId: field.id, // Store the ephemeral client-generated ID
+          clientId: field.id,
+          isScored: field.isScored,
+          scoreRanges: field.scoreRanges,
+          maxScore: field.maxScore,
+          weight: field.weight,
         })),
       })),
       graphs: graphs.map((graph) => ({
@@ -228,6 +316,244 @@ const CreateTemplate: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Add scoring configuration UI to the field section
+  const renderFieldScoring = (sectionIndex: number, fieldIndex: number, field: Field) => {
+    if (field.type !== 'number') return null;
+
+    return (
+      <div className="mt-4 border-t pt-4">
+        <div className="flex items-center mb-4">
+          <label className="inline-flex items-center">
+            <input
+              type="checkbox"
+              checked={field.isScored ?? false}
+              onChange={(e) =>
+                handleFieldChange(sectionIndex, fieldIndex, 'isScored', e.target.checked)
+              }
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span className="ml-2 text-sm text-gray-700">Enable Scoring</span>
+          </label>
+        </div>
+
+        {field.isScored && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Max Score
+                </label>
+                <input
+                  type="number"
+                  value={field.maxScore || ''}
+                  onChange={(e) =>
+                    handleFieldChange(
+                      sectionIndex,
+                      fieldIndex,
+                      'maxScore',
+                      parseFloat(e.target.value)
+                    )
+                  }
+                  className="text-black w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Weight
+                </label>
+                <input
+                  type="number"
+                  value={field.weight || 1}
+                  onChange={(e) =>
+                    handleFieldChange(
+                      sectionIndex,
+                      fieldIndex,
+                      'weight',
+                      parseFloat(e.target.value)
+                    )
+                  }
+                  className="text-black w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Score Ranges
+              </label>
+              {field.scoreRanges?.map((range, rangeIndex) => (
+                <div key={rangeIndex} className="flex gap-2 mb-2 items-end">
+                  <div className="flex flex-col w-1/3">
+                    <label className="text-xs text-gray-500 mb-1" htmlFor={`min-${sectionIndex}-${fieldIndex}-${rangeIndex}`}>Min</label>
+                    <input
+                      id={`min-${sectionIndex}-${fieldIndex}-${rangeIndex}`}
+                      type="number"
+                      value={range.min}
+                      onChange={(e) =>
+                        handleScoreRangeChange(
+                          sectionIndex,
+                          fieldIndex,
+                          rangeIndex,
+                          'min',
+                          parseFloat(e.target.value)
+                        )
+                      }
+                      placeholder="Min"
+                      className="text-black px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div className="flex flex-col w-1/3">
+                    <label className="text-xs text-gray-500 mb-1" htmlFor={`max-${sectionIndex}-${fieldIndex}-${rangeIndex}`}>Max</label>
+                    <input
+                      id={`max-${sectionIndex}-${fieldIndex}-${rangeIndex}`}
+                      type="number"
+                      value={range.max}
+                      onChange={(e) =>
+                        handleScoreRangeChange(
+                          sectionIndex,
+                          fieldIndex,
+                          rangeIndex,
+                          'max',
+                          parseFloat(e.target.value)
+                        )
+                      }
+                      placeholder="Max"
+                      className="text-black px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div className="flex flex-col w-1/3">
+                    <label className="text-xs text-gray-500 mb-1" htmlFor={`score-${sectionIndex}-${fieldIndex}-${rangeIndex}`}>Score</label>
+                    <input
+                      id={`score-${sectionIndex}-${fieldIndex}-${rangeIndex}`}
+                      type="number"
+                      value={range.score}
+                      onChange={(e) =>
+                        handleScoreRangeChange(
+                          sectionIndex,
+                          fieldIndex,
+                          rangeIndex,
+                          'score',
+                          parseFloat(e.target.value)
+                        )
+                      }
+                      placeholder="Score"
+                      className="text-black px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveScoreRange(sectionIndex, fieldIndex, rangeIndex)}
+                    className="text-red-600 hover:text-red-800 ml-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => handleAddScoreRange(sectionIndex, fieldIndex)}
+                className="mt-2 text-blue-600 hover:text-blue-800"
+              >
+                Add Score Range
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Add section scoring UI
+  const renderSectionScoring = (sectionIndex: number, section: Section) => (
+    <div className="mt-4 border-t pt-4">
+      <div className="flex items-center mb-4">
+        <label className="inline-flex items-center">
+          <input
+            type="checkbox"
+            checked={section.isScored}
+            onChange={(e) =>
+              handleSectionChange(sectionIndex, 'isScored', e.target.checked)
+            }
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <span className="ml-2 text-sm text-gray-700">Enable Section Scoring</span>
+        </label>
+      </div>
+
+      {section.isScored && (
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Max Score
+            </label>
+            <input
+              type="number"
+              value={section.maxScore || ''}
+              onChange={(e) =>
+                handleSectionChange(
+                  sectionIndex,
+                  'maxScore',
+                  parseFloat(e.target.value)
+                )
+              }
+              className="text-black w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Weight
+            </label>
+            <input
+              type="number"
+              value={section.weight || 1}
+              onChange={(e) =>
+                handleSectionChange(
+                  sectionIndex,
+                  'weight',
+                  parseFloat(e.target.value)
+                )
+              }
+              className="text-black w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Passing Score
+            </label>
+            <input
+              type="number"
+              value={section.passingScore || ''}
+              onChange={(e) =>
+                handleSectionChange(
+                  sectionIndex,
+                  'passingScore',
+                  parseFloat(e.target.value)
+                )
+              }
+              className="text-black w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Add handleSectionChange function
+  const handleSectionChange = (
+    sectionIndex: number,
+    key: keyof Section,
+    value: any
+  ) => {
+    setSections((prev) => {
+      const updated = [...prev];
+      updated[sectionIndex] = {
+        ...updated[sectionIndex],
+        [key]: value,
+      };
+      return updated;
+    });
   };
 
   return (
@@ -319,6 +645,9 @@ const CreateTemplate: React.FC = () => {
                         className="text-black w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
+
+                    {/* Add section scoring UI */}
+                    {renderSectionScoring(sIndex, section)}
 
                     {/* Fields */}
                     <div className="mb-4">
@@ -418,6 +747,9 @@ const CreateTemplate: React.FC = () => {
                               />
                             </div>
                           )}
+
+                          {/* Add field scoring UI */}
+                          {renderFieldScoring(sIndex, fIndex, field)}
 
                           {/* Remove Field */}
                           <div className="mt-4">

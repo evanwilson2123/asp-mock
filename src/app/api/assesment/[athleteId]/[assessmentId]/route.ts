@@ -6,6 +6,61 @@ import AssesmentTemplate, {
   IAssessmentTemplate,
 } from '@/models/assesmentTemplate';
 
+// Add scoring calculation functions
+const calculateFieldScore = (field: any, value: any) => {
+  if (!field.isScored || field.type !== 'number') return null;
+  
+  const numValue = parseFloat(value);
+  if (isNaN(numValue)) return null;
+
+  // Find the appropriate score range
+  const range = field.scoreRanges?.find(
+    (r: any) => numValue >= r.min && numValue <= r.max
+  );
+  
+  return {
+    score: range?.score ?? 0,
+    maxScore: field.maxScore ?? 0,
+    weight: field.weight ?? 1,
+    passed: range?.score >= (field.passingScore ?? 0)
+  };
+};
+
+const calculateSectionScore = (section: any, responses: any[]) => {
+  if (!section.isScored) return null;
+
+  let totalScore = 0;
+  let maxPossibleScore = 0;
+  let totalWeight = 0;
+  let allPassed = true;
+
+  responses.forEach((response: any) => {
+    const field = section.fields.find((f: any) => f.clientId === response.fieldId);
+    if (field?.isScored) {
+      const fieldScore = calculateFieldScore(field, response.value);
+      if (fieldScore) {
+        totalScore += fieldScore.score * fieldScore.weight;
+        maxPossibleScore += fieldScore.maxScore * fieldScore.weight;
+        totalWeight += fieldScore.weight;
+        if (!fieldScore.passed) allPassed = false;
+      }
+    }
+  });
+
+  if (totalWeight === 0) return null;
+
+  const weightedScore = totalScore / totalWeight;
+  const weightedMaxScore = maxPossibleScore / totalWeight;
+  const percentage = (weightedScore / weightedMaxScore) * 100;
+
+  return {
+    score: weightedScore,
+    maxScore: weightedMaxScore,
+    percentage: percentage.toFixed(1),
+    passed: allPassed && percentage >= (section.passingScore ?? 0)
+  };
+};
+
 export async function GET(req: NextRequest, context: any) {
   const { athleteId, assessmentId } = await context.params;
   if (!athleteId) {
@@ -60,35 +115,72 @@ export async function GET(req: NextRequest, context: any) {
       );
     }
 
-    // Transform the assessment's sections for display.
-    // Now we use the clientId if available to build the field mapping.
+    // Transform sections and calculate scores
     const displaySections = assess.sections.map((assessSection, sIndex) => {
-      // Assuming sections match by index; adjust if needed.
       const templateSection = template.sections[sIndex];
       const responsesWithLabels = Object.entries(assessSection.responses).map(
         ([fieldId, value]) => {
           const field = templateSection
             ? templateSection.fields.find(
-                (f: any) => f._id.toString() === fieldId
+                (f: any) => f._id.toString() === fieldId || f.clientId === fieldId
               )
             : null;
-          // Use clientId if available; otherwise fall back to the Mongo _id.
           const idForMapping = field?.clientId || fieldId;
+          
+          // Calculate field score if applicable
+          const fieldScore = field ? calculateFieldScore(field, value) : null;
+          
           return {
             fieldId: idForMapping,
             label: field ? field.label : fieldId,
             value,
             type: field ? field.type : 'text',
+            score: fieldScore ? {
+              score: fieldScore.score,
+              maxScore: fieldScore.maxScore,
+              percentage: ((fieldScore.score / fieldScore.maxScore) * 100).toFixed(1),
+              passed: fieldScore.passed
+            } : null
           };
         }
       );
+
+      // Calculate section score if applicable
+      const sectionScore = templateSection?.isScored 
+        ? calculateSectionScore(templateSection, responsesWithLabels)
+        : null;
+
       return {
         title: assessSection.title,
         responses: responsesWithLabels,
+        score: sectionScore,
+        isScored: templateSection?.isScored ?? false
       };
     });
 
-    // Return the assessment along with a display-friendly structure including graphs.
+    // Calculate overall assessment score
+    const scoredSections = displaySections.filter(s => s.isScored);
+    let totalScore = 0;
+    let maxTotalScore = 0;
+    let totalWeight = 0;
+    let allSectionsPassed = true;
+
+    scoredSections.forEach(section => {
+      if (section.score) {
+        totalScore += section.score.score * (template.sections.find(s => s.title === section.title)?.weight ?? 1);
+        maxTotalScore += section.score.maxScore * (template.sections.find(s => s.title === section.title)?.weight ?? 1);
+        totalWeight += (template.sections.find(s => s.title === section.title)?.weight ?? 1);
+        if (!section.score.passed) allSectionsPassed = false;
+      }
+    });
+
+    const overallScore = totalWeight > 0 ? {
+      score: (totalScore / totalWeight).toFixed(1),
+      maxScore: (maxTotalScore / totalWeight).toFixed(1),
+      percentage: ((totalScore / maxTotalScore) * 100).toFixed(1),
+      passed: allSectionsPassed
+    } : null;
+
     return NextResponse.json(
       {
         assessment: assess,
@@ -97,6 +189,7 @@ export async function GET(req: NextRequest, context: any) {
           templateId: assess.templateId,
           sections: displaySections,
           graphs: template.graphs || [],
+          overallScore
         },
       },
       { status: 200 }
