@@ -66,6 +66,12 @@ interface BlastMotionSwing {
   playLevel: string;
 }
 
+interface EarlyConnectedPercents {
+  earlyConnected: number;
+  connectedAtImpact: number;
+  connected: number;
+}
+
 const batSpeedThresholds = {
   "youth": 60,
   "high school": 67,
@@ -201,6 +207,21 @@ const BlastMotionSessionDetails: React.FC = () => {
       y: swing.connectionAtImpact as number,
     }));
 
+  const earlyConnectedPercents: EarlyConnectedPercents = (() => {
+    if (scatterDataPoints.length === 0) return { earlyConnected: 0, connectedAtImpact: 0, connected: 0 };
+    let earlyConnected = 0, connectedAtImpact = 0, connected = 0;
+    scatterDataPoints.forEach((pt) => {
+      if (pt.x <= 100 && pt.x >= 80 && pt.y <= 100 && pt.y >= 80) connected++;
+      if (pt.x <= 100 && pt.x >= 80) earlyConnected++;
+      if (pt.y <= 100 && pt.y >= 80) connectedAtImpact++;
+    })
+    return {
+      earlyConnected: (earlyConnected / scatterDataPoints.length) * 100,
+      connectedAtImpact: (connectedAtImpact / scatterDataPoints.length) * 100,
+      connected: (connected / scatterDataPoints.length) * 100,
+    }
+  })();
+
   const regressionDataPoints = (() => {
     if (scatterDataPoints.length === 0) return [];
     let sumX = 0,
@@ -257,20 +278,40 @@ const BlastMotionSessionDetails: React.FC = () => {
       },
       annotation: {
         annotations: {
-          verticalLine: {
-            type: 'line' as const,
-            scaleID: 'x',
-            value: 90,
-            borderColor: 'rgba(0, 0, 0, 0.8)',
-            borderWidth: 2,
+          // verticalLine: {
+          //   type: 'line' as const,
+          //   scaleID: 'x',
+          //   value: 90,
+          //   borderColor: 'rgba(0, 0, 0, 0.8)',
+          //   borderWidth: 2,
+          // },
+          // horizontalLine: {
+          //   type: 'line' as const,
+          //   scaleID: 'y',
+          //   value: 90,
+          //   borderColor: 'rgba(0, 0, 0, 0.8)',
+          //   borderWidth: 2,
+          // },
+          shadedBox1: {
+            type: 'box' as const,
+            xMin: 80,
+            xMax: 100,
+            yMin: 0,
+            yMax: scatterDataPoints.reduce((max, pt) => Math.max(max, pt.y), 0) + 10,
+            backgroundColor: 'rgba(128, 128, 128, 0.2)',
+            borderColor: 'rgba(0, 0, 0, 1)',
+            borderWidth: 1,
           },
-          horizontalLine: {
-            type: 'line' as const,
-            scaleID: 'y',
-            value: 90,
-            borderColor: 'rgba(0, 0, 0, 0.8)',
-            borderWidth: 2,
-          },
+          shadedBox2: {
+            type: 'box' as const,
+            xMin: (scatterDataPoints.reduce((min, pt) => Math.min(min, pt.x), 100) - 10) >= 50 ? 50 : scatterDataPoints.reduce((min, pt) => Math.min(min, pt.x), 100) - 10,
+            xMax: (scatterDataPoints.reduce((max, pt) => Math.max(max, pt.x), 0) + 10) <= 150 ? 150 : scatterDataPoints.reduce((max, pt) => Math.max(max, pt.x), 0) + 10,
+            yMin: 80,
+            yMax: 100,
+            backgroundColor: 'rgba(128, 128, 128, 0.2)',
+            borderColor: 'rgba(0, 0, 0, 1)',
+            borderWidth: 1,
+          }
         },
       },
     },
@@ -599,6 +640,11 @@ const BlastMotionSessionDetails: React.FC = () => {
           <h2 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-4">
             Early Connection vs Connection At Impact
           </h2>
+          <p className=" flex flex-col mb-4 text-xs md:text-sm text-gray-700 justify-center items-center">
+            * {earlyConnectedPercents.earlyConnected.toFixed(1)}% of swings were early connected. <br />
+            * {earlyConnectedPercents.connectedAtImpact.toFixed(1)}% of swings were connected at impact. <br />
+            * {earlyConnectedPercents.connected.toFixed(1)}% of swings were connected.
+          </p>
           {scatterDataPoints.length > 0 ? (
             <div className="w-full max-w-3xl mx-auto h-[400px]">
               <Scatter data={scatterChartData} options={{...scatterChartOptions, maintainAspectRatio: false}} />
