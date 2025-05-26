@@ -52,6 +52,11 @@ export async function DELETE(req: NextRequest, context: any) {
           (id: any) => id.toString() !== tagId
         );
         break;
+      case 'assessments':
+        athlete.assessmentTags = athlete.assessmentTags.filter(
+          (id: any) => id.toString() !== tagId
+        );
+        break;
       default:
         return NextResponse.json({ error: 'Invalid tech' }, { status: 400 });
     }

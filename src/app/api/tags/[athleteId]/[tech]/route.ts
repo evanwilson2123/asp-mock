@@ -51,7 +51,7 @@ export async function GET(req: NextRequest, context: any) {
       case 'forceplates':
         tagIds = athlete.forceTags;
         break;
-      case 'asessments':
+      case 'assessments':
         tagIds = athlete.assessmentTags;
         break;
       default:
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest, context: any) {
       case 'forceplates':
         athlete.forceTags.push(tagId);
         break;
-      case 'asessments':
+      case 'assessments':
         athlete.assessmentTags.push(tagId);
         break;
       default:
