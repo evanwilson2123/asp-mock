@@ -65,8 +65,8 @@ export async function POST(req: NextRequest, context: any) {
         }
 
         if (!group.athletes.includes(athleteId)) {
-            group.athletes.push(athleteId);
-            await group.save();
+        group.athletes.push(athleteId);
+        await group.save();
         }
 
         const athlete = await Athlete.findById(athleteId);

@@ -593,7 +593,7 @@ const TrackmanStats: React.FC = () => {
             style={{ minHeight: 300 }}
           >
             <h2 className="text-lg font-semibold text-gray-700 mb-4">
-              Averages Over Time
+              Velocity Averages Over Time
             </h2>
             {averageVelocities.length ? (
               <div className="w-full h-72 md:h-96">

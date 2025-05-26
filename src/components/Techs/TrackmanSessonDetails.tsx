@@ -181,10 +181,9 @@ const TrackmanSessionDetails: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Trackman Session Details
         </h1>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Speed vs. Spin Rate Scatter Plot */}
-          <div className="bg-white p-6 rounded shadow">
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+          {/* <div className="bg-white p-6 rounded shadow">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">
               Speed vs. Spin Rate
             </h2>
@@ -216,7 +215,7 @@ const TrackmanSessionDetails: React.FC = () => {
                 },
               }}
             />
-          </div>
+          </div> */}
 
           {/* Horizontal vs Vertical Break Scatter Plot */}
           <div className="bg-white p-6 rounded shadow">
