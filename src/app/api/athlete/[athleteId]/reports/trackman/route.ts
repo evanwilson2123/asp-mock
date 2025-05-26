@@ -102,6 +102,11 @@ export async function GET(req: NextRequest, context: any) {
       [date: string]: { [pitchType: string]: number[] };
     } = {};
 
+    // Prepare average stuffPlus over time by pitch type
+    const avgStuffPlusByType: {
+      [date: string]: { [pitchType: string]: number[] };
+    } = {};
+
     // Collect sessions for navigation
     const sessionMap: Record<
       string,
@@ -115,6 +120,7 @@ export async function GET(req: NextRequest, context: any) {
         pitchReleaseSpeed,
         createdAt,
         sessionName,
+        stuffPlus,
       } = session;
 
       // Add sessionId, date, and sessionName for clickable sessions
@@ -150,6 +156,18 @@ export async function GET(req: NextRequest, context: any) {
 
         avgPitchSpeedsByType[date][pitchType].push(speed);
       }
+
+      // Prepare average stuffPlus over time by pitch type
+      if (pitchType && stuffPlus !== undefined && stuffPlus !== null) {
+        const date = new Date(createdAt).toISOString().split('T')[0];
+        if (!avgStuffPlusByType[date]) {
+          avgStuffPlusByType[date] = {};
+        }
+        if (!avgStuffPlusByType[date][pitchType]) {
+          avgStuffPlusByType[date][pitchType] = [];
+        }
+        avgStuffPlusByType[date][pitchType].push(stuffPlus);
+      }
     });
 
     // Format average pitch speeds data
@@ -160,6 +178,17 @@ export async function GET(req: NextRequest, context: any) {
           pitchType,
           avgSpeed:
             speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length,
+        }))
+    );
+
+    // Format average stuffPlus data
+    const avgStuffPlus = Object.entries(avgStuffPlusByType).flatMap(
+      ([date, pitches]) =>
+        Object.entries(pitches).map(([pitchType, stuffPluses]) => ({
+          date,
+          pitchType,
+          avgStuffPlus:
+            stuffPluses.reduce((sum, s) => sum + s, 0) / stuffPluses.length,
         }))
     );
 
@@ -206,6 +235,7 @@ export async function GET(req: NextRequest, context: any) {
     return NextResponse.json({
       pitchStats: formattedPitchStats,
       avgPitchSpeeds,
+      avgStuffPlus,
       sessions: clickableSessions, // Now includes sessionName
       coachesNotes: athlete.coachesNotes,
       maxStuffPlus,

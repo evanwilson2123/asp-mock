@@ -44,6 +44,12 @@ interface AvgPitchSpeed {
   avgSpeed: number;
 }
 
+interface AvgStuffPlus {
+  date: string;
+  pitchType: string;
+  avgStuffPlus: number;
+}
+
 interface Session {
   sessionId: string;
   date: string;
@@ -53,6 +59,7 @@ interface Session {
 interface TrackmanData {
   pitchStats: { pitchType: string; peakSpeed: number }[];
   avgPitchSpeeds: AvgPitchSpeed[];
+  avgStuffPlus: AvgStuffPlus[];
   sessions: Session[];
   coachesNotes: ICoachNote[];
   maxStuffPlus: number;
@@ -64,9 +71,6 @@ interface BlastTag {
   description: string;
 }
 
-/* -------------------------------------------------------------------------- */
-/*                               Component                                    */
-/* -------------------------------------------------------------------------- */
 
 const TrackmanStats: React.FC = () => {
   /* ---------------------------- State variables --------------------------- */
@@ -77,6 +81,7 @@ const TrackmanStats: React.FC = () => {
   const [averageVelocities, setAverageVelocities] = useState<AvgPitchSpeed[]>(
     []
   );
+  const [averageStuffPlus, setAverageStuffPlus] = useState<AvgStuffPlus[]>([]);
   const [maxStuffPlus, setMaxStuffPlus] = useState<number>(0);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,6 +135,7 @@ const TrackmanStats: React.FC = () => {
         const data: TrackmanData = await res.json();
         setPeakVelocities(data.pitchStats || []);
         setAverageVelocities(data.avgPitchSpeeds || []);
+        setAverageStuffPlus(data.avgStuffPlus || []);
         setSessions(data.sessions || []);
         setCoachNotes(data.coachesNotes || []);
         setMaxStuffPlus(data.maxStuffPlus || 0);
@@ -326,6 +332,32 @@ const TrackmanStats: React.FC = () => {
 
   const mainChartData = { labels: uniqueDates, datasets };
   const mainChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' as const } },
+  };
+
+  // Stuff+ chart data
+  const uniqueStuffPlusDates = [...new Set(averageStuffPlus.map((d) => d.date))];
+  const stuffPlusDatasets = Object.entries(
+    averageStuffPlus.reduce(
+      (acc, cur) => {
+        if (!acc[cur.pitchType]) acc[cur.pitchType] = [];
+        acc[cur.pitchType].push(cur.avgStuffPlus);
+        return acc;
+      },
+      {} as Record<string, number[]>
+    )
+  ).map(([pitchType, stuffPluses], idx) => ({
+    label: pitchType,
+    data: stuffPluses,
+    borderColor: colors[idx % colors.length],
+    backgroundColor: colors[idx % colors.length] + '33',
+    tension: 0.3,
+    fill: true,
+  }));
+  const stuffPlusChartData = { labels: uniqueStuffPlusDates, datasets: stuffPlusDatasets };
+  const stuffPlusChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { position: 'top' as const } },
@@ -569,6 +601,23 @@ const TrackmanStats: React.FC = () => {
               </div>
             ) : (
               <p className="text-gray-500">No session data available.</p>
+            )}
+          </div>
+
+          {/* Stuff+ chart */}
+          <div
+            className="bg-white p-6 rounded shadow mb-8"
+            style={{ minHeight: 300 }}
+          >
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+              Stuff+ Averages Over Time
+            </h2>
+            {averageStuffPlus.length ? (
+              <div className="w-full h-72 md:h-96">
+                <Line data={stuffPlusChartData} options={stuffPlusChartOptions} />
+              </div>
+            ) : (
+              <p className="text-gray-500">No Stuff+ data available.</p>
             )}
           </div>
 

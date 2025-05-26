@@ -278,20 +278,6 @@ const BlastMotionSessionDetails: React.FC = () => {
       },
       annotation: {
         annotations: {
-          // verticalLine: {
-          //   type: 'line' as const,
-          //   scaleID: 'x',
-          //   value: 90,
-          //   borderColor: 'rgba(0, 0, 0, 0.8)',
-          //   borderWidth: 2,
-          // },
-          // horizontalLine: {
-          //   type: 'line' as const,
-          //   scaleID: 'y',
-          //   value: 90,
-          //   borderColor: 'rgba(0, 0, 0, 0.8)',
-          //   borderWidth: 2,
-          // },
           shadedBox1: {
             type: 'box' as const,
             xMin: 80,
