@@ -51,6 +51,9 @@ export async function GET(req: NextRequest, context: any) {
       case 'forceplates':
         tagIds = athlete.forceTags;
         break;
+      case 'asessments':
+        tagIds = athlete.assessmentTags;
+        break;
       default:
         return NextResponse.json({ error: 'Invalid Tech' }, { status: 400 });
     }
@@ -116,6 +119,9 @@ export async function POST(req: NextRequest, context: any) {
         break;
       case 'forceplates':
         athlete.forceTags.push(tagId);
+        break;
+      case 'asessments':
+        athlete.assessmentTags.push(tagId);
         break;
       default:
         return NextResponse.json({ error: 'Invalid tech' }, { status: 400 });
