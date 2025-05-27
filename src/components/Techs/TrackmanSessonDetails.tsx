@@ -156,17 +156,28 @@ const TrackmanSessionDetails: React.FC = () => {
   };
 
   // Calculate pagination
-  const allPitches = pitchTypes.flatMap(pitchType => 
-    dataByPitchType[pitchType].speeds.map((speed, index) => ({
+  const allPitches = pitchTypes.flatMap(pitchType => {
+    const pitchData = dataByPitchType[pitchType];
+    // Get the minimum length of all arrays to ensure we don't access undefined values
+    const minLength = Math.min(
+      pitchData.speeds.length,
+      pitchData.spinRates.length,
+      pitchData.horizontalBreaks.length,
+      pitchData.verticalBreaks.length,
+      pitchData.locations.length,
+      (pitchData.stuffPlus || []).length || Infinity
+    );
+
+    return Array.from({ length: minLength }, (_, index) => ({
       pitchType,
-      speed,
-      spinRate: dataByPitchType[pitchType].spinRates[index],
-      horizontalBreak: dataByPitchType[pitchType].horizontalBreaks[index],
-      verticalBreak: dataByPitchType[pitchType].verticalBreaks[index],
-      stuffPlus: dataByPitchType[pitchType].stuffPlus?.[index],
-      location: dataByPitchType[pitchType].locations[index],
-    }))
-  );
+      speed: pitchData.speeds[index] ?? null,
+      spinRate: pitchData.spinRates[index] ?? null,
+      horizontalBreak: pitchData.horizontalBreaks[index] ?? null,
+      verticalBreak: pitchData.verticalBreaks[index] ?? null,
+      stuffPlus: pitchData.stuffPlus?.[index] ?? null,
+      location: pitchData.locations[index] ?? null,
+    }));
+  });
 
   const filteredPitches = selectedPitchType === 'all' 
     ? allPitches 
@@ -247,11 +258,21 @@ const TrackmanSessionDetails: React.FC = () => {
                   {currentPitches.map((pitch, index) => (
                     <tr key={`${pitch.pitchType}-${index}`}>
                       <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.pitchType}</td>
-                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.speed.toFixed(1)}</td>
-                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.spinRate.toFixed(0)}</td>
-                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.horizontalBreak.toFixed(1)}</td>
-                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.verticalBreak.toFixed(1)}</td>
-                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.stuffPlus?.toFixed(1) || 'N/A'}</td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
+                        {pitch.speed !== null ? pitch.speed.toFixed(1) : 'N/A'}
+                      </td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
+                        {pitch.spinRate !== null ? pitch.spinRate.toFixed(0) : 'N/A'}
+                      </td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
+                        {pitch.horizontalBreak !== null ? pitch.horizontalBreak.toFixed(1) : 'N/A'}
+                      </td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
+                        {pitch.verticalBreak !== null ? pitch.verticalBreak.toFixed(1) : 'N/A'}
+                      </td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
+                        {pitch.stuffPlus !== null ? pitch.stuffPlus.toFixed(1) : 'N/A'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
