@@ -320,7 +320,7 @@ const ArmCareStats: React.FC = () => {
 
   // Auth
   const { athleteId } = useParams();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const role = user?.publicMetadata?.role;
 
   // Router
@@ -411,7 +411,11 @@ const ArmCareStats: React.FC = () => {
     fetchAvailableTags();
   }, []);
 
-  // If no role found, prompt sign-in
+  // Update the auth check to include loading state
+  if (!isLoaded) {
+    return <Loader />;
+  }
+
   if (!role) {
     return <SignInPrompt />;
   }
@@ -419,6 +423,7 @@ const ArmCareStats: React.FC = () => {
   if (loading) {
     return <Loader />;
   }
+
   if (errorMessage) {
     return <ErrorMessage role={role as string} message={errorMessage} />;
   }
