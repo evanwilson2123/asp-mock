@@ -53,6 +53,9 @@ const TrackmanSessionDetails: React.FC = () => {
       verticalBreaks: number[];
       locations: { x: number; y: number }[];
       stuffPlus?: number[];
+      tilts: string[];
+      verticalApproachAngles: number[];
+      releaseHeights: number[];
     };
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -165,7 +168,10 @@ const TrackmanSessionDetails: React.FC = () => {
       pitchData.horizontalBreaks.length,
       pitchData.verticalBreaks.length,
       pitchData.locations.length,
-      (pitchData.stuffPlus || []).length || Infinity
+      (pitchData.stuffPlus || []).length || Infinity,
+      pitchData.tilts.length,
+      pitchData.verticalApproachAngles.length,
+      pitchData.releaseHeights.length
     );
 
     return Array.from({ length: minLength }, (_, index) => ({
@@ -176,6 +182,9 @@ const TrackmanSessionDetails: React.FC = () => {
       verticalBreak: pitchData.verticalBreaks[index] ?? null,
       stuffPlus: pitchData.stuffPlus?.[index] ?? null,
       location: pitchData.locations[index] ?? null,
+      tilt: pitchData.tilts[index] ?? null,
+      verticalApproachAngle: pitchData.verticalApproachAngles[index] ?? null,
+      releaseHeight: pitchData.releaseHeights[index] ?? null,
     }));
   });
 
@@ -252,6 +261,9 @@ const TrackmanSessionDetails: React.FC = () => {
                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">H Break</th>
                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">V Break</th>
                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stuff+</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tilt</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VAA</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rel Ht</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -272,6 +284,15 @@ const TrackmanSessionDetails: React.FC = () => {
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
                         {pitch.stuffPlus !== null ? pitch.stuffPlus.toFixed(1) : 'N/A'}
+                      </td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
+                        {pitch.tilt ?? 'N/A'}
+                      </td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
+                        {pitch.verticalApproachAngle !== null ? pitch.verticalApproachAngle.toFixed(1) : 'N/A'}
+                      </td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
+                        {pitch.releaseHeight !== null ? pitch.releaseHeight.toFixed(1) : 'N/A'}
                       </td>
                     </tr>
                   ))}

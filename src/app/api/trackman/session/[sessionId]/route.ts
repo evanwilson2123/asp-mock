@@ -91,6 +91,8 @@ import { auth } from '@clerk/nextjs/server';
  * - Handles missing data gracefully (e.g., if spin rate is null).
  * - Logs errors to the server console for debugging purposes.
  */
+
+// TODO: add tilt, verticalApproachAngle, and releaseHeight to the response
 export async function GET(req: NextRequest, context: any) {
   const { sessionId } = context.params;
 
@@ -114,6 +116,9 @@ export async function GET(req: NextRequest, context: any) {
         locationHeight: true,
         locationSide: true,
         stuffPlus: true,
+        tilt: true,
+        verticalApproachAngle: true,
+        releaseHeight: true,
       },
     });
 
@@ -133,6 +138,9 @@ export async function GET(req: NextRequest, context: any) {
         verticalBreaks: number[];
         locations: { x: number; y: number }[];
         stuffPlus: number[];
+        tilts: string[];
+        verticalApproachAngles: number[];
+        releaseHeights: number[];
       }
     > = {};
 
@@ -147,6 +155,9 @@ export async function GET(req: NextRequest, context: any) {
           verticalBreaks: [],
           locations: [],
           stuffPlus: [],
+          tilts: [],
+          verticalApproachAngles: [],
+          releaseHeights: [],
         };
       }
 
@@ -177,6 +188,18 @@ export async function GET(req: NextRequest, context: any) {
 
       if (pitch.stuffPlus !== null && pitch.stuffPlus !== undefined) {
         dataByPitchType[pitchType].stuffPlus.push(pitch.stuffPlus);
+      }
+
+      if (pitch.tilt !== null && pitch.tilt !== undefined) {
+        dataByPitchType[pitchType].tilts.push(pitch.tilt);
+      }
+
+      if (pitch.verticalApproachAngle !== null && pitch.verticalApproachAngle !== undefined) {
+        dataByPitchType[pitchType].verticalApproachAngles.push(pitch.verticalApproachAngle);
+      }
+
+      if (pitch.releaseHeight !== null && pitch.releaseHeight !== undefined) {
+        dataByPitchType[pitchType].releaseHeights.push(pitch.releaseHeight);
       }
     });
 
