@@ -17,20 +17,11 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import ErrorMessage from '../ErrorMessage';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-import { TrashIcon } from '@heroicons/react/24/solid';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import AthleteSidebar from '../Dash/AthleteSidebar';
 // --- COLOR HELPERS ---
 
@@ -96,6 +87,196 @@ interface BlastTag {
   name: string;
   description: string;
 }
+
+// Add TagManager component
+const TagManager: React.FC<{
+  blastTags: BlastTag[];
+  availableTags: BlastTag[];
+  onAddTag: (tagId: string) => void;
+  onRemoveTag: (tagId: string) => void;
+  athleteId: string;
+}> = ({ blastTags, availableTags, onAddTag, onRemoveTag, athleteId }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTagId, setSelectedTagId] = useState('');
+
+  const filteredAvailableTags = availableTags.filter(
+    (tag) =>
+      !blastTags.some((bt) => bt._id === tag._id) &&
+      tag.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleAddTag = () => {
+    if (selectedTagId) {
+      onAddTag(selectedTagId);
+      setSelectedTagId('');
+      setSearchTerm('');
+      setIsModalOpen(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="flex flex-col space-y-3">
+        {/* Active Tags */}
+        <div className="flex flex-wrap gap-2">
+          {blastTags.map((tag) => (
+            <div
+              key={tag._id}
+              className="group relative bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5 flex items-center space-x-2"
+            >
+              <Link
+                href={`/athlete/${athleteId}/tags/arm-care/${tag._id}`}
+                className="text-blue-700 hover:text-blue-800 font-medium text-sm"
+              >
+                {tag.name}
+              </Link>
+              <button
+                onClick={() => onRemoveTag(tag._id)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <TrashIcon className="h-3.5 w-3.5 text-blue-500 hover:text-blue-700" />
+              </button>
+              {tag.description && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                  {tag.description}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add Tag Button */}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Tag
+        </button>
+      </div>
+
+      {/* Add Tag Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Add Tags</h3>
+                <button
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setSearchTerm('');
+                    setSelectedTagId('');
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Search Input */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search tags..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    autoFocus
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-500"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Tag List */}
+                <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
+                  {filteredAvailableTags.length > 0 ? (
+                    <div className="divide-y divide-gray-200">
+                      {filteredAvailableTags.map((tag) => (
+                        <button
+                          key={tag._id}
+                          onClick={() => setSelectedTagId(tag._id)}
+                          className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${
+                            selectedTagId === tag._id ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-gray-900">{tag.name}</div>
+                              {tag.description && (
+                                <div className="text-sm text-gray-500 mt-0.5">{tag.description}</div>
+                              )}
+                            </div>
+                            {selectedTagId === tag._id && (
+                              <svg className="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                      {searchTerm ? 'No matching tags found' : 'Start typing to search tags'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setSearchTerm('');
+                      setSelectedTagId('');
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddTag}
+                    disabled={!selectedTagId}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Add Tag
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+// Update Chart.js registration
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 /**
  * ArmCareStats Component
@@ -260,7 +441,43 @@ const ArmCareStats: React.FC = () => {
   };
   const chartOptions = {
     responsive: true,
-    plugins: { legend: { position: 'top' as const } },
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          padding: 20,
+          font: {
+            size: 12
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        type: 'linear' as const,
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)'
+        },
+        ticks: {
+          font: {
+            size: 12
+          }
+        }
+      },
+      x: {
+        type: 'category' as const,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)'
+        },
+        ticks: {
+          font: {
+            size: 12
+          }
+        }
+      }
+    }
   };
 
   // --- Compute % of BW for the LATEST strengths ---
@@ -276,6 +493,47 @@ const ArmCareStats: React.FC = () => {
   const erClass = getStrengthColor(erPercent, 'ER');
   const scapClass = getStrengthColor(scapPercent, 'Scaption');
   const sbClass = getShoulderBalanceColor(ratio);
+
+  // Add these handlers for tag management
+  const handleAddBlastTag = async (tagId: string) => {
+    if (!tagId) return;
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/arm-care`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagId }),
+      });
+      if (res.ok) {
+        const addedTag = availableTags.find((tag) => tag._id === tagId);
+        if (addedTag) {
+          setBlastTags((prev) => [...prev, addedTag]);
+        }
+      } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Error adding tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage('Internal Server Error');
+    }
+  };
+
+  const handleRemoveBlastTag = async (tagId: string) => {
+    try {
+      const res = await fetch(`/api/tags/${athleteId}/arm-care/${tagId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setBlastTags((prev) => prev.filter((tag) => tag._id !== tagId));
+      } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Error removing tag');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage('Internal Server Error');
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -333,226 +591,173 @@ const ArmCareStats: React.FC = () => {
           ))}
         </nav>
 
-        {/* --- New: Arm Care Tag Management Section --- */}
-        <div className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-3xl font-bold text-gray-700">
-            Arm Care Overview
-          </h1>
-          <div className="flex items-center">
-            <span className="text-gray-900 mr-2 font-semibold">Tags:</span>
-            {blastTags.length > 0 ? (
-              blastTags.map((tag) => (
-                <div
-                  key={tag._id}
-                  className="relative inline-block group mr-2 mb-2"
-                >
-                  <Link
-                    key={tag._id}
-                    href={`/athlete/${athleteId}/tags/blast/${tag._id}`}
-                  >
-                    <span
-                      title={tag.description}
-                      key={tag._id}
-                      className="inline-block bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
-                    >
-                      {tag.name}
-                      <button
-                        onClick={() => {
-                          // --- New: Remove Tag Handler ---
-                          (async () => {
-                            try {
-                              const res = await fetch(
-                                `/api/tags/${athleteId}/arm-care/${tag._id}`,
-                                { method: 'DELETE' }
-                              );
-                              if (res.ok) {
-                                setBlastTags((prev) =>
-                                  prev.filter((bt) => bt._id !== tag._id)
-                                );
-                              } else {
-                                const data = await res.json();
-                                setErrorMessage(
-                                  data.error || 'Error removing tag'
-                                );
-                              }
-                            } catch (err: any) {
-                              console.error(err);
-                              setErrorMessage('Internal Server Error');
-                            }
-                          })();
-                        }}
-                        className="ml-1 text-red-500"
-                      >
-                        <TrashIcon className="h-4 w-4 inline" />
-                      </button>
-                    </span>
-                  </Link>
-                  {/* Tooltip element
-                  <div className="absolute left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
-                    {tag.description}
-                  </div> */}
-                </div>
-              ))
-            ) : (
-              <span className="text-gray-500">None</span>
-            )}
-            <select
-              onChange={async (e) => {
-                const tagId = e.target.value;
-                if (!tagId) return;
-                try {
-                  const res = await fetch(`/api/tags/${athleteId}/arm-care`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tagId }),
-                  });
-                  if (res.ok) {
-                    const addedTag = availableTags.find(
-                      (tag) => tag._id === tagId
-                    );
-                    if (addedTag) {
-                      setBlastTags((prev) => [...prev, addedTag]);
-                    }
-                  } else {
-                    const data = await res.json();
-                    setErrorMessage(data.error || 'Error adding tag');
-                  }
-                } catch (err: any) {
-                  console.error(err);
-                  setErrorMessage('Internal Server Error');
-                }
-              }}
-              defaultValue=""
-              className="ml-2 p-2 border rounded text-gray-900"
-            >
-              <option value="">Add Tag</option>
-              {availableTags
-                .filter((tag) => !blastTags.some((bt) => bt._id === tag._id))
-                .map((tag) => (
-                  <option key={tag._id} value={tag._id}>
-                    {tag.name}
-                  </option>
-                ))}
-            </select>
+        {/* Overview and Tags Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
+            <h1 className="text-3xl font-bold text-gray-700 mb-4 md:mb-0">
+              Arm Care Overview
+            </h1>
+            <div className="w-full md:w-auto">
+              <TagManager
+                blastTags={blastTags}
+                availableTags={availableTags}
+                onAddTag={handleAddBlastTag}
+                onRemoveTag={handleRemoveBlastTag}
+                athleteId={athleteId as string}
+              />
+            </div>
           </div>
         </div>
-        {/* End Tag Management Section */}
 
         {/* Session List */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Sessions (Latest to Earliest)
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            Sessions
           </h2>
-          <ul className="bg-white p-4 rounded shadow text-black">
+          <ul className="divide-y divide-gray-200">
             {sessions.length > 0 ? (
               sessions.map((session) => (
                 <li
                   key={session.sessionId}
-                  className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
+                  className="py-3 hover:bg-gray-50 transition-colors"
                 >
-                  <Link href={`/arm-care/${session.sessionId}`}>
-                    {session.date} (Session ID: {session.sessionId})
+                  <Link 
+                    href={`/arm-care/${session.sessionId}`}
+                    className="block px-4 text-gray-700 hover:text-blue-600"
+                  >
+                    {new Date(session.date).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
                   </Link>
                 </li>
               ))
             ) : (
-              <p className="text-gray-500">No session data available.</p>
+              <li className="py-3 px-4 text-gray-500">No session data available.</li>
             )}
           </ul>
         </div>
 
-        {/* Example: Display color-coded latest IR, ER, Scaption */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Latest Strength (Color-Coded)
-          </h2>
-          <div className="bg-white p-6 rounded shadow space-y-4">
-            <div className={`text-xl ${irClass}`}>
-              IR Strength: {irPercent.toFixed(1)}% BW
-            </div>
-            <div className={`text-xl ${erClass}`}>
-              ER Strength: {erPercent.toFixed(1)}% BW
-            </div>
-            <div className={`text-xl ${scapClass}`}>
-              Scaption: {scapPercent.toFixed(1)}% BW
-            </div>
-            <div className={`text-xl ${sbClass}`}>
-              Shoulder Balance (ER:IR): {ratio.toFixed(2)}
-            </div>
-          </div>
-        </div>
-
-        {/* All-time Max & Latest Scores */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            All-Time Max &amp; Latest
-          </h2>
-          <div className="flex flex-col md:flex-row gap-8">
-            {/* All-time max */}
-            <div className="bg-white p-6 rounded shadow flex-1">
-              <h3 className="text-md font-bold text-gray-600 mb-4">
-                All-Time Max
-              </h3>
-              <div className="flex flex-col gap-4 text-gray-700">
-                <div>
-                  <strong>Internal Strength:</strong> {maxInternal} lbs
-                </div>
-                <div>
-                  <strong>External Strength:</strong> {maxExternal} lbs
-                </div>
-                <div>
-                  <strong>Scaption Strength:</strong> {maxScaption} lbs
-                </div>
-                <div>
-                  <strong>Internal ROM:</strong> {internalRom}°
-                </div>
-                <div>
-                  <strong>External ROM:</strong> {externalRom}°
-                </div>
-                <div>
-                  <strong>Shoulder Flexion:</strong> {maxShoulderFlexion}°
-                </div>
+        {/* Latest Strength Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Latest Strength Card */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Latest Strength Metrics
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <span className="text-gray-700 font-medium">Internal Rotation</span>
+                <span className={`text-lg font-semibold ${irClass}`}>
+                  {irPercent.toFixed(1)}% BW
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <span className="text-gray-700 font-medium">External Rotation</span>
+                <span className={`text-lg font-semibold ${erClass}`}>
+                  {erPercent.toFixed(1)}% BW
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <span className="text-gray-700 font-medium">Scaption</span>
+                <span className={`text-lg font-semibold ${scapClass}`}>
+                  {scapPercent.toFixed(1)}% BW
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <span className="text-gray-700 font-medium">Shoulder Balance (ER:IR)</span>
+                <span className={`text-lg font-semibold ${sbClass}`}>
+                  {ratio.toFixed(2)}
+                </span>
               </div>
             </div>
-            {/* Latest */}
-            <div className="bg-white p-6 rounded shadow flex-1">
-              <h3 className="text-md font-bold text-gray-600 mb-4">
-                Latest Scores
-              </h3>
-              <div className="flex flex-col gap-4 text-gray-700">
-                <div>
-                  <strong>Internal Strength:</strong> {latestInternal} lbs
-                </div>
-                <div>
-                  <strong>External Strength:</strong> {latestExternal} lbs
-                </div>
-                <div>
-                  <strong>Scaption Strength:</strong> {latestScaption} lbs
-                </div>
-                <div>
-                  <strong>Internal ROM:</strong> {latestInternalRom}°
-                </div>
-                <div>
-                  <strong>External ROM:</strong> {latestExternalRom}°
-                </div>
-                <div>
-                  <strong>Shoulder Flexion:</strong> {latestShoulderFlexion}°
-                </div>
+          </div>
+
+          {/* All-time Max Card */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              All-Time Max
+            </h2>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">Internal Strength</div>
+                <div className="text-lg font-semibold text-gray-900">{maxInternal} lbs</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">External Strength</div>
+                <div className="text-lg font-semibold text-gray-900">{maxExternal} lbs</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">Scaption Strength</div>
+                <div className="text-lg font-semibold text-gray-900">{maxScaption} lbs</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">Internal ROM</div>
+                <div className="text-lg font-semibold text-gray-900">{internalRom}°</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">External ROM</div>
+                <div className="text-lg font-semibold text-gray-900">{externalRom}°</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">Shoulder Flexion</div>
+                <div className="text-lg font-semibold text-gray-900">{maxShoulderFlexion}°</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Averages Over Time (Line Chart) */}
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+        {/* Latest Scores Card */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            Latest Scores
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Internal Strength</div>
+              <div className="text-lg font-semibold text-gray-900">{latestInternal} lbs</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">External Strength</div>
+              <div className="text-lg font-semibold text-gray-900">{latestExternal} lbs</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Scaption Strength</div>
+              <div className="text-lg font-semibold text-gray-900">{latestScaption} lbs</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Internal ROM</div>
+              <div className="text-lg font-semibold text-gray-900">{latestInternalRom}°</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">External ROM</div>
+              <div className="text-lg font-semibold text-gray-900">{latestExternalRom}°</div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Shoulder Flexion</div>
+              <div className="text-lg font-semibold text-gray-900">{latestShoulderFlexion}°</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Arm Scores Over Time Chart */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
             Arm Scores Over Time
           </h2>
-          {sessionData.length > 0 ? (
-            <Line data={chartData} options={chartOptions} />
-          ) : (
-            <p className="text-gray-500">No session data available.</p>
-          )}
+          <div className="h-[400px]">
+            {sessionData.length > 0 ? (
+              <Line 
+                data={chartData} 
+                options={chartOptions}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                No session data available.
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
