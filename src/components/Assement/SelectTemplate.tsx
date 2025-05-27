@@ -104,12 +104,14 @@ const SelectTemplate = () => {
             </p>
           </div>
           <div className="flex space-x-4">
-            <button
+            {role === 'ADMIN' && (
+              <button
               onClick={() => router.push('/assesment/create-template')}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
             >
               Create Template
             </button>
+            )}
             {role === 'ADMIN' && (
               <button
                 onClick={() => router.push('/assesment/template/archived')}

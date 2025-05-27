@@ -159,6 +159,9 @@ const CoachSidebar: React.FC = () => {
               {/* <li className="p-2 rounded hover:bg-gray-700">
                 <Link href="/program-planner">Program Planner</Link>
               </li> */}
+              <li className="p-2 rounded hover:bg-gray-700">
+                <Link href="/assesment">Assessments</Link>
+              </li>
             </ul>
           )}
 
