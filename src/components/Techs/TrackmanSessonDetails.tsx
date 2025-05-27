@@ -56,6 +56,7 @@ const TrackmanSessionDetails: React.FC = () => {
       tilts: string[];
       verticalApproachAngles: number[];
       releaseHeights: number[];
+      releaseSides: number[];
     };
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -171,7 +172,8 @@ const TrackmanSessionDetails: React.FC = () => {
       (pitchData.stuffPlus || []).length || Infinity,
       pitchData.tilts.length,
       pitchData.verticalApproachAngles.length,
-      pitchData.releaseHeights.length
+      pitchData.releaseHeights.length,
+      pitchData.releaseSides.length
     );
 
     return Array.from({ length: minLength }, (_, index) => ({
@@ -185,6 +187,7 @@ const TrackmanSessionDetails: React.FC = () => {
       tilt: pitchData.tilts[index] ?? null,
       verticalApproachAngle: pitchData.verticalApproachAngles[index] ?? null,
       releaseHeight: pitchData.releaseHeights[index] ?? null,
+      releaseSide: pitchData.releaseSides[index] ?? null,
     }));
   });
 
@@ -232,7 +235,7 @@ const TrackmanSessionDetails: React.FC = () => {
           Trackman Session Details
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+        <div className="mb-6">
           {/* Paginated Table */}
           <div className="bg-white p-6 rounded shadow">
             <div className="flex justify-between items-center mb-4">
@@ -319,6 +322,10 @@ const TrackmanSessionDetails: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+          
 
           {/* Horizontal vs Vertical Break Scatter Plot */}
           <div className="bg-white p-6 rounded shadow">
@@ -362,6 +369,61 @@ const TrackmanSessionDetails: React.FC = () => {
                     title: { display: true, text: 'Vertical Break (inches)' },
                     min: -30,
                     max: 30,
+                    grid: {
+                      color: (ctx) =>
+                        ctx.tick.value === 0 ? '#000000' : '#CCCCCC',
+                    },
+                    ticks: {
+                      color: '#000000',
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
+
+          {/* Release Height vs Release Side Scatter Plot */}
+          <div className="bg-white p-6 rounded shadow">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+              Release Height vs. Release Side
+            </h2>
+            <Scatter
+              data={{
+                datasets: pitchTypes.map((pitchType, index) => ({
+                  label: pitchType,
+                  data: dataByPitchType[pitchType].releaseHeights.map(
+                    (height, i) => ({
+                      x: dataByPitchType[pitchType].releaseSides[i],
+                      y: height,
+                    })
+                  ),
+                  backgroundColor: softColors[index % softColors.length],
+                  pointRadius: 6,
+                })),
+              }}
+              options={{
+                responsive: true,
+                aspectRatio: 1,
+                plugins: {
+                  legend: { position: 'top' },
+                },
+                scales: {
+                  x: {
+                    title: { display: true, text: 'Release Side (ft)' },
+                    min: -5,
+                    max: 5,
+                    grid: {
+                      color: (ctx) =>
+                        ctx.tick.value === 0 ? '#000000' : '#CCCCCC',
+                    },
+                    ticks: {
+                      color: '#000000',
+                    },
+                  },
+                  y: {
+                    title: { display: true, text: 'Release Height (ft)' },
+                    min: 2,
+                    max: 7,
                     grid: {
                       color: (ctx) =>
                         ctx.tick.value === 0 ? '#000000' : '#CCCCCC',

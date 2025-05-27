@@ -119,6 +119,7 @@ export async function GET(req: NextRequest, context: any) {
         tilt: true,
         verticalApproachAngle: true,
         releaseHeight: true,
+        releaseSide: true,
       },
     });
 
@@ -141,6 +142,7 @@ export async function GET(req: NextRequest, context: any) {
         tilts: string[];
         verticalApproachAngles: number[];
         releaseHeights: number[];
+        releaseSides: number[];
       }
     > = {};
 
@@ -158,6 +160,7 @@ export async function GET(req: NextRequest, context: any) {
           tilts: [],
           verticalApproachAngles: [],
           releaseHeights: [],
+          releaseSides: [],
         };
       }
 
@@ -200,6 +203,10 @@ export async function GET(req: NextRequest, context: any) {
 
       if (pitch.releaseHeight !== null && pitch.releaseHeight !== undefined) {
         dataByPitchType[pitchType].releaseHeights.push(pitch.releaseHeight);
+      }
+
+      if (pitch.releaseSide !== null && pitch.releaseSide !== undefined) {
+        dataByPitchType[pitchType].releaseSides.push(pitch.releaseSide);
       }
     });
 
