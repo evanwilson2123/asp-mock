@@ -57,6 +57,9 @@ const TrackmanSessionDetails: React.FC = () => {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+  const [selectedPitchType, setSelectedPitchType] = useState<string | 'all'>('all');
 
   const { sessionId } = useParams();
   const router = useRouter();
@@ -114,9 +117,14 @@ const TrackmanSessionDetails: React.FC = () => {
 
   // Find the max number of pitches for any type
   const maxStuffPlusLength = Math.max(
-    ...pitchTypes.map((pitchType) => (dataByPitchType[pitchType].stuffPlus || []).length)
+    ...pitchTypes.map(
+      (pitchType) => (dataByPitchType[pitchType].stuffPlus || []).length
+    )
   );
-  const stuffPlusLabels = Array.from({ length: maxStuffPlusLength }, (_, i) => i + 1);
+  const stuffPlusLabels = Array.from(
+    { length: maxStuffPlusLength },
+    (_, i) => i + 1
+  );
 
   const stuffPlusChartData = {
     labels: stuffPlusLabels,
@@ -146,6 +154,28 @@ const TrackmanSessionDetails: React.FC = () => {
       },
     },
   };
+
+  // Calculate pagination
+  const allPitches = pitchTypes.flatMap(pitchType => 
+    dataByPitchType[pitchType].speeds.map((speed, index) => ({
+      pitchType,
+      speed,
+      spinRate: dataByPitchType[pitchType].spinRates[index],
+      horizontalBreak: dataByPitchType[pitchType].horizontalBreaks[index],
+      verticalBreak: dataByPitchType[pitchType].verticalBreaks[index],
+      stuffPlus: dataByPitchType[pitchType].stuffPlus?.[index],
+      location: dataByPitchType[pitchType].locations[index],
+    }))
+  );
+
+  const filteredPitches = selectedPitchType === 'all' 
+    ? allPitches 
+    : allPitches.filter(pitch => pitch.pitchType === selectedPitchType);
+
+  const totalPages = Math.ceil(filteredPitches.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPitches = filteredPitches.slice(startIndex, endIndex);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -181,41 +211,72 @@ const TrackmanSessionDetails: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-700 mb-6">
           Trackman Session Details
         </h1>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
-          {/* <div className="bg-white p-6 rounded shadow">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">
-              Speed vs. Spin Rate
-            </h2>
-            <Scatter
-              data={{
-                datasets: pitchTypes.map((pitchType, index) => ({
-                  label: pitchType,
-                  data: dataByPitchType[pitchType].speeds.map((speed, i) => ({
-                    x: speed,
-                    y: dataByPitchType[pitchType].spinRates[i],
-                  })),
-                  backgroundColor: softColors[index % softColors.length],
-                  pointRadius: 6,
-                })),
-              }}
-              options={{
-                responsive: true,
-                aspectRatio: 1,
-                plugins: {
-                  legend: { position: 'top' },
-                },
-                scales: {
-                  x: {
-                    title: { display: true, text: 'Speed (mph)' },
-                  },
-                  y: {
-                    title: { display: true, text: 'Spin Rate (rpm)' },
-                  },
-                },
-              }}
-            />
-          </div> */}
+          {/* Paginated Table */}
+          <div className="bg-white p-6 rounded shadow">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-gray-700">Pitch Details</h2>
+              <select
+                value={selectedPitchType}
+                onChange={(e) => {
+                  setSelectedPitchType(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border rounded px-2 py-1 text-black"
+              >
+                <option value="all text-black">All Pitch Types</option>
+                {pitchTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Speed</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spin</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">H Break</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">V Break</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stuff+</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentPitches.map((pitch, index) => (
+                    <tr key={`${pitch.pitchType}-${index}`}>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.pitchType}</td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.speed.toFixed(1)}</td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.spinRate.toFixed(0)}</td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.horizontalBreak.toFixed(1)}</td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.verticalBreak.toFixed(1)}</td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.stuffPlus?.toFixed(1) || 'N/A'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-2 py-0.5 text-sm bg-gray-200 rounded disabled:opacity-50 text-black"
+              >
+                Prev
+              </button>
+              <span className="text-xs text-gray-600">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-2 py-0.5 text-sm bg-gray-200 rounded disabled:opacity-50 text-black"
+              >
+                Next
+              </button>
+            </div>
+          </div>
 
           {/* Horizontal vs Vertical Break Scatter Plot */}
           <div className="bg-white p-6 rounded shadow">
@@ -369,3 +430,39 @@ const TrackmanSessionDetails: React.FC = () => {
 };
 
 export default TrackmanSessionDetails;
+
+{
+  /* <div className="bg-white p-6 rounded shadow">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+              Speed vs. Spin Rate
+            </h2>
+            <Scatter
+              data={{
+                datasets: pitchTypes.map((pitchType, index) => ({
+                  label: pitchType,
+                  data: dataByPitchType[pitchType].speeds.map((speed, i) => ({
+                    x: speed,
+                    y: dataByPitchType[pitchType].spinRates[i],
+                  })),
+                  backgroundColor: softColors[index % softColors.length],
+                  pointRadius: 6,
+                })),
+              }}
+              options={{
+                responsive: true,
+                aspectRatio: 1,
+                plugins: {
+                  legend: { position: 'top' },
+                },
+                scales: {
+                  x: {
+                    title: { display: true, text: 'Speed (mph)' },
+                  },
+                  y: {
+                    title: { display: true, text: 'Spin Rate (rpm)' },
+                  },
+                },
+              }}
+            />
+          </div> */
+}
