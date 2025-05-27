@@ -67,6 +67,183 @@ interface BlastTag {
 /*                               Component                                    */
 /* -------------------------------------------------------------------------- */
 
+const TagManager: React.FC<{
+  blastTags: BlastTag[];
+  availableTags: BlastTag[];
+  onAddTag: (tagId: string) => void;
+  onRemoveTag: (tagId: string) => void;
+  athleteId: string;
+}> = ({ blastTags, availableTags, onAddTag, onRemoveTag, athleteId }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTagId, setSelectedTagId] = useState('');
+
+  const filteredAvailableTags = availableTags.filter(
+    (tag) =>
+      !blastTags.some((bt) => bt._id === tag._id) &&
+      tag.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleAddTag = () => {
+    if (selectedTagId) {
+      onAddTag(selectedTagId);
+      setSelectedTagId('');
+      setSearchTerm('');
+      setIsModalOpen(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="flex flex-col space-y-3">
+        {/* Active Tags */}
+        <div className="flex flex-wrap gap-2">
+          {blastTags.map((tag) => (
+            <div
+              key={tag._id}
+              className="group relative bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5 flex items-center space-x-2"
+            >
+              <Link
+                href={`/athlete/${athleteId}/tags/hittrax/${tag._id}`}
+                className="text-blue-700 hover:text-blue-800 font-medium text-sm"
+              >
+                {tag.name}
+              </Link>
+              <button
+                onClick={() => onRemoveTag(tag._id)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <TrashIcon className="h-3.5 w-3.5 text-blue-500 hover:text-blue-700" />
+              </button>
+              {tag.description && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                  {tag.description}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add Tag Button */}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Tag
+        </button>
+      </div>
+
+      {/* Add Tag Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Add Tags</h3>
+                <button
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setSearchTerm('');
+                    setSelectedTagId('');
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Search Input */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search tags..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    autoFocus
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-500"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Tag List */}
+                <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
+                  {filteredAvailableTags.length > 0 ? (
+                    <div className="divide-y divide-gray-200">
+                      {filteredAvailableTags.map((tag) => (
+                        <button
+                          key={tag._id}
+                          onClick={() => setSelectedTagId(tag._id)}
+                          className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${
+                            selectedTagId === tag._id ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-gray-900">{tag.name}</div>
+                              {tag.description && (
+                                <div className="text-sm text-gray-500 mt-0.5">{tag.description}</div>
+                              )}
+                            </div>
+                            {selectedTagId === tag._id && (
+                              <svg className="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                      {searchTerm ? 'No matching tags found' : 'Start typing to search tags'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setSearchTerm('');
+                      setSelectedTagId('');
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddTag}
+                    disabled={!selectedTagId}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Add Tag
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 const HitTraxStats: React.FC = () => {
   /* ---------------------------- State variables --------------------------- */
 
@@ -234,8 +411,7 @@ const HitTraxStats: React.FC = () => {
       setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
   };
 
-  const handleAddBlastTag = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const tagId = e.target.value;
+  const handleAddBlastTag = async (tagId: string) => {
     if (!tagId) return;
 
     const res = await fetch(`/api/tags/${athleteId}/hittrax`, {
@@ -488,49 +664,18 @@ const HitTraxStats: React.FC = () => {
           </nav>
 
           {/* -------------------- Tag Management -------------------- */}
-          <div className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white rounded-lg shadow-md p-6">
-            <h1 className="text-3xl font-bold text-gray-700">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 bg-white rounded-lg shadow-md p-6">
+            <h1 className="text-3xl font-bold text-gray-700 mb-4 md:mb-0">
               HitTrax Overview
             </h1>
-            <div className="flex flex-wrap items-center">
-              <span className="text-gray-900 mr-2 font-semibold">Tags:</span>
-              {blastTags.length ? (
-                blastTags.map((tag) => (
-                  <span
-                    key={tag._id}
-                    className="bg-gray-200 text-gray-800 rounded-full px-3 py-1 mr-2 mb-2"
-                  >
-                    <Link
-                      href={`/athlete/${athleteId}/tags/hittrax/${tag._id}`}
-                    >
-                      {tag.name}
-                    </Link>
-                    <button
-                      onClick={() => handleRemoveBlastTag(tag._id)}
-                      className="ml-1"
-                    >
-                      <TrashIcon className="h-4 w-4 text-red-500 inline" />
-                    </button>
-                  </span>
-                ))
-              ) : (
-                <span className="text-gray-500">None</span>
-              )}
-
-              <select
-                onChange={handleAddBlastTag}
-                defaultValue=""
-                className="ml-2 p-2 border rounded text-gray-900"
-              >
-                <option value="">Add Tag</option>
-                {availableTags
-                  .filter((t) => !blastTags.some((bt) => bt._id === t._id))
-                  .map((tag) => (
-                    <option key={tag._id} value={tag._id}>
-                      {tag.name}
-                    </option>
-                  ))}
-              </select>
+            <div className="w-full md:w-auto">
+              <TagManager
+                blastTags={blastTags}
+                availableTags={availableTags}
+                onAddTag={handleAddBlastTag}
+                onRemoveTag={handleRemoveBlastTag}
+                athleteId={athleteId as string}
+              />
             </div>
           </div>
 
