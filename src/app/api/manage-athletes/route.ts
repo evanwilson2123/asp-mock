@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { clerkClient, auth } from '@clerk/nextjs/server';
 import Athlete from '@/models/athlete';
-import Team from '@/models/team';
 import { connectDB } from '@/lib/db';
+import Group from '@/models/group';
 
 /**
  * GET /api/athletes
@@ -97,9 +97,13 @@ export async function GET() {
     await connectDB();
 
     const client = await clerkClient();
-    const user = await client.users?.getUser(userId); // Clerk client
+    const user = await client.users?.getUser(userId);
     const role = user.publicMetadata?.role;
-    console.log(role);
+    const coachId = user.publicMetadata?.objectId;
+
+    if (!role) {
+      return NextResponse.json({ error: 'No Role found' }, { status: 400 });
+    }
 
     let athletes = [];
 
@@ -112,29 +116,40 @@ export async function GET() {
         break;
 
       case 'COACH':
-        // Fetch teams where the coach's objectId matches
-        const teams = await Team.find({
-          coach: user.publicMetadata?.objectId,
+        if (!coachId) {
+          return NextResponse.json({ error: 'Coach ID not found' }, { status: 400 });
+        }
+
+        // Find all groups where the coach is either head coach or assistant
+        const groups = await Group.find({
+          $or: [
+            { headCoach: coachId },
+            { assistants: coachId }
+          ]
+        }).exec();
+
+        // Get all unique athlete IDs from these groups
+        const athleteIds = [...new Set(
+          groups.reduce((ids: string[], group) => {
+            return [...ids, ...group.athletes];
+          }, [])
+        )];
+
+        // Fetch athletes that belong to these groups
+        athletes = await Athlete.find({
+          _id: { $in: athleteIds }
         })
-          .select('_id firstName lastName level email')
-          .exec();
-
-        // Collect all athlete IDs (players) from the teams
-        const athleteIds = teams.reduce((ids: string[], team) => {
-          return ids.concat(team.players || []);
-        }, []);
-
-        // Fetch all athletes whose IDs match the collected athlete IDs
-        athletes = await Athlete.find({ _id: { $in: athleteIds } }).exec();
+        .select('_id firstName lastName level email')
+        .exec();
         break;
 
       default:
-        return NextResponse.json({ error: 'No Role found' }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
     return NextResponse.json({ athletes }, { status: 200 });
   } catch (error: any) {
-    console.error(error);
+    console.error('Error in manage-athletes route:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

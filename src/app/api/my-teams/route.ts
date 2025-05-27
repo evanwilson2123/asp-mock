@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clerkClient, auth } from '@clerk/nextjs/server';
-import Team from '@/models/team';
 import { connectDB } from '@/lib/db';
+import Group from '@/models/group';
 
 /**
  * GET /api/teams
@@ -94,8 +94,8 @@ export async function GET() {
       return NextResponse.json({ error: 'missing Coach ID' }, { status: 400 });
     }
 
-    const teams = await Team.find({
-      $or: [{ coach: coachId }, { assistants: coachId }],
+    const teams = await Group.find({
+      $or: [{ headCoach: coachId }, { assistants: coachId }],
     }).exec();
 
     return NextResponse.json({ teams }, { status: 200 });
