@@ -193,7 +193,7 @@ const TrackmanSessionDetails: React.FC = () => {
 
   const filteredPitches = selectedPitchType === 'all' 
     ? allPitches 
-    : allPitches.filter(pitch => pitch.pitchType === selectedPitchType);
+    : allPitches.filter(pitch => pitch.pitchType.toLowerCase() === selectedPitchType.toLowerCase());
 
   const totalPages = Math.ceil(filteredPitches.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -248,7 +248,7 @@ const TrackmanSessionDetails: React.FC = () => {
                 }}
                 className="border rounded px-2 py-1 text-black"
               >
-                <option value="all text-black">All Pitch Types</option>
+                <option value="all">All Pitch Types</option>
                 {pitchTypes.map(type => (
                   <option key={type} value={type}>{type}</option>
                 ))}
