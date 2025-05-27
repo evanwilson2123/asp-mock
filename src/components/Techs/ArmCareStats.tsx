@@ -568,32 +568,66 @@ const ArmCareStats: React.FC = () => {
           <button
             key="athletePage"
             onClick={() => router.push(`/athlete/${athleteId}`)}
-            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end underline"
           >
             Profile
           </button>
           <button
             key="assessments"
-            onClick={() =>
-              router.push(`/athlete/${athleteId}/reports/assessments`)
-            }
-            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+            onClick={() => router.push(`/athlete/${athleteId}/reports/assessments`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
           >
-            Asessments
+            Assessments
           </button>
-          {['Pitching', 'Hitting', 'Goals'].map((tech) => (
-            <button
-              key={tech}
-              onClick={() =>
-                router.push(`/athlete/${athleteId}/${tech.toLowerCase()}`)
-              }
-              className={`text-gray-700 font-semibold hover:text-gray-900 transition ${
-                tech === 'Pitching' ? 'underline' : ''
-              }`}
-            >
-              {tech}
-            </button>
-          ))}
+          <button
+            key="pitching"
+            onClick={() => router.push(`/athlete/${athleteId}/pitching`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Pitching
+          </button>
+          <button
+            key="hitting"
+            onClick={() => router.push(`/athlete/${athleteId}/hitting`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Hitting
+          </button>
+          <button
+            key="forceplates"
+            onClick={() => router.push(`/athlete/${athleteId}/forceplates`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Forceplates
+          </button>
+          <button
+            key="goals"
+            onClick={() => router.push(`/athlete/${athleteId}/goals`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Goals
+          </button>
+          <button
+            key="comparison"
+            onClick={() => router.push(`/athlete/${athleteId}/comparison`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Comparison
+          </button>
+          <button
+            key="media"
+            onClick={() => router.push(`/athlete/${athleteId}/media`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Media
+          </button>
+          <button
+            key="dash-view"
+            onClick={() => router.push(`/athlete/${athleteId}/dash-view`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Dash-View
+          </button>
         </nav>
 
         {/* Overview and Tags Section */}

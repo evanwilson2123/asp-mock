@@ -121,7 +121,7 @@ const Pitching = () => {
             }
             className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
           >
-            Assesments
+            Assessments
           </button>
           {['Pitching', 'Hitting', 'Goals'].map((tech) => (
             <button
@@ -136,6 +136,13 @@ const Pitching = () => {
               {tech}
             </button>
           ))}
+          <button
+            key="forceplates"
+            onClick={() => router.push(`/athlete/${athleteId}/forceplates`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Forceplates
+          </button>
           <button
             key="comparison"
             onClick={() => router.push(`/athlete/${athleteId}/comparison`)}

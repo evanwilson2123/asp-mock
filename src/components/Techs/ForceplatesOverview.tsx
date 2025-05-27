@@ -799,27 +799,67 @@ const ForceplatesOverview: React.FC = () => {
         {/* sticky navbar (mirrors BlastMotionStats) */}
         <nav className="bg-white rounded-lg shadow-md mb-6 p-3 flex space-x-4 sticky top-0 z-10">
           <button
+            key="athletePage"
             onClick={() => router.push(`/athlete/${athleteId}`)}
-            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end underline"
           >
             Profile
           </button>
-          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((s) => (
-            <button
-              key={s}
-              onClick={() =>
-                router.push(`/athlete/${athleteId}/${s.toLowerCase()}`)
-              }
-              className="text-gray-700 font-semibold hover:text-gray-900 transition"
-            >
-              {s}
-            </button>
-          ))}
           <button
+            key="assessments"
+            onClick={() => router.push(`/athlete/${athleteId}/reports/assessments`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Assessments
+          </button>
+          <button
+            key="pitching"
+            onClick={() => router.push(`/athlete/${athleteId}/pitching`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Pitching
+          </button>
+          <button
+            key="hitting"
+            onClick={() => router.push(`/athlete/${athleteId}/hitting`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Hitting
+          </button>
+          <button
+            key="forceplates"
+            onClick={() => router.push(`/athlete/${athleteId}/forceplates`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Forceplates
+          </button>
+          <button
+            key="goals"
+            onClick={() => router.push(`/athlete/${athleteId}/goals`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Goals
+          </button>
+          <button
+            key="comparison"
+            onClick={() => router.push(`/athlete/${athleteId}/comparison`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Comparison
+          </button>
+          <button
+            key="media"
             onClick={() => router.push(`/athlete/${athleteId}/media`)}
             className="text-gray-700 font-semibold hover:text-gray-900 transition"
           >
             Media
+          </button>
+          <button
+            key="dash-view"
+            onClick={() => router.push(`/athlete/${athleteId}/dash-view`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Dash-View
           </button>
         </nav>
 

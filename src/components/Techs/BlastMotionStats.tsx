@@ -642,7 +642,16 @@ const BlastMotionStats: React.FC = () => {
           >
             Profile
           </button>
-          {['Assessments', 'Pitching', 'Hitting', 'Goals'].map((tech) => (
+          <button
+            key="assessments"
+            onClick={() =>
+              router.push(`/athlete/${athleteId}/reports/assessments`)
+            }
+            className="text-gray-700 font-semibold hover:text-gray-900 transition flex justify-end"
+          >
+            Assessments
+          </button>
+          {['Pitching', 'Hitting', 'Goals'].map((tech) => (
             <button
               key={tech}
               onClick={() =>
@@ -654,11 +663,32 @@ const BlastMotionStats: React.FC = () => {
             </button>
           ))}
           <button
+            key="forceplates"
+            onClick={() => router.push(`/athlete/${athleteId}/forceplates`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Forceplates
+          </button>
+          <button
+            key="comparison"
+            onClick={() => router.push(`/athlete/${athleteId}/comparison`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Comparison
+          </button>
+          <button
             key="media"
             onClick={() => router.push(`/athlete/${athleteId}/media`)}
             className="text-gray-700 font-semibold hover:text-gray-900 transition"
           >
             Media
+          </button>
+          <button
+            key="dash-view"
+            onClick={() => router.push(`/athlete/${athleteId}/dash-view`)}
+            className="text-gray-700 font-semibold hover:text-gray-900 transition"
+          >
+            Dash-View
           </button>
         </nav>
         {/* Blast Motion Overview and Inline Tag Management */}
