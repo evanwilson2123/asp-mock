@@ -73,11 +73,11 @@ interface EarlyConnectedPercents {
 }
 
 const batSpeedThresholds = {
-  "youth": 60,
-  "high school": 67,
-  "college": 75,
-  "pro": 75,
-}
+  youth: 60,
+  'high school': 67,
+  college: 75,
+  pro: 75,
+};
 
 /**
  * BlastMotionSessionDetails Component
@@ -165,8 +165,15 @@ const BlastMotionSessionDetails: React.FC = () => {
   };
 
   // Calculate percent of swings in the 0-15 attack angle box
-  const swingsInBox = attackAngleData.filter(v => v !== null && v >= 0 && v <= 15).length;
-  const percentInBox = swings.length > 0 ? (swingsInBox / swings.length) * 100 : 0;
+  const swingsInBox = attackAngleData.filter(
+    (v) => v !== null && v >= 0 && v <= 15
+  ).length;
+  const percentInBox =
+    swings.length > 0 ? (swingsInBox / swings.length) * 100 : 0;
+
+  const validAttackAngles = attackAngleData.filter(
+    (v): v is number => v !== null
+  );
 
   const attackAngleLineChartOptions = {
     responsive: true,
@@ -187,8 +194,8 @@ const BlastMotionSessionDetails: React.FC = () => {
     scales: {
       y: {
         title: { display: true, text: 'Attack Angle (°)' },
-        min: Math.min(0, ...attackAngleData.filter(v => v !== null)),
-        max: Math.max(20, ...attackAngleData.filter(v => v !== null)),
+        min: Math.min(0, ...validAttackAngles),
+        max: Math.max(20, ...validAttackAngles),
       },
       x: {
         title: { display: true, text: 'Swing Number' },
@@ -208,18 +215,21 @@ const BlastMotionSessionDetails: React.FC = () => {
     }));
 
   const earlyConnectedPercents: EarlyConnectedPercents = (() => {
-    if (scatterDataPoints.length === 0) return { earlyConnected: 0, connectedAtImpact: 0, connected: 0 };
-    let earlyConnected = 0, connectedAtImpact = 0, connected = 0;
+    if (scatterDataPoints.length === 0)
+      return { earlyConnected: 0, connectedAtImpact: 0, connected: 0 };
+    let earlyConnected = 0,
+      connectedAtImpact = 0,
+      connected = 0;
     scatterDataPoints.forEach((pt) => {
       if (pt.x <= 100 && pt.x >= 80 && pt.y <= 100 && pt.y >= 80) connected++;
       if (pt.x <= 100 && pt.x >= 80) earlyConnected++;
       if (pt.y <= 100 && pt.y >= 80) connectedAtImpact++;
-    })
+    });
     return {
       earlyConnected: (earlyConnected / scatterDataPoints.length) * 100,
       connectedAtImpact: (connectedAtImpact / scatterDataPoints.length) * 100,
       connected: (connected / scatterDataPoints.length) * 100,
-    }
+    };
   })();
 
   const regressionDataPoints = (() => {
@@ -283,21 +293,39 @@ const BlastMotionSessionDetails: React.FC = () => {
             xMin: 80,
             xMax: 100,
             yMin: 0,
-            yMax: scatterDataPoints.reduce((max, pt) => Math.max(max, pt.y), 0) + 10,
+            yMax:
+              scatterDataPoints.reduce((max, pt) => Math.max(max, pt.y), 0) +
+              10,
             backgroundColor: 'rgba(128, 128, 128, 0.2)',
             borderColor: 'rgba(0, 0, 0, 1)',
             borderWidth: 1,
           },
           shadedBox2: {
             type: 'box' as const,
-            xMin: (scatterDataPoints.reduce((min, pt) => Math.min(min, pt.x), 100) - 10) >= 50 ? 50 : scatterDataPoints.reduce((min, pt) => Math.min(min, pt.x), 100) - 10,
-            xMax: (scatterDataPoints.reduce((max, pt) => Math.max(max, pt.x), 0) + 10) <= 150 ? 150 : scatterDataPoints.reduce((max, pt) => Math.max(max, pt.x), 0) + 10,
+            xMin:
+              scatterDataPoints.reduce((min, pt) => Math.min(min, pt.x), 100) -
+                10 >=
+              50
+                ? 50
+                : scatterDataPoints.reduce(
+                    (min, pt) => Math.min(min, pt.x),
+                    100
+                  ) - 10,
+            xMax:
+              scatterDataPoints.reduce((max, pt) => Math.max(max, pt.x), 0) +
+                10 <=
+              150
+                ? 150
+                : scatterDataPoints.reduce(
+                    (max, pt) => Math.max(max, pt.x),
+                    0
+                  ) + 10,
             yMin: 80,
             yMax: 100,
             backgroundColor: 'rgba(128, 128, 128, 0.2)',
             borderColor: 'rgba(0, 0, 0, 1)',
             borderWidth: 1,
-          }
+          },
         },
       },
     },
@@ -440,9 +468,15 @@ const BlastMotionSessionDetails: React.FC = () => {
   const highSchoolThreshold = batSpeedThresholds['high school'];
   const collegeProThreshold = batSpeedThresholds.college;
 
-  const swingsAboveYouth = swings.filter(s => (s.batSpeed || 0) >= youthThreshold).length;
-  const swingsAboveHighSchool = swings.filter(s => (s.batSpeed || 0) >= highSchoolThreshold).length;
-  const swingsAboveCollegePro = swings.filter(s => (s.batSpeed || 0) >= collegeProThreshold).length;
+  const swingsAboveYouth = swings.filter(
+    (s) => (s.batSpeed || 0) >= youthThreshold
+  ).length;
+  const swingsAboveHighSchool = swings.filter(
+    (s) => (s.batSpeed || 0) >= highSchoolThreshold
+  ).length;
+  const swingsAboveCollegePro = swings.filter(
+    (s) => (s.batSpeed || 0) >= collegeProThreshold
+  ).length;
 
   const percentAboveYouth = (swingsAboveYouth / swings.length) * 100;
   const percentAboveHighSchool = (swingsAboveHighSchool / swings.length) * 100;
@@ -457,12 +491,12 @@ const BlastMotionSessionDetails: React.FC = () => {
     datasets: [
       {
         label: 'Bat Speed (mph)',
-        data: swings.map(s => s.batSpeed),
+        data: swings.map((s) => s.batSpeed),
         backgroundColor: 'rgba(54, 162, 235, 0.8)',
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 1,
-      }
-    ]
+      },
+    ],
   };
 
   // Pagination logic for swing details table
@@ -474,16 +508,16 @@ const BlastMotionSessionDetails: React.FC = () => {
   const batSpeedOptions = {
     responsive: true,
     plugins: {
-      legend: { 
+      legend: {
         position: 'top' as const,
         labels: {
           boxWidth: 20,
           padding: 20,
           color: 'rgba(0, 0, 0, 0.8)',
           font: {
-            size: 12
-          }
-        }
+            size: 12,
+          },
+        },
       },
       annotation: {
         annotations: {
@@ -498,8 +532,8 @@ const BlastMotionSessionDetails: React.FC = () => {
               position: 'start',
               backgroundColor: 'rgba(255, 99, 132, 0.8)',
               color: 'white',
-              padding: 4
-            }
+              padding: 4,
+            },
           },
           highSchoolThreshold: {
             type: 'line',
@@ -512,8 +546,8 @@ const BlastMotionSessionDetails: React.FC = () => {
               position: 'start',
               backgroundColor: 'rgba(75, 192, 192, 0.8)',
               color: 'white',
-              padding: 4
-            }
+              padding: 4,
+            },
           },
           collegeProThreshold: {
             type: 'line',
@@ -526,11 +560,11 @@ const BlastMotionSessionDetails: React.FC = () => {
               position: 'start',
               backgroundColor: 'rgba(153, 102, 255, 0.8)',
               color: 'white',
-              padding: 4
-            }
-          }
-        }
-      }
+              padding: 4,
+            },
+          },
+        },
+      },
     },
     scales: {
       y: {
@@ -540,10 +574,14 @@ const BlastMotionSessionDetails: React.FC = () => {
           text: 'Bat Speed (mph)',
           font: {
             size: 14,
-            weight: 'bold'
-          }
+            weight: 'bold',
+          },
         },
-        max: Math.max(...batSpeedData.datasets[0].data as number[], batSpeedThresholds.college) + 5
+        max:
+          Math.max(
+            ...(batSpeedData.datasets[0].data as number[]),
+            batSpeedThresholds.college
+          ) + 5,
       },
       x: {
         title: {
@@ -551,11 +589,11 @@ const BlastMotionSessionDetails: React.FC = () => {
           text: 'Swing Number',
           font: {
             size: 14,
-            weight: 'bold'
-          }
-        }
-      }
-    }
+            weight: 'bold',
+          },
+        },
+      },
+    },
   } as const;
 
   return (
@@ -615,10 +653,17 @@ const BlastMotionSessionDetails: React.FC = () => {
             Attack Angle Over Swings
           </h2>
           <div className="mb-2 text-gray-700 text-xs md:text-sm font-medium text-center">
-            {percentInBox.toFixed(1)}% of swings had an attack angle between 0° and 15°.
+            {percentInBox.toFixed(1)}% of swings had an attack angle between 0°
+            and 15°.
           </div>
           <div className="w-full max-w-3xl mx-auto h-[400px]">
-            <Line data={attackAngleLineChartData} options={{...attackAngleLineChartOptions, maintainAspectRatio: false}} />
+            <Line
+              data={attackAngleLineChartData}
+              options={{
+                ...attackAngleLineChartOptions,
+                maintainAspectRatio: false,
+              }}
+            />
           </div>
         </div>
         {/* First Scatter Chart: Early Connection vs Connection At Impact */}
@@ -627,13 +672,19 @@ const BlastMotionSessionDetails: React.FC = () => {
             Early Connection vs Connection At Impact
           </h2>
           <p className=" flex flex-col mb-4 text-xs md:text-sm text-gray-700 justify-center items-center">
-            * {earlyConnectedPercents.earlyConnected.toFixed(1)}% of swings were early connected. <br />
-            * {earlyConnectedPercents.connectedAtImpact.toFixed(1)}% of swings were connected at impact. <br />
-            * {earlyConnectedPercents.connected.toFixed(1)}% of swings were connected.
+            * {earlyConnectedPercents.earlyConnected.toFixed(1)}% of swings were
+            early connected. <br />*{' '}
+            {earlyConnectedPercents.connectedAtImpact.toFixed(1)}% of swings
+            were connected at impact. <br />*{' '}
+            {earlyConnectedPercents.connected.toFixed(1)}% of swings were
+            connected.
           </p>
           {scatterDataPoints.length > 0 ? (
             <div className="w-full max-w-3xl mx-auto h-[400px]">
-              <Scatter data={scatterChartData} options={{...scatterChartOptions, maintainAspectRatio: false}} />
+              <Scatter
+                data={scatterChartData}
+                options={{ ...scatterChartOptions, maintainAspectRatio: false }}
+              />
             </div>
           ) : (
             <p className="text-gray-500">
@@ -652,7 +703,13 @@ const BlastMotionSessionDetails: React.FC = () => {
           </p>
           {scatterDataPoints2.length > 0 ? (
             <div className="w-full max-w-3xl mx-auto h-[400px]">
-              <Scatter data={scatterChartData2} options={{...scatterChartOptions2, maintainAspectRatio: false}} />
+              <Scatter
+                data={scatterChartData2}
+                options={{
+                  ...scatterChartOptions2,
+                  maintainAspectRatio: false,
+                }}
+              />
             </div>
           ) : (
             <p className="text-gray-500">
@@ -666,7 +723,10 @@ const BlastMotionSessionDetails: React.FC = () => {
             Average Scores
           </h2>
           <div className="w-full max-w-2xl mx-auto h-[400px]">
-            <PolarArea data={polarData} options={{...polarOptions, maintainAspectRatio: false}} />
+            <PolarArea
+              data={polarData}
+              options={{ ...polarOptions, maintainAspectRatio: false }}
+            />
           </div>
         </div>
         {/* Bat Speed Bar Chart */}
@@ -676,13 +736,26 @@ const BlastMotionSessionDetails: React.FC = () => {
           </h2>
           <div className="mb-2 text-gray-700 text-xs md:text-sm font-medium text-center space-y-1">
             <div className={currentPlayLevel === 'youth' ? 'font-bold' : ''}>
-              {percentAboveYouth.toFixed(1)}% of swings ({swingsAboveYouth} of {swings.length}) meet or exceed Youth threshold (50 mph)
+              {percentAboveYouth.toFixed(1)}% of swings ({swingsAboveYouth} of{' '}
+              {swings.length}) meet or exceed Youth threshold (50 mph)
             </div>
-            <div className={currentPlayLevel === 'high school' ? 'font-bold' : ''}>
-              {percentAboveHighSchool.toFixed(1)}% of swings ({swingsAboveHighSchool} of {swings.length}) meet or exceed High School threshold (65 mph)
+            <div
+              className={currentPlayLevel === 'high school' ? 'font-bold' : ''}
+            >
+              {percentAboveHighSchool.toFixed(1)}% of swings (
+              {swingsAboveHighSchool} of {swings.length}) meet or exceed High
+              School threshold (65 mph)
             </div>
-            <div className={(currentPlayLevel === 'college' || currentPlayLevel === 'pro') ? 'font-bold' : ''}>
-              {percentAboveCollegePro.toFixed(1)}% of swings ({swingsAboveCollegePro} of {swings.length}) meet or exceed College/Pro threshold (75 mph)
+            <div
+              className={
+                currentPlayLevel === 'college' || currentPlayLevel === 'pro'
+                  ? 'font-bold'
+                  : ''
+              }
+            >
+              {percentAboveCollegePro.toFixed(1)}% of swings (
+              {swingsAboveCollegePro} of {swings.length}) meet or exceed
+              College/Pro threshold (75 mph)
             </div>
           </div>
           <div className="w-full max-w-3xl mx-auto h-[400px]">

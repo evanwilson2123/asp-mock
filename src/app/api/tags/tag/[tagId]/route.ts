@@ -62,3 +62,38 @@ export async function DELETE(req: NextRequest, context: any) {
     );
   }
 }
+
+export async function PUT(req: NextRequest, context: any) {
+  const { userId } = await auth();
+  if (!userId) {
+    console.log('Unauthenticated Request');
+    return NextResponse.json({ error: "Unauthorized Request" }, { status: 401 });
+  }
+  const tagId = await context.params.tagId as string;
+  if (!tagId) {
+    console.log('Missing tagId');
+    return NextResponse.json({ error: 'Missing tagId' }, { status: 400 });
+  }
+  try {
+    await connectDB();
+
+    const tag = await AthleteTag.findById(tagId);
+    if (!tag) {
+      console.log('Tag to edit not found');
+      return NextResponse.json({ error: 'Tag to edit not found' }, { status: 404 });
+    }
+
+    const { name, description, notes, links } = await req.json();
+    if (name) tag.name = name;
+    if (description) tag.description = description;
+    if (notes) tag.notes = notes;
+    if (links) tag.links = links;
+
+    await tag.save();
+
+    return NextResponse.json({ message: 'Tag updated' }, { status: 200 });
+  } catch (error: any) {
+    console.error(error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

@@ -30,6 +30,9 @@ const ViewTag = () => {
   const [tag, setTag] = useState<IAthleteTag | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTag, setEditedTag] = useState<IAthleteTag | null>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   // Next.js navigation hooks.
   const { tech, tagId } = useParams();
@@ -59,6 +62,72 @@ const ViewTag = () => {
 
     fetchTag();
   }, [tech, tagId]);
+
+  const handleEdit = () => {
+    setEditedTag(tag);
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setEditedTag(null);
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    if (!editedTag) return;
+    
+    setSaveLoading(true);
+    try {
+      const res = await fetch(`/api/tags/tag/${tagId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editedTag),
+      });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMessage(data.error);
+        return;
+      }
+      
+      setTag(editedTag);
+      setIsEditing(false);
+      setEditedTag(null);
+    } catch (error: any) {
+      console.error(error);
+      setErrorMessage(error.message || 'Failed to save changes');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof IAthleteTag, value: any) => {
+    if (!editedTag) return;
+    setEditedTag(prev => prev ? { ...prev, [field]: value } : null);
+  };
+
+  const handleLinkChange = (index: number, value: string) => {
+    if (!editedTag?.links) return;
+    const newLinks = [...editedTag.links];
+    newLinks[index] = value;
+    setEditedTag(prev => prev ? { ...prev, links: newLinks } : null);
+  };
+
+  const addLink = () => {
+    if (!editedTag) return;
+    setEditedTag(prev => prev ? { 
+      ...prev, 
+      links: [...(prev.links || []), ''] 
+    } : null);
+  };
+
+  const removeLink = (index: number) => {
+    if (!editedTag?.links) return;
+    const newLinks = editedTag.links.filter((_, i) => i !== index);
+    setEditedTag(prev => prev ? { ...prev, links: newLinks } : null);
+  };
 
   if (loading) return <Loader />;
   if (errorMessage)
@@ -94,32 +163,137 @@ const ViewTag = () => {
       {/* Main Content Area */}
       <div className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
-          {/* Header with gradient background and back button */}
-          <button
-            onClick={() => router.back()}
-            className="text-black mr-4 hover:underline text-2xl mb-4"
-          >
-            &larr; Back
-          </button>
-          <div className="bg-gray-900 rounded-t-2xl p-6 shadow-lg flex items-center">
-            <h1 className="text-4xl font-extrabold text-white">{tag?.name}</h1>
-          </div>
-          {/* Content card */}
-          <div className="bg-white rounded-b-2xl shadow-2xl p-8">
-            {tag?.description && (
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-                  Description
-                </h2>
-                <p className="text-gray-700">{tag.description}</p>
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => router.back()}
+              className="text-black hover:underline text-2xl"
+            >
+              &larr; Back
+            </button>
+            {!isEditing ? (
+              <button
+                onClick={handleEdit}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Edit Tag
+              </button>
+            ) : (
+              <div className="space-x-2">
+                <button
+                  onClick={handleCancel}
+                  className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                  disabled={saveLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                  disabled={saveLoading}
+                >
+                  {saveLoading ? 'Saving...' : 'Save Changes'}
+                </button>
               </div>
             )}
+          </div>
+
+          <div className="bg-gray-900 rounded-t-2xl p-6 shadow-lg flex items-center">
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedTag?.name || ''}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className="text-4xl font-extrabold text-white bg-transparent border-b-2 border-white focus:outline-none focus:border-blue-500 w-full"
+              />
+            ) : (
+              <h1 className="text-4xl font-extrabold text-white">{tag?.name}</h1>
+            )}
+          </div>
+
+          <div className="bg-white rounded-b-2xl shadow-2xl p-8">
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                Description
+              </h2>
+              {isEditing ? (
+                <textarea
+                  value={editedTag?.description || ''}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  className="text-black w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              ) : (
+                <p className="text-gray-700">{tag?.description}</p>
+              )}
+            </div>
+
             <div className="mb-6">
               <h2 className="text-2xl font-semibold text-gray-800 mb-2">
                 Notes
               </h2>
-              <p className="text-gray-700">{tag?.notes}</p>
+              {isEditing ? (
+                <textarea
+                  value={editedTag?.notes || ''}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  className="text-black w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              ) : (
+                <p className="text-gray-700">{tag?.notes}</p>
+              )}
             </div>
+
+            {/* Links Section */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-2xl font-semibold text-gray-800">Links</h2>
+                {isEditing && (
+                  <button
+                    onClick={addLink}
+                    className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 text-sm"
+                  >
+                    Add Link
+                  </button>
+                )}
+              </div>
+              {isEditing ? (
+                <div className="space-y-2">
+                  {editedTag?.links?.map((link, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={link}
+                        onChange={(e) => handleLinkChange(index, e.target.value)}
+                        className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter link URL"
+                      />
+                      <button
+                        onClick={() => removeLink(index)}
+                        className="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {tag?.links?.map((link, index) => (
+                    <li key={index}>
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             {/* Video Embed Section */}
             {videoLinks.length > 0 && (
               <div className="mb-6">
@@ -147,27 +321,6 @@ const ViewTag = () => {
                     )}
                   </div>
                 ))}
-              </div>
-            )}
-            {tag?.links && tag.links.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-                  Links
-                </h2>
-                <ul className="space-y-2">
-                  {tag.links.flat().map((link, index) => (
-                    <li key={index}>
-                      <a
-                        href={link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
               </div>
             )}
           </div>

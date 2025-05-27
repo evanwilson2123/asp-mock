@@ -9,10 +9,18 @@ import Sidebar from '@/components/Dash/Sidebar';
 import { TrashIcon, FolderIcon } from '@heroicons/react/24/solid';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useRouter } from 'next/navigation';
 
 interface DeletePopupState {
   show: boolean;
   tagId: string;
+  confirmText: string;
+}
+
+interface DeleteFolderPopupState {
+  show: boolean;
+  folderId: string;
+  folderName: string;
   confirmText: string;
 }
 
@@ -44,6 +52,7 @@ export const DraggableTag: React.FC<DraggableTagProps> = ({
   onShowDelete,
   isOpen,
 }) => {
+  const router = useRouter();
   const [{ isDragging }, drag] = useDrag({
     type: ItemTypes.TAG,
     item: { id: tag._id.toString(), sourceFolderId },
@@ -51,15 +60,28 @@ export const DraggableTag: React.FC<DraggableTagProps> = ({
       isDragging: monitor.isDragging(),
     }),
   });
+
+  const handleTagClick = (e: React.MouseEvent) => {
+    // Prevent navigation if clicking on buttons or if dragging
+    if (
+      (e.target as HTMLElement).closest('button') ||
+      isDragging
+    ) {
+      return;
+    }
+    router.push(`/tags/${tag._id}`);
+  };
+
   return (
     <div
       ref={drag as any}
       style={{ opacity: isDragging ? 0.5 : 1 }}
-      className="bg-white rounded-lg shadow-md p-4 mb-4"
+      className="bg-white rounded-lg shadow-md p-4 mb-4 cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={handleTagClick}
     >
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-700">{tag.name}</h2>
-        <div className="flex space-x-2">
+        <h2 className="text-xl font-bold text-gray-700 hover:text-blue-600 transition-colors">{tag.name}</h2>
+        <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onToggleDetails(tag._id.toString())}
             className="text-gray-500 hover:text-gray-700 transition"
@@ -120,7 +142,7 @@ interface FolderItemProps {
   onDropTag: (tagId: string, destinationFolderId: string) => void;
   onToggleDetails: (tagId: string) => void;
   onShowDelete: (tagId: string) => void;
-  onDeleteFolder: (folderId: string) => void;
+  onDeleteFolder: (folderId: string, folderName: string) => void;
   openTagId: string | null;
 }
 export const FolderItem: React.FC<FolderItemProps> = ({
@@ -153,7 +175,10 @@ export const FolderItem: React.FC<FolderItemProps> = ({
         <div className="flex items-center space-x-2">
           <h2 className="text-2xl font-bold text-gray-700">{folder.name}</h2>
           <button
-            onClick={() => onDeleteFolder(folder._id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteFolder(folder._id, folder.name);
+            }}
             className="text-red-500 hover:text-red-700"
           >
             <TrashIcon className="h-5 w-5" />
@@ -252,6 +277,12 @@ const ManageTags = () => {
   const [deletePopup, setDeletePopup] = useState<DeletePopupState>({
     show: false,
     tagId: '',
+    confirmText: '',
+  });
+  const [deleteFolderPopup, setDeleteFolderPopup] = useState<DeleteFolderPopupState>({
+    show: false,
+    folderId: '',
+    folderName: '',
     confirmText: '',
   });
 
@@ -413,10 +444,19 @@ const ManageTags = () => {
     }
   };
 
-  const handleDeleteFolder = async (folderId: string) => {
+  const showDeleteFolderPopup = (folderId: string, folderName: string) => {
+    setDeleteFolderPopup({ show: true, folderId, folderName, confirmText: '' });
+  };
+
+  const handleDeleteFolder = async () => {
+    if (deleteFolderPopup.confirmText !== 'DELETE') {
+      alert("Please type 'DELETE' to confirm deletion.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await fetch(`/api/tags/folder/${folderId}`, {
+      const res = await fetch(`/api/tags/folder/${deleteFolderPopup.folderId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -424,7 +464,8 @@ const ManageTags = () => {
         setErrorMessage('Error deleting folder');
         return;
       }
-      setFolders((prev) => prev.filter((folder) => folder._id !== folderId));
+      setFolders((prev) => prev.filter((folder) => folder._id !== deleteFolderPopup.folderId));
+      setDeleteFolderPopup({ show: false, folderId: '', folderName: '', confirmText: '' });
     } catch (error: any) {
       console.error(error);
       setErrorMessage('Error deleting folder');
@@ -540,7 +581,7 @@ const ManageTags = () => {
                   onDropTag={handleDropTag}
                   onToggleDetails={toggleTagDetails}
                   onShowDelete={showDeletePopup}
-                  onDeleteFolder={handleDeleteFolder}
+                  onDeleteFolder={showDeleteFolderPopup}
                   openTagId={openTagId}
                 />
               ))}
@@ -938,6 +979,51 @@ const ManageTags = () => {
                     }
                     await handleDeleteTag();
                   }}
+                  className="px-4 py-2 border rounded bg-red-500 text-white"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Folder Confirmation Modal */}
+        {deleteFolderPopup.show && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded shadow-lg w-80">
+              <h3 className="text-lg font-bold mb-4 text-black">
+                Confirm Folder Deletion
+              </h3>
+              <p className="mb-2 text-black">
+                Are you sure you want to delete the folder &quot;{deleteFolderPopup.folderName}&quot;?
+              </p>
+              <p className="mb-2 text-black">
+                Type <strong>DELETE</strong> to confirm deletion.
+              </p>
+              <input
+                type="text"
+                placeholder="DELETE"
+                value={deleteFolderPopup.confirmText}
+                onChange={(e) =>
+                  setDeleteFolderPopup((prev) => ({
+                    ...prev,
+                    confirmText: e.target.value,
+                  }))
+                }
+                className="border p-2 mb-4 w-full text-black"
+              />
+              <div className="flex justify-end">
+                <button
+                  onClick={() =>
+                    setDeleteFolderPopup({ show: false, folderId: '', folderName: '', confirmText: '' })
+                  }
+                  className="mr-4 px-4 py-2 border rounded text-black"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteFolder}
                   className="px-4 py-2 border rounded bg-red-500 text-white"
                 >
                   Confirm
