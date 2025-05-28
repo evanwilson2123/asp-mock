@@ -170,14 +170,14 @@ const ViewTag = () => {
             >
               &larr; Back
             </button>
-            {!isEditing ? (
+            {!isEditing && role !== 'ATHLETE' ? (
               <button
                 onClick={handleEdit}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
                 Edit Tag
               </button>
-            ) : (
+            ) : isEditing ? (
               <div className="space-x-2">
                 <button
                   onClick={handleCancel}
@@ -194,7 +194,7 @@ const ViewTag = () => {
                   {saveLoading ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
-            )}
+            ): null}
           </div>
 
           <div className="bg-gray-900 rounded-t-2xl p-6 shadow-lg flex items-center">
