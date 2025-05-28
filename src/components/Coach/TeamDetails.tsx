@@ -227,7 +227,7 @@ const TeamDetails = () => {
         <h1 className='text-2xl font-bold text-gray-700 justify-center flex mb-4'>Athletes</h1>
         {/* Add Athlete Button and Modal Form */}
         <div className="mb-4">
-          {!showAddAthlete && (
+          {!showAddAthlete && role !== 'ATHLETE' && (
             <button
               onClick={openAddModal}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
@@ -306,13 +306,15 @@ const TeamDetails = () => {
                   <td className="text-black py-2 px-4">{athlete.email}</td>
                   <td className="text-black py-2 px-4">{athlete.level}</td>
                   <td className="py-2 px-4" onClick={e => e.stopPropagation()}>
+                    {role !== 'ATHLETE' && (
                     <button
                       onClick={() => handleRemoveAthlete(athlete._id)}
                       className="text-red-600 hover:text-red-800"
                       title="Remove Athlete"
                     >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

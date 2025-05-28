@@ -297,6 +297,7 @@ const ManageTags = () => {
 
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
+  const router = useRouter();
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -605,6 +606,8 @@ const ManageTags = () => {
   if (loading) return <Loader />;
   if (errorMessage)
     return <ErrorMessage role={role as string} message={errorMessage} />;
+
+  if (role === 'ATHLETE') router.push("/")
 
   return (
     <DndProvider backend={HTML5Backend}>

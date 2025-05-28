@@ -89,13 +89,20 @@ export async function GET() {
 
     const client = await clerkClient();
     const user = await client.users?.getUser(userId);
-    const coachId = user.publicMetadata?.objectId;
-    if (!coachId) {
+    const role = user?.publicMetadata?.role as string;
+    const id = user?.publicMetadata?.objectId;
+    if (role === 'ATHLETE') {
+      const teams = await Group.find({
+        $or: [{ athletes: id }]
+      })
+      return NextResponse.json({ teams }, { status: 200 });
+    }
+    if (!id) {
       return NextResponse.json({ error: 'missing Coach ID' }, { status: 400 });
     }
 
     const teams = await Group.find({
-      $or: [{ headCoach: coachId }, { assistants: coachId }],
+      $or: [{ headCoach: id }, { assistants: id }],
     }).exec();
 
     return NextResponse.json({ teams }, { status: 200 });

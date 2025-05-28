@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
 import { useUser } from '@clerk/nextjs';
+import AthleteSidebar from '../Dash/AthleteSidebar';
 
 interface Team {
   _id: string;
@@ -69,7 +70,7 @@ const MyTeams = () => {
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Sidebar */}
       <div className="w-64 bg-gray-900 text-white">
-        {role === 'COACH' ? <CoachSidebar /> : <Sidebar />}
+        {role === 'COACH' ? <CoachSidebar /> : role === 'ATHLETE' ? <AthleteSidebar /> : <Sidebar />}
       </div>
 
       {/* Main Content Area */}

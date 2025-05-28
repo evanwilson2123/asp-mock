@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import CoachSidebar from '@/components/Dash/CoachSidebar';
 import AthleteSidebar from '@/components/Dash/AthleteSidebar';
 import Sidebar from '@/components/Dash/Sidebar';
+import { useRouter } from 'next/navigation';
 
 /**
  * ForcePlatesUpload
@@ -29,6 +30,8 @@ const ForcePlatesUpload = () => {
   const [fileQueue, setFileQueue] = useState<FileUploadStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  const router = useRouter();
+  
   /* ----------------------------- handlers ----------------------------- */
   const onSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -105,6 +108,8 @@ const ForcePlatesUpload = () => {
   const clearCompleted = () => {
     setFileQueue(prev => prev.filter(f => f.status === 'pending' || f.status === 'uploading'));
   };
+
+  if (role === 'ATHLETE') router.push("/")
 
   /* ----------------------------- UI ----------------------------- */
   return (

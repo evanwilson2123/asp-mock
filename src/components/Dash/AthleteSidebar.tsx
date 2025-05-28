@@ -25,7 +25,6 @@ import { useUser } from '@clerk/nextjs';
 const AthleteSidebar: React.FC = () => {
   const pathname = usePathname();
   const [isCoachesToolsOpen, setIsCoachesToolsOpen] = useState(false); // State to manage dropdown
-  const [isReportsOpen, setIsReportsOpen] = useState(false); // State to manage reports drop down
 
   const { user, isLoaded } = useUser();
   const athleteId = user?.publicMetadata?.objectId;
@@ -68,7 +67,7 @@ const AthleteSidebar: React.FC = () => {
             <Link href="/csv-upload">CSV-Upload</Link>
           </li> */}
             {/* Reports Section */}
-            <li
+            {/* <li
               className="p-3 rounded hover:bg-gray-700 text-base flex justify-between items-center cursor-pointer"
               onClick={() => setIsReportsOpen(!isReportsOpen)}
             >
@@ -89,10 +88,10 @@ const AthleteSidebar: React.FC = () => {
                   d="M19 9l-7 7-7-7"
                 />
               </svg>
-            </li>
+            </li> */}
 
             {/* Dropdown Options For Reports*/}
-            {isReportsOpen && (
+            {/* {isReportsOpen && (
               <ul className="mt-2 space-y-2 pl-4">
                 <li
                   className={`p-2 rounded ${
@@ -114,7 +113,7 @@ const AthleteSidebar: React.FC = () => {
                   <Link href="/arm-care">ArmCare.com</Link>
                 </li>
               </ul>
-            )}
+            )} */}
 
             <li
               className={`hover:bg-gray-700 p-3 rounded ${
