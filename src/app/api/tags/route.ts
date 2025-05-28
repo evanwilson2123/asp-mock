@@ -3,6 +3,31 @@ import AthleteTag from '@/models/athleteTag';
 import TagFolder from '@/models/tagFolder';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { writeFile } from 'fs/promises';
+import path from 'path';
+import { existsSync, mkdirSync } from 'fs';
+
+// Helper function to save uploaded files
+async function saveUploadedFile(file: File, tagId: string): Promise<string> {
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  // Create uploads directory if it doesn't exist
+  const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'tags', tagId);
+  if (!existsSync(uploadDir)) {
+    mkdirSync(uploadDir, { recursive: true });
+  }
+
+  // Generate unique filename
+  const uniqueFilename = `${Date.now()}-${file.name}`;
+  const filePath = path.join(uploadDir, uniqueFilename);
+  
+  // Save the file
+  await writeFile(filePath, buffer);
+  
+  // Return the public URL path
+  return `/uploads/tags/${tagId}/${uniqueFilename}`;
+}
 
 export async function GET() {
   const { userId } = await auth();
@@ -40,22 +65,23 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const {
-      name,
-      description,
-      notes,
-      links,
-      automatic, // boolean flag indicating Automatic vs Standard tag
-      tech, // expected to be one of 'blast', 'hittrax', 'trackman', 'armcare', 'forceplates'
-      session, // boolean flag: true if the tag is for a session, false if for an overview
-      metric,
-      min,
-      max,
-      greaterThan,
-      lessThan,
-    } = await req.json();
+    // Handle multipart form data
+    const formData = await req.formData();
+    
+    // Get basic fields
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+    const notes = formData.get('notes') as string;
+    const links = formData.get('links') as string;
+    const automatic = formData.get('automatic') as string;
+    const tech = formData.get('tech') as string;
+    const metric = formData.get('metric') as string;
+    const min = formData.get('min') as string;
+    const max = formData.get('max') as string;
+    const greaterThan = formData.get('greaterThan') as string;
+    const lessThan = formData.get('lessThan') as string;
 
-    // Check required fields for both Standard and Automatic
+    // Check required fields
     if (!name || !notes) {
       console.log('Missing required fields');
       return NextResponse.json(
@@ -64,33 +90,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Base tag data common to both forms
+    // Create base tag data
     const tagData: any = {
       name,
       description,
       notes,
-      links,
-      automatic: Boolean(automatic),
-      session: Boolean(session),
+      links: links ? JSON.parse(links) : undefined,
+      automatic: automatic === 'true',
+      session: false,
     };
 
-    // If the tag is created using the Automatic form,
-    // add additional properties.
-    if (automatic) {
-      tagData.tech = tech; // Make sure the frontend sends the mapped enum (e.g. "blast")
+    // Add automatic tag properties if applicable
+    if (automatic === 'true') {
+      tagData.tech = tech;
       tagData.metric = metric;
-
-      // Convert to numbers if provided
-      if (min !== undefined && min !== '') tagData.min = Number(min);
-      if (max !== undefined && max !== '') tagData.max = Number(max);
-      if (greaterThan !== undefined && greaterThan !== '')
-        tagData.greaterThan = Number(greaterThan);
-      if (lessThan !== undefined && lessThan !== '')
-        tagData.lessThan = Number(lessThan);
+      if (min) tagData.min = Number(min);
+      if (max) tagData.max = Number(max);
+      if (greaterThan) tagData.greaterThan = Number(greaterThan);
+      if (lessThan) tagData.lessThan = Number(lessThan);
     }
 
+    // Create the tag first to get its ID
     const tag = new AthleteTag(tagData);
     await tag.save();
+
+    // Handle image uploads
+    const imageFiles = formData.getAll('images') as File[];
+    if (imageFiles.length > 0) {
+      const uploadPromises = imageFiles.map(file => saveUploadedFile(file, tag._id.toString()));
+      const newImageUrls = await Promise.all(uploadPromises);
+      tag.media = newImageUrls;
+      await tag.save();
+    }
 
     return NextResponse.json({ tag }, { status: 200 });
   } catch (error: any) {

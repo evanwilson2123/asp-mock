@@ -1,6 +1,12 @@
 import { Schema, model, models, Types } from 'mongoose';
 
-export type Tech = 'blast' | 'hittrax' | 'trackman' | 'armcare' | 'forceplates' | 'assessment';
+export type Tech =
+  | 'blast'
+  | 'hittrax'
+  | 'trackman'
+  | 'armcare'
+  | 'forceplates'
+  | 'assessment';
 
 export interface IAthleteTag {
   _id: Types.ObjectId;
@@ -18,6 +24,7 @@ export interface IAthleteTag {
   max?: number;
   greaterThan?: number;
   lessThan: number;
+  media: string[];
 }
 
 const athleteTagSchema = new Schema<IAthleteTag>({
@@ -39,6 +46,7 @@ const athleteTagSchema = new Schema<IAthleteTag>({
   max: { type: Number, required: false },
   greaterThan: { type: Number, required: false },
   lessThan: { type: Number, required: false },
+  media: [{ type: String, required: true, default: [] }],
 });
 
 const AthleteTag =

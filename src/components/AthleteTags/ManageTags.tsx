@@ -24,6 +24,11 @@ interface DeleteFolderPopupState {
   confirmText: string;
 }
 
+interface ImagePreview {
+  file: File;
+  preview: string;
+}
+
 export interface TagFolder {
   _id: string;
   name: string;
@@ -286,6 +291,10 @@ const ManageTags = () => {
     confirmText: '',
   });
 
+  // media states
+  const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const { user } = useUser();
   const role = user?.publicMetadata?.role;
 
@@ -352,58 +361,114 @@ const ManageTags = () => {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    setUploadError(null);
+    const newPreviews: ImagePreview[] = [];
+
+    // Validate each file
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        setUploadError('Only image files are allowed');
+        continue;
+      }
+
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setUploadError('File size must be less than 5MB');
+        continue;
+      }
+
+      const preview = URL.createObjectURL(file);
+      newPreviews.push({ file, preview });
+    }
+
+    setImagePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const removeImage = (index: number) => {
+    setImagePreviews(prev => {
+      const newPreviews = [...prev];
+      URL.revokeObjectURL(newPreviews[index].preview);
+      newPreviews.splice(index, 1);
+      return newPreviews;
+    });
+  };
+
+  // Cleanup preview URLs on component unmount
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach(preview => URL.revokeObjectURL(preview.preview));
+    };
+  }, [imagePreviews]);
+
   const handleCreateTag = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const tagData: any = {
-      name: newTagName,
-      description: newTagDescription || undefined,
-      notes: newTagNotes,
-      links: newTagLinks
-        ? newTagLinks.split(',').map((l: string) => l.trim())
-        : undefined,
-      automatic: activeForm === 'Automatic',
-      session: false,
-    };
-    if (activeForm === 'Automatic') {
-      const techMapping: Record<
-        string,
-        'blast' | 'hittrax' | 'trackman' | 'armcare' | 'forceplates'
-      > = {
-        'Blast Motion': 'blast',
-        Hittrax: 'hittrax',
-        Trackman: 'trackman',
-        Armcare: 'armcare',
-        Forceplates: 'forceplates',
-      };
-      tagData.tech = techMapping[newTagTech] || undefined;
-      tagData.metric = newTagMetric;
-      if (newTagMode === 'Range') {
-        tagData.min = Number(newTagMin);
-        tagData.max = Number(newTagMax);
-      } else if (newTagMode === 'Threshold') {
-        if (newTagThresholdType === 'Greater than') {
-          tagData.greaterThan = Number(newTagThresholdValue);
-        } else if (newTagThresholdType === 'Less than') {
-          tagData.lessThan = Number(newTagThresholdValue);
+    setLoading(true);
+    setUploadError(null);
+
+    try {
+      // Create FormData to handle file uploads
+      const formData = new FormData();
+      formData.append('name', newTagName);
+      formData.append('description', newTagDescription || '');
+      formData.append('notes', newTagNotes);
+      if (newTagLinks) {
+        formData.append('links', newTagLinks);
+      }
+      formData.append('automatic', String(activeForm === 'Automatic'));
+      formData.append('session', 'false');
+
+      // Append images
+      imagePreviews.forEach((preview) => {
+        formData.append(`images`, preview.file);
+      });
+
+      if (activeForm === 'Automatic') {
+        const techMapping: Record<string, 'blast' | 'hittrax' | 'trackman' | 'armcare' | 'forceplates'> = {
+          'Blast Motion': 'blast',
+          Hittrax: 'hittrax',
+          Trackman: 'trackman',
+          Armcare: 'armcare',
+          Forceplates: 'forceplates',
+        };
+        formData.append('tech', techMapping[newTagTech] || '');
+        formData.append('metric', newTagMetric);
+        if (newTagMode === 'Range') {
+          formData.append('min', newTagMin);
+          formData.append('max', newTagMax);
+        } else if (newTagMode === 'Threshold') {
+          if (newTagThresholdType === 'Greater than') {
+            formData.append('greaterThan', newTagThresholdValue);
+          } else if (newTagThresholdType === 'Less than') {
+            formData.append('lessThan', newTagThresholdValue);
+          }
         }
       }
-    }
-    try {
+
       const res = await fetch('/api/tags', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(tagData),
+        body: formData, // Send as FormData instead of JSON
       });
+
       const data = await res.json();
       if (!res.ok) {
         setErrorMessage(data.error || 'Error creating tag');
         return;
       }
-      setTags((prev) => [...prev, data.tag]);
+
+      // Reset form
+      setTags(prev => [...prev, data.tag]);
       setNewTagName('');
       setNewTagDescription('');
       setNewTagNotes('');
       setNewTagLinks('');
+      setImagePreviews([]);
       if (activeForm === 'Automatic') {
         setNewTagTech('');
         setNewTagMetric('');
@@ -417,6 +482,8 @@ const ManageTags = () => {
     } catch (error: any) {
       console.error(error);
       setErrorMessage('Internal Server Error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -681,6 +748,58 @@ const ManageTags = () => {
                       onChange={(e) => setNewTagLinks(e.target.value)}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Media
+                    </label>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-center w-full">
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p className="mb-2 text-sm text-gray-500">
+                              <span className="font-semibold">Click to upload</span> or drag and drop
+                            </p>
+                            <p className="text-xs text-gray-500">PNG, JPG or GIF (MAX. 5MB)</p>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageChange}
+                          />
+                        </label>
+                      </div>
+                      {uploadError && (
+                        <p className="text-red-500 text-sm">{uploadError}</p>
+                      )}
+                      {imagePreviews.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {imagePreviews.map((preview, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={preview.preview}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(index)}
+                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <button
                     type="submit"

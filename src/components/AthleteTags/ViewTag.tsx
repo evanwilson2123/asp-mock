@@ -8,6 +8,7 @@ import Sidebar from '@/components/Dash/Sidebar';
 import Loader from '../Loader';
 import ErrorMessage from '../ErrorMessage';
 import AthleteSidebar from '../Dash/AthleteSidebar';
+import { TrashIcon } from '@heroicons/react/24/solid';
 
 // Helper function to transform YouTube links to embed links.
 function getEmbedUrl(url: string): string {
@@ -26,6 +27,12 @@ function getEmbedUrl(url: string): string {
   return url;
 }
 
+// Add ImagePreview interface
+interface ImagePreview {
+  file: File;
+  preview: string;
+}
+
 const ViewTag = () => {
   const [tag, setTag] = useState<IAthleteTag | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -33,6 +40,9 @@ const ViewTag = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTag, setEditedTag] = useState<IAthleteTag | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
 
   // Next.js navigation hooks.
   const { tech, tagId } = useParams();
@@ -73,17 +83,91 @@ const ViewTag = () => {
     setIsEditing(false);
   };
 
+  // Add image handling functions
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    setUploadError(null);
+    const newPreviews: ImagePreview[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      if (!file.type.startsWith('image/')) {
+        setUploadError('Only image files are allowed');
+        continue;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setUploadError('File size must be less than 5MB');
+        continue;
+      }
+
+      const preview = URL.createObjectURL(file);
+      newPreviews.push({ file, preview });
+    }
+
+    setImagePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const removeNewImage = (index: number) => {
+    setImagePreviews(prev => {
+      const newPreviews = [...prev];
+      URL.revokeObjectURL(newPreviews[index].preview);
+      newPreviews.splice(index, 1);
+      return newPreviews;
+    });
+  };
+
+  const markImageForDeletion = (imageUrl: string) => {
+    setImagesToDelete(prev => [...prev, imageUrl]);
+    if (editedTag) {
+      setEditedTag(prev => prev ? {
+        ...prev,
+        media: prev.media.filter(url => url !== imageUrl)
+      } : null);
+    }
+  };
+
+  // Cleanup preview URLs
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach(preview => URL.revokeObjectURL(preview.preview));
+    };
+  }, [imagePreviews]);
+
   const handleSave = async () => {
     if (!editedTag) return;
     
     setSaveLoading(true);
     try {
+      const formData = new FormData();
+      
+      // Add all tag data
+      Object.entries(editedTag).forEach(([key, value]) => {
+        if (key !== 'media' && value !== undefined) {
+          if (Array.isArray(value)) {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+
+      // Add new images
+      imagePreviews.forEach((preview) => {
+        formData.append('images', preview.file);
+      });
+
+      // Add images to delete
+      if (imagesToDelete.length > 0) {
+        formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
+      }
+
       const res = await fetch(`/api/tags/tag/${tagId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editedTag),
+        body: formData,
       });
       
       const data = await res.json();
@@ -92,9 +176,11 @@ const ViewTag = () => {
         return;
       }
       
-      setTag(editedTag);
+      setTag(data.tag);
       setIsEditing(false);
       setEditedTag(null);
+      setImagePreviews([]);
+      setImagesToDelete([]);
     } catch (error: any) {
       console.error(error);
       setErrorMessage(error.message || 'Failed to save changes');
@@ -241,6 +327,66 @@ const ViewTag = () => {
               ) : (
                 <p className="text-gray-700">{tag?.notes}</p>
               )}
+            </div>
+
+            {/* Media Section */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-2xl font-semibold text-gray-800">Media</h2>
+                {isEditing && (
+                  <div className="flex items-center space-x-2">
+                    <label className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 text-sm cursor-pointer">
+                      Add Images
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+              {uploadError && (
+                <p className="text-red-500 text-sm mb-2">{uploadError}</p>
+              )}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {/* Existing Images - Filter out images marked for deletion */}
+                {tag?.media?.filter(imageUrl => !imagesToDelete.includes(imageUrl)).map((imageUrl, index) => (
+                  <div key={`existing-${index}`} className="relative group">
+                    <img
+                      src={imageUrl}
+                      alt={`Tag media ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                    {isEditing && (
+                      <button
+                        onClick={() => markImageForDeletion(imageUrl)}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {/* New Images */}
+                {isEditing && imagePreviews.map((preview, index) => (
+                  <div key={`new-${index}`} className="relative group">
+                    <img
+                      src={preview.preview}
+                      alt={`New image ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={() => removeNewImage(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Links Section */}
