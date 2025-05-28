@@ -46,7 +46,7 @@ const athleteTagSchema = new Schema<IAthleteTag>({
   max: { type: Number, required: false },
   greaterThan: { type: Number, required: false },
   lessThan: { type: Number, required: false },
-  media: [{ type: String, required: true, default: [] }],
+  media: { type: [String], required: false, default: [] },
 });
 
 const AthleteTag =

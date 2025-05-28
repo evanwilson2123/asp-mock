@@ -3,31 +3,7 @@ import AthleteTag from '@/models/athleteTag';
 import TagFolder from '@/models/tagFolder';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import path from 'path';
-import { existsSync, mkdirSync } from 'fs';
-
-// Helper function to save uploaded files
-async function saveUploadedFile(file: File, tagId: string): Promise<string> {
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-
-  // Create uploads directory if it doesn't exist
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'tags', tagId);
-  if (!existsSync(uploadDir)) {
-    mkdirSync(uploadDir, { recursive: true });
-  }
-
-  // Generate unique filename
-  const uniqueFilename = `${Date.now()}-${file.name}`;
-  const filePath = path.join(uploadDir, uniqueFilename);
-  
-  // Save the file
-  await writeFile(filePath, buffer);
-  
-  // Return the public URL path
-  return `/uploads/tags/${tagId}/${uniqueFilename}`;
-}
+import { put } from '@vercel/blob';
 
 export async function GET() {
   const { userId } = await auth();
@@ -114,10 +90,16 @@ export async function POST(req: NextRequest) {
     const tag = new AthleteTag(tagData);
     await tag.save();
 
-    // Handle image uploads
+    // Handle image uploads using Vercel Blob
     const imageFiles = formData.getAll('images') as File[];
     if (imageFiles.length > 0) {
-      const uploadPromises = imageFiles.map(file => saveUploadedFile(file, tag._id.toString()));
+      const uploadPromises = imageFiles.map(async (file, index) => {
+        const blob = await put(`tags/${tag._id}/image_${index}`, file, {
+          access: 'public',
+        });
+        return blob.url;
+      });
+      
       const newImageUrls = await Promise.all(uploadPromises);
       tag.media = newImageUrls;
       await tag.save();
