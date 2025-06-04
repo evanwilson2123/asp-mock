@@ -427,7 +427,6 @@ const TrackmanSessionDetails: React.FC = () => {
               }}
             />
           </div>
-
           {/* Release Height vs Release Side Scatter Plot */}
           <div className="bg-white p-6 rounded shadow">
             <h2 className="text-lg font-semibold text-gray-700 mb-1">
@@ -486,7 +485,6 @@ const TrackmanSessionDetails: React.FC = () => {
               }}
             />
           </div>
-
           {/* Pitch Location Scatter Plot with Strike Zone */}
           <div className="flex justify-center items-center lg:col-span-2 bg-white p-6 rounded shadow">
             <div>

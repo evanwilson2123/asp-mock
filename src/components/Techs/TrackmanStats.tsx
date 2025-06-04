@@ -836,6 +836,7 @@ const TrackmanStats: React.FC = () => {
               <p className="text-gray-500">No session data available.</p>
             )}
           </div>
+          {/* */}
 
           {/* Stuff+ chart */}
           <div
