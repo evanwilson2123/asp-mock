@@ -63,7 +63,9 @@ const TrackmanSessionDetails: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
-  const [selectedPitchType, setSelectedPitchType] = useState<string | 'all'>('all');
+  const [selectedPitchType, setSelectedPitchType] = useState<string | 'all'>(
+    'all'
+  );
 
   const { sessionId } = useParams();
   const router = useRouter();
@@ -160,7 +162,7 @@ const TrackmanSessionDetails: React.FC = () => {
   };
 
   // Calculate pagination
-  const allPitches = pitchTypes.flatMap(pitchType => {
+  const allPitches = pitchTypes.flatMap((pitchType) => {
     const pitchData = dataByPitchType[pitchType];
     // Get the minimum length of all arrays to ensure we don't access undefined values
     const minLength = Math.min(
@@ -191,9 +193,13 @@ const TrackmanSessionDetails: React.FC = () => {
     }));
   });
 
-  const filteredPitches = selectedPitchType === 'all' 
-    ? allPitches 
-    : allPitches.filter(pitch => pitch.pitchType.toLowerCase() === selectedPitchType.toLowerCase());
+  const filteredPitches =
+    selectedPitchType === 'all'
+      ? allPitches
+      : allPitches.filter(
+          (pitch) =>
+            pitch.pitchType.toLowerCase() === selectedPitchType.toLowerCase()
+        );
 
   const totalPages = Math.ceil(filteredPitches.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -239,7 +245,9 @@ const TrackmanSessionDetails: React.FC = () => {
           {/* Paginated Table */}
           <div className="bg-white p-6 rounded shadow">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-700">Pitch Details</h2>
+              <h2 className="text-lg font-semibold text-gray-700">
+                Pitch Details
+              </h2>
               <select
                 value={selectedPitchType}
                 onChange={(e) => {
@@ -249,8 +257,10 @@ const TrackmanSessionDetails: React.FC = () => {
                 className="border rounded px-2 py-1 text-black"
               >
                 <option value="all">All Pitch Types</option>
-                {pitchTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {pitchTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
             </div>
@@ -258,44 +268,76 @@ const TrackmanSessionDetails: React.FC = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Speed</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spin</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">H Break</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">V Break</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stuff+</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tilt</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VAA</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rel Ht</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Speed
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Spin
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      H Break
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      V Break
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Stuff+
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tilt
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      VAA
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Rel Ht
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {currentPitches.map((pitch, index) => (
                     <tr key={`${pitch.pitchType}-${index}`}>
-                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">{pitch.pitchType}</td>
+                      <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
+                        {pitch.pitchType}
+                      </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
                         {pitch.speed !== null ? pitch.speed.toFixed(1) : 'N/A'}
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
-                        {pitch.spinRate !== null ? pitch.spinRate.toFixed(0) : 'N/A'}
+                        {pitch.spinRate !== null
+                          ? pitch.spinRate.toFixed(0)
+                          : 'N/A'}
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
-                        {pitch.horizontalBreak !== null ? pitch.horizontalBreak.toFixed(1) : 'N/A'}
+                        {pitch.horizontalBreak !== null
+                          ? pitch.horizontalBreak.toFixed(1)
+                          : 'N/A'}
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
-                        {pitch.verticalBreak !== null ? pitch.verticalBreak.toFixed(1) : 'N/A'}
+                        {pitch.verticalBreak !== null
+                          ? pitch.verticalBreak.toFixed(1)
+                          : 'N/A'}
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
-                        {pitch.stuffPlus !== null ? pitch.stuffPlus.toFixed(1) : 'N/A'}
+                        {pitch.stuffPlus !== null
+                          ? pitch.stuffPlus.toFixed(1)
+                          : 'N/A'}
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
                         {pitch.tilt ?? 'N/A'}
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
-                        {pitch.verticalApproachAngle !== null ? pitch.verticalApproachAngle.toFixed(1) : 'N/A'}
+                        {pitch.verticalApproachAngle !== null
+                          ? pitch.verticalApproachAngle.toFixed(1)
+                          : 'N/A'}
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-sm text-gray-900">
-                        {pitch.releaseHeight !== null ? pitch.releaseHeight.toFixed(1) : 'N/A'}
+                        {pitch.releaseHeight !== null
+                          ? pitch.releaseHeight.toFixed(1)
+                          : 'N/A'}
                       </td>
                     </tr>
                   ))}
@@ -304,7 +346,7 @@ const TrackmanSessionDetails: React.FC = () => {
             </div>
             <div className="flex justify-between items-center mt-2">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 className="px-2 py-0.5 text-sm bg-gray-200 rounded disabled:opacity-50 text-black"
               >
@@ -314,7 +356,9 @@ const TrackmanSessionDetails: React.FC = () => {
                 {currentPage} / {totalPages}
               </span>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
                 disabled={currentPage === totalPages}
                 className="px-2 py-0.5 text-sm bg-gray-200 rounded disabled:opacity-50 text-black"
               >
@@ -325,13 +369,15 @@ const TrackmanSessionDetails: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
-          
-
           {/* Horizontal vs Vertical Break Scatter Plot */}
           <div className="bg-white p-6 rounded shadow">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            <h2 className="text-lg font-semibold text-gray-700 mb-1">
               Horizontal vs. Vertical Break
             </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              A scatter plot showing the horizontal and vertical break for each
+              pitch color coded by pitch type
+            </p>
             <Scatter
               data={{
                 datasets: pitchTypes.map((pitchType, index) => ({
@@ -384,9 +430,13 @@ const TrackmanSessionDetails: React.FC = () => {
 
           {/* Release Height vs Release Side Scatter Plot */}
           <div className="bg-white p-6 rounded shadow">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            <h2 className="text-lg font-semibold text-gray-700 mb-1">
               Release Height vs. Release Side
             </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              A scatter plot representing the release point of each pitch (view
+              from behind mound)
+            </p>
             <Scatter
               data={{
                 datasets: pitchTypes.map((pitchType, index) => ({
@@ -440,9 +490,13 @@ const TrackmanSessionDetails: React.FC = () => {
           {/* Pitch Location Scatter Plot with Strike Zone */}
           <div className="flex justify-center items-center lg:col-span-2 bg-white p-6 rounded shadow">
             <div>
-              <h2 className="text-lg font-semibold text-gray-700 mb-4 text-center">
+              <h2 className="text-lg font-semibold text-gray-700 mb-1 text-center">
                 Pitch Location (Strike Zone)
               </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                A scatter plot showing where each pitch was located in relation
+                to the strike zone color coded by pitch type
+              </p>
               <div
                 style={{
                   width: '600px',
@@ -522,9 +576,13 @@ const TrackmanSessionDetails: React.FC = () => {
 
           {/* Stuff+ Score by Pitch Line Chart */}
           <div className="bg-white p-6 rounded shadow lg:col-span-2">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            <h2 className="text-lg font-semibold text-gray-700 mb-1">
               Stuff+ Score by Pitch
             </h2>
+            <p className="text-gray-500 text-sm mb-4">
+              A line chart representing the stuff+ score of each pitch, in order
+              by pitch type
+            </p>
             <Line data={stuffPlusChartData} options={stuffPlusChartOptions} />
           </div>
         </div>

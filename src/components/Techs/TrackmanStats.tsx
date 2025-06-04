@@ -137,8 +137,18 @@ const TagManager: React.FC<{
           onClick={() => setIsModalOpen(true)}
           className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          <svg
+            className="h-4 w-4 mr-1.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           Add Tag
         </button>
@@ -159,8 +169,18 @@ const TagManager: React.FC<{
                   }}
                   className="text-gray-400 hover:text-gray-500"
                 >
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -181,8 +201,18 @@ const TagManager: React.FC<{
                       onClick={() => setSearchTerm('')}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-500"
                     >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   )}
@@ -202,14 +232,28 @@ const TagManager: React.FC<{
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="font-medium text-gray-900">{tag.name}</div>
+                              <div className="font-medium text-gray-900">
+                                {tag.name}
+                              </div>
                               {tag.description && (
-                                <div className="text-sm text-gray-500 mt-0.5">{tag.description}</div>
+                                <div className="text-sm text-gray-500 mt-0.5">
+                                  {tag.description}
+                                </div>
                               )}
                             </div>
                             {selectedTagId === tag._id && (
-                              <svg className="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              <svg
+                                className="h-5 w-5 text-blue-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
                               </svg>
                             )}
                           </div>
@@ -218,7 +262,9 @@ const TagManager: React.FC<{
                     </div>
                   ) : (
                     <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                      {searchTerm ? 'No matching tags found' : 'Start typing to search tags'}
+                      {searchTerm
+                        ? 'No matching tags found'
+                        : 'Start typing to search tags'}
                     </div>
                   )}
                 </div>
@@ -479,8 +525,6 @@ const TrackmanStats: React.FC = () => {
     if (res.ok) setBlastTags((prev) => prev.filter((t) => t._id !== tagId));
   };
 
-  
-
   /* ----- Chart ----- */
   const colors = [
     '#FF6384',
@@ -517,7 +561,9 @@ const TrackmanStats: React.FC = () => {
   };
 
   // Stuff+ chart data
-  const uniqueStuffPlusDates = [...new Set(averageStuffPlus.map((d) => d.date))];
+  const uniqueStuffPlusDates = [
+    ...new Set(averageStuffPlus.map((d) => d.date)),
+  ];
   const stuffPlusDatasets = Object.entries(
     averageStuffPlus.reduce(
       (acc, cur) => {
@@ -535,7 +581,10 @@ const TrackmanStats: React.FC = () => {
     tension: 0.3,
     fill: true,
   }));
-  const stuffPlusChartData = { labels: uniqueStuffPlusDates, datasets: stuffPlusDatasets };
+  const stuffPlusChartData = {
+    labels: uniqueStuffPlusDates,
+    datasets: stuffPlusDatasets,
+  };
   const stuffPlusChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -582,7 +631,9 @@ const TrackmanStats: React.FC = () => {
             </button>
             <button
               key="assessments"
-              onClick={() => router.push(`/athlete/${athleteId}/reports/assessments`)}
+              onClick={() =>
+                router.push(`/athlete/${athleteId}/reports/assessments`)
+              }
               className="text-gray-700 font-semibold hover:text-gray-900 transition"
             >
               Assessments
@@ -759,10 +810,7 @@ const TrackmanStats: React.FC = () => {
                   {maxStuffPlus.toFixed(2)}
                 </span>
               </div>
-              <p
-                className="mt-2 font-medium"
-                style={{ color: colors[0] }}
-              >
+              <p className="mt-2 font-medium" style={{ color: colors[0] }}>
                 Stuff+
               </p>
             </div>
@@ -773,9 +821,13 @@ const TrackmanStats: React.FC = () => {
             className="bg-white p-6 rounded shadow mb-8"
             style={{ minHeight: 300 }}
           >
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            <h2 className="text-lg font-semibold text-gray-700 mb-1">
               Velocity Averages Over Time
             </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              A line chart depicting the athlete&apos;s velocity progress over
+              time among a selection of pitch types
+            </p>
             {averageVelocities.length ? (
               <div className="w-full h-72 md:h-96">
                 <Line data={mainChartData} options={mainChartOptions} />
@@ -790,12 +842,19 @@ const TrackmanStats: React.FC = () => {
             className="bg-white p-6 rounded shadow mb-8"
             style={{ minHeight: 300 }}
           >
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            <h2 className="text-lg font-semibold text-gray-700 mb-1">
               Stuff+ Averages Over Time
             </h2>
+            <p className="text-gray-500 text-sm mb-4">
+              A line chart depicting the athlete&apos;s stuff+ progress over
+              time among a selection of pitch types
+            </p>
             {averageStuffPlus.length ? (
               <div className="w-full h-72 md:h-96">
-                <Line data={stuffPlusChartData} options={stuffPlusChartOptions} />
+                <Line
+                  data={stuffPlusChartData}
+                  options={stuffPlusChartOptions}
+                />
               </div>
             ) : (
               <p className="text-gray-500">No Stuff+ data available.</p>
