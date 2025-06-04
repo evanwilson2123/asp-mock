@@ -282,191 +282,238 @@ import Athlete from '@/models/athlete';
  *     ]
  *   }
  */
+
+const batSpeedThresholds = {
+    youth: 60,
+    'high school': 67,
+    college: 75,
+    pro: 75,
+};
+
+
+interface FastSwingRate {
+    youthPercent: number;
+    highschoolPercent: number;
+    collegePercent: number;
+    proPercent: number;
+}
+
 export async function GET(req: NextRequest, context: any) {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: 'AUTH FAILED' }, { status: 400 });
-  }
-  const athleteId = context.params.athleteId;
-
-  try {
-    const { searchParams } = req.nextUrl;
-    const isAthlete = searchParams.get('isAthlete');
-    if (!isAthlete) {
-      console.log('Missing isAthlete param');
-      return NextResponse.json(
-        { error: 'Missing isAthlete param' },
-        { status: 400 }
-      );
+    const { userId } = await auth();
+    if (!userId) {
+        return NextResponse.json({ error: 'AUTH FAILED' }, { status: 400 });
     }
-    // Fetch BlastMotion records for the athlete, ordered by the actual CSV date descending.
-    const records = await prisma.blastMotion.findMany({
-      where: { athlete: athleteId },
-      orderBy: { date: 'desc' },
-    });
+    const athleteId = context.params.athleteId;
 
-    if (!records || records.length === 0) {
-      return NextResponse.json(
-        { error: 'No data found for this athlete' },
-        { status: 404 }
-      );
-    }
+    try {
+        const { searchParams } = req.nextUrl;
+        const isAthlete = searchParams.get('isAthlete');
+        if (!isAthlete) {
+            console.log('Missing isAthlete param');
+            return NextResponse.json(
+                { error: 'Missing isAthlete param' },
+                { status: 400 }
+            );
+        }
+        // Fetch BlastMotion records for the athlete, ordered by the actual CSV date descending.
+        const records = await prisma.blastMotion.findMany({
+            where: { athlete: athleteId },
+            orderBy: { date: 'desc' },
+        });
 
-    // Group records by sessionId. We assume that when the data was uploaded,
-    // each record's "date" field was set using the CSV date.
-    const sessions: Record<
-      string,
-      {
-        sessionId: string;
-        sessionName: string;
-        date: string;
-        batSpeeds: number[];
-        handSpeeds: number[];
-        rotationalAccels: number[];
-        powers: number[];
-        earlyConnections: number[];
-        connectionAtImpacts: number[];
-      }
-    > = {};
+        if (!records || records.length === 0) {
+            return NextResponse.json(
+                { error: 'No data found for this athlete' },
+                { status: 404 }
+            );
+        }
 
-    const allBatSpeeds: number[] = [];
-    const allHandSpeeds: number[] = [];
-    const allRotationalAccels: number[] = [];
-    const allPowers: number[] = [];
-    const allEarlyConnections: number[] = [];
-    const allConnectionAtImpacts: number[] = [];
+        // Group records by sessionId. We assume that when the data was uploaded,
+        // each record's "date" field was set using the CSV date.
+        const sessions: Record<
+            string,
+            {
+                sessionId: string;
+                sessionName: string;
+                date: string;
+                batSpeeds: number[];
+                handSpeeds: number[];
+                rotationalAccels: number[];
+                powers: number[];
+                earlyConnections: number[];
+                connectionAtImpacts: number[];
+                fastSwingRates: FastSwingRate[];
+            }
+        > = {};
 
-    for (const record of records) {
-      const sessionId = record.sessionId;
-      if (!sessions[sessionId]) {
-        sessions[sessionId] = {
-          sessionId,
-          sessionName: record.sessionName,
-          // Use the actual CSV date stored in record.date (formatted as "YYYY-MM-DD")
-          date: new Date(record.date).toISOString().split('T')[0],
-          batSpeeds: [],
-          handSpeeds: [],
-          rotationalAccels: [],
-          powers: [],
-          earlyConnections: [],
-          connectionAtImpacts: [],
-        };
-      }
+        const allBatSpeeds: number[] = [];
+        const allHandSpeeds: number[] = [];
+        const allRotationalAccels: number[] = [];
+        const allPowers: number[] = [];
+        const allEarlyConnections: number[] = [];
+        const allConnectionAtImpacts: number[] = [];
 
-      if (record.batSpeed !== null) {
-        sessions[sessionId].batSpeeds.push(record.batSpeed);
-        allBatSpeeds.push(record.batSpeed);
-      }
-      if (record.peakHandSpeed !== null) {
-        sessions[sessionId].handSpeeds.push(record.peakHandSpeed);
-        allHandSpeeds.push(record.peakHandSpeed);
-      }
-      if (record.rotationalAcceleration !== null) {
-        sessions[sessionId].rotationalAccels.push(
-          record.rotationalAcceleration
+        for (const record of records) {
+            const sessionId = record.sessionId;
+            if (!sessions[sessionId]) {
+                sessions[sessionId] = {
+                    sessionId,
+                    sessionName: record.sessionName,
+                    // Use the actual CSV date stored in record.date (formatted as "YYYY-MM-DD")
+                    date: new Date(record.date).toISOString().split('T')[0],
+                    batSpeeds: [],
+                    handSpeeds: [],
+                    rotationalAccels: [],
+                    powers: [],
+                    earlyConnections: [],
+                    connectionAtImpacts: [],
+                    fastSwingRates: [],
+                };
+            }
+
+            if (record.batSpeed !== null) {
+                sessions[sessionId].batSpeeds.push(record.batSpeed);
+                allBatSpeeds.push(record.batSpeed);
+            }
+            if (record.peakHandSpeed !== null) {
+                sessions[sessionId].handSpeeds.push(record.peakHandSpeed);
+                allHandSpeeds.push(record.peakHandSpeed);
+            }
+            if (record.rotationalAcceleration !== null) {
+                sessions[sessionId].rotationalAccels.push(
+                    record.rotationalAcceleration
+                );
+                allRotationalAccels.push(record.rotationalAcceleration);
+            }
+            if (record.power !== null) {
+                sessions[sessionId].powers.push(record.power);
+                allPowers.push(record.power);
+            }
+            if (record.earlyConnection !== null) {
+                sessions[sessionId].earlyConnections.push(record.earlyConnection);
+                allEarlyConnections.push(record.earlyConnection);
+            }
+            if (record.connectionAtImpact !== null) {
+                sessions[sessionId].connectionAtImpacts.push(record.connectionAtImpact);
+                allConnectionAtImpacts.push(record.connectionAtImpact);
+            }
+        }
+
+        // Calculate session averages.
+        const sessionAverages = Object.values(sessions).map((session) => {
+            const avgBatSpeed =
+                session.batSpeeds.length > 0
+                    ? session.batSpeeds.reduce((acc, v) => acc + v, 0) /
+                    session.batSpeeds.length
+                    : 0;
+            const avgHandSpeed =
+                session.handSpeeds.length > 0
+                    ? session.handSpeeds.reduce((acc, v) => acc + v, 0) /
+                    session.handSpeeds.length
+                    : 0;
+            const avgRotationalAcceleration =
+                session.rotationalAccels.length > 0
+                    ? session.rotationalAccels.reduce((acc, v) => acc + v, 0) /
+                    session.rotationalAccels.length
+                    : 0;
+            const avgPower =
+                session.powers.length > 0
+                    ? session.powers.reduce((acc, v) => acc + v, 0) /
+                    session.powers.length
+                    : 0;
+            const avgEarlyConnection =
+                session.earlyConnections.length > 0
+                    ? session.earlyConnections.reduce((acc, v) => acc + v, 0) /
+                    session.earlyConnections.length
+                    : 0;
+            const avgConnectionAtImpacts =
+                session.connectionAtImpacts.length > 0
+                    ? session.connectionAtImpacts.reduce((acc, v) => acc + v, 0) /
+                    session.connectionAtImpacts.length
+                    : 0;
+            const calcAvgFastSwingRates = () => {
+                if (session.batSpeeds.length > 0) {
+                    let youthLength = 0;
+                    let highSchoolLength = 0;
+                    let collegeLength = 0;
+                    let proLength = 0;
+                    for (const speed of session.batSpeeds) {
+                        if (speed >= batSpeedThresholds.youth) {
+                            youthLength++;
+                        }
+                        if (speed >= batSpeedThresholds['high school']) {
+                            highSchoolLength++;
+                        }
+                        if (speed >= batSpeedThresholds.college) {
+                            collegeLength++;
+                        }
+                        if (speed >= batSpeedThresholds.pro) {
+                            proLength++;
+                        }
+                    }
+                    return {
+                        youthPercent: (youthLength / session.batSpeeds.length) * 100,
+                        highschoolPercent: (highSchoolLength / session.batSpeeds.length) * 100,
+                        collegePercent: (collegeLength / session.batSpeeds.length) * 100,
+                        proPercent: (proLength / session.batSpeeds.length) * 100,
+                    }
+                }
+            }
+            const avgFastSwingRates = calcAvgFastSwingRates();
+            return {
+                sessionId: session.sessionId,
+                sessionName: session.sessionName,
+                date: session.date,
+                avgBatSpeed,
+                avgHandSpeed,
+                avgRotationalAcceleration,
+                avgPower,
+                avgEarlyConnection,
+                avgConnectionAtImpacts,
+                fastSwingRates: avgFastSwingRates,
+            };
+        });
+
+        // Compute global max metrics.
+        const maxBatSpeed = allBatSpeeds.length > 0 ? Math.max(...allBatSpeeds) : 0;
+        const maxHandSpeed =
+            allHandSpeeds.length > 0 ? Math.max(...allHandSpeeds) : 0;
+        const maxRotationalAcceleration =
+            allRotationalAccels.length > 0 ? Math.max(...allRotationalAccels) : 0;
+        const maxPower = allPowers.length > 0 ? Math.max(...allPowers) : 0;
+
+        const athlete = await Athlete.findById(athleteId);
+        if (!athlete) {
+            return NextResponse.json(
+                { error: 'Could not find athlete by ID' },
+                { status: 404 }
+            );
+        }
+
+        const coachesNotes = athlete.coachesNotes.filter((n: any) =>
+            isAthlete === 'true'
+                ? n.isAthlete && n.section === 'blast'
+                : n.section === 'blast'
         );
-        allRotationalAccels.push(record.rotationalAcceleration);
-      }
-      if (record.power !== null) {
-        sessions[sessionId].powers.push(record.power);
-        allPowers.push(record.power);
-      }
-      if (record.earlyConnection !== null) {
-        sessions[sessionId].earlyConnections.push(record.earlyConnection);
-        allEarlyConnections.push(record.earlyConnection);
-      }
-      if (record.connectionAtImpact !== null) {
-        sessions[sessionId].connectionAtImpacts.push(record.connectionAtImpact);
-        allConnectionAtImpacts.push(record.connectionAtImpact);
-      }
+
+        return NextResponse.json({
+            maxBatSpeed,
+            maxHandSpeed,
+            maxRotationalAcceleration,
+            maxPower,
+            sessionAverages,
+            sessions: sessionAverages.map(({ sessionId, sessionName, date }) => ({
+                sessionId,
+                sessionName,
+                date,
+            })),
+            coachesNotes: coachesNotes,
+        });
+    } catch (error: any) {
+        console.error('Error fetching BlastMotion data:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch BlastMotion data', details: error.message },
+            { status: 500 }
+        );
     }
-
-    // Calculate session averages.
-    const sessionAverages = Object.values(sessions).map((session) => {
-      const avgBatSpeed =
-        session.batSpeeds.length > 0
-          ? session.batSpeeds.reduce((acc, v) => acc + v, 0) /
-            session.batSpeeds.length
-          : 0;
-      const avgHandSpeed =
-        session.handSpeeds.length > 0
-          ? session.handSpeeds.reduce((acc, v) => acc + v, 0) /
-            session.handSpeeds.length
-          : 0;
-      const avgRotationalAcceleration =
-        session.rotationalAccels.length > 0
-          ? session.rotationalAccels.reduce((acc, v) => acc + v, 0) /
-            session.rotationalAccels.length
-          : 0;
-      const avgPower =
-        session.powers.length > 0
-          ? session.powers.reduce((acc, v) => acc + v, 0) /
-            session.powers.length
-          : 0;
-      const avgEarlyConnection =
-        session.earlyConnections.length > 0
-          ? session.earlyConnections.reduce((acc, v) => acc + v, 0) /
-            session.earlyConnections.length
-          : 0;
-      const avgConnectionAtImpacts =
-        session.connectionAtImpacts.length > 0
-          ? session.connectionAtImpacts.reduce((acc, v) => acc + v, 0) /
-            session.connectionAtImpacts.length
-          : 0;
-
-      return {
-        sessionId: session.sessionId,
-        sessionName: session.sessionName,
-        date: session.date,
-        avgBatSpeed,
-        avgHandSpeed,
-        avgRotationalAcceleration,
-        avgPower,
-        avgEarlyConnection,
-        avgConnectionAtImpacts,
-      };
-    });
-
-    // Compute global max metrics.
-    const maxBatSpeed = allBatSpeeds.length > 0 ? Math.max(...allBatSpeeds) : 0;
-    const maxHandSpeed =
-      allHandSpeeds.length > 0 ? Math.max(...allHandSpeeds) : 0;
-    const maxRotationalAcceleration =
-      allRotationalAccels.length > 0 ? Math.max(...allRotationalAccels) : 0;
-    const maxPower = allPowers.length > 0 ? Math.max(...allPowers) : 0;
-
-    const athlete = await Athlete.findById(athleteId);
-    if (!athlete) {
-      return NextResponse.json(
-        { error: 'Could not find athlete by ID' },
-        { status: 404 }
-      );
-    }
-
-    const coachesNotes = athlete.coachesNotes.filter((n: any) =>
-      isAthlete === 'true'
-        ? n.isAthlete && n.section === 'blast'
-        : n.section === 'blast'
-    );
-
-    return NextResponse.json({
-      maxBatSpeed,
-      maxHandSpeed,
-      maxRotationalAcceleration,
-      maxPower,
-      sessionAverages,
-      sessions: sessionAverages.map(({ sessionId, sessionName, date }) => ({
-        sessionId,
-        sessionName,
-        date,
-      })),
-      coachesNotes: coachesNotes,
-    });
-  } catch (error: any) {
-    console.error('Error fetching BlastMotion data:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch BlastMotion data', details: error.message },
-      { status: 500 }
-    );
-  }
 }
